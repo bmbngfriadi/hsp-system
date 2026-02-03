@@ -60,17 +60,19 @@
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
            <div id="data-card-container" class="md:hidden bg-slate-50 p-3 space-y-4"></div>
            <div class="hidden md:block overflow-x-auto">
-             <table class="w-full text-left text-sm whitespace-nowrap">
+             <table class="w-full text-left text-sm">
                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs font-bold">
                  <tr>
                     <th class="px-6 py-4 w-[100px]" data-i18n="th_id">ID & Date</th>
-                    <th class="px-6 py-4 w-[120px]" data-i18n="th_user">User Info</th>
-                    <th class="px-6 py-4 min-w-[120px]" data-i18n="th_unit">Unit & Purpose</th>
-                    <th class="px-6 py-4 w-[120px]" data-i18n="th_approval">Approval Status</th>
-                    <th class="px-6 py-4 w-[150px]" >Notes / Comment</th>
-                    <th class="px-6 py-4 text-center w-[100px]" data-i18n="th_status">Status</th>
+                    <th class="px-6 py-4 w-[140px]" data-i18n="th_user">User Info</th>
+                    <th class="px-6 py-4 w-[150px]" data-i18n="th_unit">Unit & Purpose</th>
+                    <th class="px-6 py-4 w-[120px]" data-i18n="th_approval">Approval</th>
+                    <th class="px-6 py-4 w-[160px]" >Notes</th>
+                    
+                    <th class="px-6 py-4 text-center min-w-[160px]" data-i18n="th_status">Status</th>
+                    
                     <th class="px-6 py-4 text-center w-[120px]" data-i18n="th_trip">Trip Info</th>
-                    <th class="px-6 py-4 text-right w-[160px]" data-i18n="th_action">Action</th>
+                    <th class="px-6 py-4 text-right w-[140px]" data-i18n="th_action">Action</th>
                 </tr>
                </thead>
                <tbody id="data-table-body" class="divide-y divide-slate-100"></tbody>
@@ -277,7 +279,7 @@
             <tr class="hover:bg-slate-50 transition border-b border-slate-50 align-top">
                 <td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${timestamp}</div><div class="text-[10px] text-slate-400">#${idStr}</div></td>
                 <td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${row.username}</div><div class="text-[10px] text-slate-500">${row.department}</div></td>
-                <td class="px-6 py-4"><div class="text-xs font-bold text-blue-700 bg-blue-50 px-1 rounded inline-block mb-1">${row.vehicle}</div><div class="text-xs text-slate-600 italic whitespace-normal max-w-[250px]" title="${row.purpose}">${row.purpose}</div></td>
+                <td class="px-6 py-4 whitespace-normal w-[150px]"><div class="text-xs font-bold text-blue-700 bg-blue-50 px-1 rounded inline-block mb-1">${row.vehicle}</div><div class="text-xs text-slate-600 italic break-words max-w-[150px]" title="${row.purpose}">${row.purpose}</div></td>
                 <td class="px-6 py-4">
                     <div class="flex flex-col gap-3 w-28">
                         <div class="flex items-start gap-2"><span class="text-[9px] w-6 font-bold text-slate-400 mt-1">GA</span>${gaBox}</div>
@@ -285,7 +287,7 @@
                     </div>
                 </td>
                 <td class="px-6 py-4 align-middle whitespace-normal max-w-[200px]">${commentDisplay}</td>
-                <td class="px-6 py-4 text-center"><span class="status-badge ${badge}">${status}</span></td>
+                <td class="px-6 py-4 text-center"><span class="status-badge ${badge} whitespace-nowrap">${status}</span></td>
                 <td class="px-6 py-4 text-center">${photosHtml}</td>
                 <td class="px-6 py-4 text-right align-top min-w-[160px]">${actionBtn}</td>
             </tr>`;
@@ -333,15 +335,119 @@
     function submitData() { const v = document.getElementById('input-vehicle').value, p = document.getElementById('input-purpose').value, btn = document.getElementById('btn-create-submit'); if(!v || !p) return showAlert("Error", "Please complete all fields."); btn.disabled = true; btn.innerText = "Processing..."; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'submit', username: currentUser.username, fullname: currentUser.fullname, role: currentUser.role, department: currentUser.department, vehicle: v, purpose: p }) }).then(r => r.json()).then(res => { btn.disabled = false; btn.innerText = "Submit Request"; if(res.success) { closeModal('modal-create'); loadData(); showAlert("Success", "Request sent."); } else { showAlert("Error", res.message); } }); }
     function callUpdate(id, act, comment) { fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: {comment: comment} }) }).then(r => r.json()).then(res => { if(res.success) loadData(); else showAlert("Error", res.message || "Failed to update"); }).catch(e => showAlert("Error", "Connection error")); }
     
-    // MODIFIED: Approve now uses showConfirm to ask for optional comment
     function approve(id, role) { showConfirm("Approve Request", "You can add an optional note below:", (comment) => { callUpdate(id, 'approve', comment); }); }
-    
     function reject(id, role) { showConfirm("Confirm Rejection", "Please provide a REASON for rejection:", (comment) => { if(!comment) return showAlert("Error", "Reason is required for rejection"); callUpdate(id, 'reject', comment); }); }
     function confirmTrip(id) { showConfirm("Confirm Trip", "Mark trip as Done and Vehicle Available?", (c) => callUpdate(id, 'endTrip', c)); } 
     function requestCorrection(id) { showConfirm("Request Correction", "Send back to user for editing?", (c) => callUpdate(id, 'requestCorrection', c)); }
     function openTripModal(id, act, startKmVal) { document.getElementById('trip-id').value = id; document.getElementById('trip-action').value = act; const titleMap = { 'startTrip': 'Departure Update', 'endTrip': 'Arrival Update', 'submitCorrection': 'Correct Trip Data' }; document.getElementById('modal-trip-title').innerText = titleMap[act]; document.getElementById('lbl-km').innerText = act === 'startTrip' ? 'Start KM' : 'End KM'; const startVal = parseInt(startKmVal) || 0; document.getElementById('modal-start-km-val').value = startVal; document.getElementById('disp-start-km').innerText = startVal; document.getElementById('input-km').value = ''; document.getElementById('input-route-update').value = ''; document.getElementById('disp-total-km').innerText = '0'; document.getElementById('input-photo').value = ''; togglePhotoSource('file'); if (act === 'endTrip' || act === 'submitCorrection') { document.getElementById('div-route-update').classList.remove('hidden'); document.getElementById('input-route-update').required = true; document.getElementById('div-calc-distance').classList.remove('hidden'); } else { document.getElementById('div-route-update').classList.add('hidden'); document.getElementById('input-route-update').required = false; document.getElementById('div-calc-distance').classList.add('hidden'); } openModal('modal-trip'); }
-    function submitTripUpdate() { const id = document.getElementById('trip-id').value; const act = document.getElementById('trip-action').value; const km = document.getElementById('input-km').value; const routeVal = document.getElementById('input-route-update').value; if(!km) return showAlert("Error", "KM Required"); let base64Data = null; if (activePhotoSource === 'camera') { if (!capturedImageBase64) return showAlert("Error", "Please capture a photo."); base64Data = capturedImageBase64; sendTripData(id, act, km, base64Data, routeVal); } else { const fileInput = document.getElementById('input-photo'); if (fileInput.files.length === 0) return showAlert("Error", "Please upload a photo."); const file = fileInput.files[0]; const reader = new FileReader(); reader.onload = function(e) { base64Data = e.target.result; sendTripData(id, act, km, base64Data, routeVal); }; reader.readAsDataURL(file); } }
-    function sendTripData(id, act, km, photoBase64, route) { const btn = document.getElementById('btn-trip-submit'); btn.disabled = true; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: { km: km, photoBase64: photoBase64, route: route } }) }).then(r => r.json()).then(res => { btn.disabled = false; closeModal('modal-trip'); loadData(); }); }
+
+    // --- CLIENT-SIDE IMAGE COMPRESSION ---
+    function compressImage(base64Str, maxWidth = 800, quality = 0.5) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = base64Str;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                if (width > maxWidth) {
+                    height *= maxWidth / width;
+                    width = maxWidth;
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+        });
+    }
+
+    async function submitTripUpdate() { 
+        try {
+            const id = document.getElementById('trip-id').value;
+            const act = document.getElementById('trip-action').value;
+            const km = document.getElementById('input-km').value;
+            const routeVal = document.getElementById('input-route-update').value;
+            const btn = document.getElementById('btn-trip-submit');
+            
+            if(!km) return showAlert("Error", "KM Required");
+            
+            btn.disabled = true;
+            btn.innerText = "Processing Image...";
+
+            let base64Data = null;
+            if (activePhotoSource === 'camera') {
+                if (!capturedImageBase64) { btn.disabled=false; btn.innerText="Save Update"; return showAlert("Error", "Please capture a photo."); }
+                base64Data = capturedImageBase64;
+            } else {
+                const fileInput = document.getElementById('input-photo');
+                if (fileInput.files.length === 0) { btn.disabled=false; btn.innerText="Save Update"; return showAlert("Error", "Please upload a photo."); }
+                const file = fileInput.files[0];
+                base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            const compressedBase64 = await compressImage(base64Data);
+            const cleanBase64 = compressedBase64.split(',')[1];
+
+            sendTripData(id, act, km, cleanBase64, routeVal);
+
+        } catch (err) {
+            console.error(err);
+            showAlert("Error", "Image processing failed.");
+            document.getElementById('btn-trip-submit').disabled = false;
+            document.getElementById('btn-trip-submit').innerText = "Save Update";
+        }
+    }
+
+    function sendTripData(id, act, km, photoBase64, route) { 
+        const btn = document.getElementById('btn-trip-submit'); 
+        btn.innerText = "Sending Data..."; 
+        
+        fetch('api/vms.php', { 
+            method: 'POST', 
+            body: JSON.stringify({ 
+                action: 'updateStatus', 
+                id: id, 
+                act: act, 
+                userRole: currentUser.role, 
+                approverName: currentUser.fullname, 
+                extraData: { km: km, photoBase64: photoBase64, route: route } 
+            }) 
+        })
+        .then(r => {
+            if (!r.ok) throw new Error("Server Error: " + r.statusText);
+            return r.text(); 
+        })
+        .then(text => {
+            try {
+                const res = JSON.parse(text); 
+                btn.disabled = false;
+                btn.innerText = "Save Update";
+                if(res.success) {
+                    closeModal('modal-trip'); 
+                    loadData();
+                } else {
+                    showAlert("Error", res.message);
+                }
+            } catch (e) {
+                console.error("Server Response Invalid:", text);
+                throw new Error("Server Response Invalid (Check Console)");
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerText = "Save Update";
+            console.error(err);
+            showAlert("Error", "Connection Failed: " + err.message);
+        });
+    }
+
     function calcTotalDistance() { const start = parseInt(document.getElementById('modal-start-km-val').value) || 0; const end = parseInt(document.getElementById('input-km').value) || 0; const total = end - start; const disp = document.getElementById('disp-total-km'); if (total < 0) { disp.innerText = "Check ODO"; disp.className = "text-red-600 font-bold"; } else { disp.innerText = total; disp.className = ""; } }
     function togglePhotoSource(source) { activePhotoSource = source; const btnFile = document.getElementById('btn-src-file'); const btnCam = document.getElementById('btn-src-cam'); const contFile = document.getElementById('source-file-container'); const contCam = document.getElementById('source-camera-container'); if(source === 'camera') { btnCam.classList.replace('bg-slate-100','bg-blue-600'); btnCam.classList.replace('text-slate-600','text-white'); btnFile.classList.replace('bg-blue-600','bg-slate-100'); btnFile.classList.replace('text-white','text-slate-600'); contFile.classList.add('hidden'); contCam.classList.remove('hidden'); startCamera(); } else { btnFile.classList.replace('bg-slate-100','bg-blue-600'); btnFile.classList.replace('text-slate-600','text-white'); btnCam.classList.replace('bg-blue-600','bg-slate-100'); btnCam.classList.replace('text-white','text-slate-600'); contCam.classList.add('hidden'); contFile.classList.remove('hidden'); stopCamera(); } }
     async function startCamera() { const video = document.getElementById('camera-stream'); const status = document.getElementById('cam-status'); document.getElementById('camera-preview').classList.add('hidden'); video.classList.remove('hidden'); document.getElementById('btn-capture').classList.remove('hidden'); document.getElementById('btn-retake').classList.add('hidden'); capturedImageBase64 = null; try { videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); video.srcObject = videoStream; status.innerText = "Camera Active"; status.classList.remove('hidden'); } catch (err) { showAlert("Camera Error", "Cannot access camera. Please use File Upload."); togglePhotoSource('file'); } }
