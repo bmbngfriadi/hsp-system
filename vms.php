@@ -63,14 +63,14 @@
              <table class="w-full text-left text-sm whitespace-nowrap">
                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs font-bold">
                  <tr>
-                    <th class="px-6 py-4" data-i18n="th_id">ID & Date</th>
-                    <th class="px-6 py-4" data-i18n="th_user">User Info</th>
-                    <th class="px-6 py-4" data-i18n="th_unit">Unit & Purpose</th>
-                    <th class="px-6 py-4" data-i18n="th_approval">Approval Status</th>
-                    <th class="px-6 py-4" >Notes / Comment</th>
-                    <th class="px-6 py-4 text-center" data-i18n="th_status">Status</th>
-                    <th class="px-6 py-4 text-center" data-i18n="th_trip">Trip Info</th>
-                    <th class="px-6 py-4 text-right min-w-[160px]" data-i18n="th_action">Action</th>
+                    <th class="px-6 py-4 w-[100px]" data-i18n="th_id">ID & Date</th>
+                    <th class="px-6 py-4 w-[120px]" data-i18n="th_user">User Info</th>
+                    <th class="px-6 py-4 min-w-[120px]" data-i18n="th_unit">Unit & Purpose</th>
+                    <th class="px-6 py-4 w-[120px]" data-i18n="th_approval">Approval Status</th>
+                    <th class="px-6 py-4 w-[150px]" >Notes / Comment</th>
+                    <th class="px-6 py-4 text-center w-[100px]" data-i18n="th_status">Status</th>
+                    <th class="px-6 py-4 text-center w-[120px]" data-i18n="th_trip">Trip Info</th>
+                    <th class="px-6 py-4 text-right w-[160px]" data-i18n="th_action">Action</th>
                 </tr>
                </thead>
                <tbody id="data-table-body" class="divide-y divide-slate-100"></tbody>
@@ -93,15 +93,20 @@
         </form>
       </div>
   </div>
+
   <div id="modal-export" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up">
         <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center"><h3 class="font-bold text-slate-700">Export Report</h3><button onclick="closeModal('modal-export')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button></div>
         <div class="p-6"><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Start Date</label><input type="date" id="exp-start" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div><div class="mb-6"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">End Date</label><input type="date" id="exp-end" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div><div class="flex items-center gap-3 mb-6"><div class="flex-grow h-px bg-slate-200"></div><span class="text-[10px] text-slate-400 font-bold uppercase">OR</span><div class="flex-grow h-px bg-slate-200"></div></div><button onclick="alert('Export not available in demo')" id="btn-exp-all" class="w-full mb-4 bg-indigo-50 text-indigo-700 border border-indigo-200 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-100 flex items-center justify-center gap-2"><i class="fas fa-database"></i> Export All Time Data</button><div class="grid grid-cols-2 gap-3"><button onclick="alert('Coming soon')" id="btn-exp-excel" class="bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-700 flex items-center justify-center gap-2"><i class="fas fa-file-excel"></i> Excel</button><button onclick="alert('Coming soon')" id="btn-exp-pdf" class="bg-red-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-red-700 flex items-center justify-center gap-2"><i class="fas fa-file-pdf"></i> PDF</button></div></div>
     </div>
   </div>
+
   <div id="modal-trip" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"><div class="bg-white rounded-t-2xl sm:rounded-xl w-full max-w-5xl shadow-2xl flex flex-col max-h-[90vh] animate-slide-up"><div class="flex-none bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center rounded-t-2xl sm:rounded-t-xl"><h3 class="font-bold text-slate-700" id="modal-trip-title">Update KM</h3><button onclick="closeModal('modal-trip')" class="text-slate-400 hover:text-red-500 p-2"><i class="fas fa-times text-lg"></i></button></div><form onsubmit="event.preventDefault(); submitTripUpdate();" class="flex flex-col flex-grow overflow-hidden"><input type="hidden" id="trip-id"><input type="hidden" id="trip-action"><input type="hidden" id="modal-start-km-val" value="0"><div class="flex-grow overflow-y-auto p-6 custom-scrollbar"><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="flex flex-col gap-5"><div id="div-calc-distance" class="hidden p-4 bg-blue-50 rounded-lg border border-blue-100"><div class="flex justify-between items-center text-sm"><span class="text-slate-500 font-medium">Start KM: <b id="disp-start-km" class="text-slate-700">0</b></span><span class="font-bold text-blue-700">Total: <span id="disp-total-km">0</span> KM</span></div></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-2" id="lbl-km">Odometer Input (KM)</label><input type="number" id="input-km" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 shadow-sm" required placeholder="Example: 12500" onkeyup="calcTotalDistance()"></div><div id="div-route-update" class="hidden flex-grow"><label class="block text-xs font-bold text-slate-500 uppercase mb-2">Actual Route Details</label><textarea id="input-route-update" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 h-full min-h-[80px]" rows="3"></textarea></div></div><div class="flex flex-col"><label class="block text-xs font-bold text-slate-500 uppercase mb-2">Dashboard Photo</label><div class="flex gap-2 mb-3"><button type="button" onclick="togglePhotoSource('file')" id="btn-src-file" class="flex-1 py-2 text-xs font-bold rounded-lg bg-blue-600 text-white shadow-sm transition"><i class="fas fa-file-upload mr-1"></i> Upload</button><button type="button" onclick="togglePhotoSource('camera')" id="btn-src-cam" class="flex-1 py-2 text-xs font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition"><i class="fas fa-camera mr-1"></i> Camera</button></div><div id="source-file-container" class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:bg-slate-50 transition flex items-center justify-center h-48 bg-slate-50"><div class="space-y-2"><i class="fas fa-cloud-upload-alt text-3xl text-slate-300"></i><input type="file" id="input-photo" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer"></div></div><div id="source-camera-container" class="hidden border border-slate-200 rounded-lg overflow-hidden bg-black relative h-48 sm:h-64 shadow-inner"><video id="camera-stream" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline></video><canvas id="camera-canvas" class="hidden"></canvas><img id="camera-preview" class="hidden w-full h-full object-cover"><div class="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-20"><button type="button" onclick="takeSnapshot()" id="btn-capture" class="bg-white/90 backdrop-blur rounded-full p-3 shadow-lg text-slate-800 hover:text-blue-600 hover:scale-110 transition duration-200"><i class="fas fa-camera text-xl"></i></button><button type="button" onclick="retakePhoto()" id="btn-retake" class="hidden bg-white/90 backdrop-blur rounded-full p-3 shadow-lg text-red-600 hover:scale-110 transition duration-200"><i class="fas fa-redo text-xl"></i></button></div></div><div id="cam-status" class="text-[10px] text-center text-slate-400 mt-2 h-4"></div></div></div></div><div class="flex-none p-4 border-t border-slate-100 bg-white flex justify-end gap-3 pb-6 sm:pb-4"><button type="button" onclick="closeModal('modal-trip')" class="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold transition border border-slate-300" data-i18n="cancel">Cancel</button><button type="submit" id="btn-trip-submit" class="px-8 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-bold shadow-md hover:shadow-lg flex items-center gap-2 btn-action transition">Save Update</button></div></form></div></div>
+
   <div id="modal-confirm" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden"><div class="p-6 text-center"><div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 shadow-sm"><i class="fas fa-question text-xl"></i></div><h3 class="text-lg font-bold text-slate-700 mb-2" id="conf-title">Confirm</h3><p class="text-sm text-slate-500 mb-4" id="conf-msg">Are you sure?</p><div class="mb-4 text-left"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Comment (Optional / Reason)</label><textarea id="conf-comment" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500" rows="2" placeholder="Write a note here..."></textarea></div><div class="flex gap-3"><button onclick="closeModal('modal-confirm')" class="flex-1 py-2.5 border border-slate-300 rounded-lg text-slate-600 font-bold text-sm hover:bg-slate-50 transition" data-i18n="cancel">Cancel</button><button onclick="execConfirm()" id="btn-conf-yes" class="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 shadow-sm transition" data-i18n="yes">Yes, Proceed</button></div></div></div></div>
+  
   <div id="modal-alert" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden"><div class="p-6 text-center"><div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 shadow-sm"><i class="fas fa-info text-xl"></i></div><h3 class="text-lg font-bold text-slate-700 mb-2" id="alert-title">Information</h3><p class="text-sm text-slate-500 mb-6" id="alert-msg">System Message.</p><button onclick="closeModal('modal-alert')" class="w-full py-2.5 bg-slate-800 text-white rounded-lg font-bold text-sm hover:bg-slate-900 shadow-sm transition">OK</button></div></div></div>
+  
   <div id="modal-cancel" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl relative animate-slide-up"><button onclick="closeModal('modal-cancel')" class="absolute top-4 right-4 text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button><h3 class="text-lg font-bold mb-4 text-slate-800">Cancel Booking</h3><form onsubmit="event.preventDefault(); submitCancel();"><input type="hidden" id="cancel-id"><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Reason / Note</label><textarea id="cancel-note" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500" rows="3"></textarea></div><div class="flex justify-end gap-3"><button type="button" onclick="closeModal('modal-cancel')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold" data-i18n="cancel">Back</button><button type="submit" id="btn-cancel-submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-bold shadow-sm btn-action">Yes, Cancel</button></div></form></div></div>
 
   <script>
@@ -200,92 +205,92 @@
        const tbody = document.getElementById('data-table-body'); const cardCont = document.getElementById('data-card-container'); tbody.innerHTML = ''; cardCont.innerHTML = ''; if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-slate-400 italic">No data found.</td></tr>'; cardCont.innerHTML = '<div class="text-center py-10 text-slate-400 italic">No data found.</div>'; return; }
        
        const getStatusBox = (role, text, time, byName) => { 
-            let cls = "bg-gray-50 text-gray-400 border-gray-200", icon = "fa-minus"; 
-            let txt = text || "Pending"; 
-            if(txt.includes('Approved')) { cls="bg-green-50 text-green-700 border-green-200"; icon="fa-check"; } 
-            else if(txt.includes('Pending')) { cls="bg-yellow-50 text-yellow-600 border-yellow-200"; icon="fa-clock"; } 
-            else if(txt.includes('Rejected')) { cls="bg-red-50 text-red-700 border-red-200"; icon="fa-times"; } 
-            
-            let displayTxt = txt.replace('Approved by ', '').replace('Rejected by ', ''); 
-            if(displayTxt === 'Pending') displayTxt = 'Pending'; 
-            
-            let approverHtml = '';
-            if (txt === 'Approved' && byName) {
-                approverHtml = `<div class="text-[9px] text-green-800 mt-0.5 truncate w-20" title="${byName}">By: ${byName}</div>`;
-            } else if (txt === 'Rejected' && byName) {
-                approverHtml = `<div class="text-[9px] text-red-800 mt-0.5 truncate w-20" title="${byName}">By: ${byName}</div>`;
-            }
-            
-            const timeHtml = time ? `<div class="text-[8px] text-slate-400 mt-1 font-mono tracking-tighter">${time}</div>` : ''; 
-            
-            return `<div class="flex flex-col"><div class="app-box ${cls}"><i class="fas ${icon} text-xs w-3"></i><span class="text-[10px] font-bold uppercase leading-none" title="${txt}">${displayTxt.substring(0,8)}</span></div>${approverHtml}${timeHtml}</div>`; 
+           let cls = "bg-gray-50 text-gray-400 border-gray-200", icon = "fa-minus"; 
+           let txt = text || "Pending"; 
+           if(txt.includes('Approved')) { cls="bg-green-50 text-green-700 border-green-200"; icon="fa-check"; } 
+           else if(txt.includes('Pending')) { cls="bg-yellow-50 text-yellow-600 border-yellow-200"; icon="fa-clock"; } 
+           else if(txt.includes('Rejected')) { cls="bg-red-50 text-red-700 border-red-200"; icon="fa-times"; } 
+           
+           let displayTxt = txt.replace('Approved by ', '').replace('Rejected by ', ''); 
+           if(displayTxt === 'Pending') displayTxt = 'Pending'; 
+           
+           let approverHtml = '';
+           if (txt === 'Approved' && byName) {
+               approverHtml = `<div class="text-[9px] text-green-800 mt-0.5 truncate w-20" title="${byName}">By: ${byName}</div>`;
+           } else if (txt === 'Rejected' && byName) {
+               approverHtml = `<div class="text-[9px] text-red-800 mt-0.5 truncate w-20" title="${byName}">By: ${byName}</div>`;
+           }
+           
+           const timeHtml = time ? `<div class="text-[8px] text-slate-400 mt-1 font-mono tracking-tighter">${time}</div>` : ''; 
+           
+           return `<div class="flex flex-col"><div class="app-box ${cls}"><i class="fas ${icon} text-xs w-3"></i><span class="text-[10px] font-bold uppercase leading-none" title="${txt}">${displayTxt.substring(0,8)}</span></div>${approverHtml}${timeHtml}</div>`; 
        };
        
        data.forEach(row => {
-          const status = row.status || 'Unknown'; const timestamp = row.timestamp ? row.timestamp.split(' ')[0] : '-'; const idStr = row.id ? String(row.id).slice(-4) : '????';
-          let badge = 'bg-gray-100 text-gray-600 border-gray-200'; if (status === 'Done') badge = 'bg-emerald-50 text-emerald-700 border-emerald-200'; else if (status === 'Active') badge = 'bg-blue-50 text-blue-700 border-blue-200'; else if (status === 'Rejected' || status === 'Cancelled') badge = 'bg-red-50 text-red-700 border-red-200'; else if (status.includes('Pending') || status === 'Correction Needed' || status === 'Pending Review') badge = 'bg-amber-50 text-amber-700 border-amber-200';
-          
-          let actionBtn = '', actionBtnMobile = '';
-          const renderApprovalBtns = (txt) => {
-              const pc = `<div class="flex items-center gap-2 w-full mt-1"><button onclick="approve('${row.id}','${txt}')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 transition"><i class="fas fa-check"></i> Approve</button><button onclick="reject('${row.id}','${txt}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 transition"><i class="fas fa-times"></i> Reject</button></div>`;
-              const mob = `<div class="flex flex-col gap-2 mt-2"><button onclick="approve('${row.id}','${txt}')" class="w-full bg-emerald-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2"><i class="fas fa-check"></i> Approve</button><button onclick="reject('${row.id}','${txt}')" class="w-full bg-red-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2"><i class="fas fa-times"></i> Reject</button></div>`;
-              return { pc, mob };
-          };
-          
-          if (currentUser.role === 'HRGA' && status === 'Pending GA') { const b = renderApprovalBtns('HRGA (L1)'); actionBtn = b.pc; actionBtnMobile = b.mob; }
-          if (status === 'Pending Section Head') {
-              let isAuthorized = false;
-              if (currentUser.role === 'TeamLeader' && currentUser.department === 'HRGA') isAuthorized = true;
-              if (currentUser.role === 'HRGA') isAuthorized = true; 
-              if(isAuthorized) { const b = renderApprovalBtns('TL HRGA (L2)'); actionBtn = b.pc; actionBtnMobile = b.mob; }
-          }
-          if (currentUser.role === 'HRGA' && status === 'Pending Review') {
+         const status = row.status || 'Unknown'; const timestamp = row.timestamp ? row.timestamp.split(' ')[0] : '-'; const idStr = row.id ? String(row.id).slice(-4) : '????';
+         let badge = 'bg-gray-100 text-gray-600 border-gray-200'; if (status === 'Done') badge = 'bg-emerald-50 text-emerald-700 border-emerald-200'; else if (status === 'Active') badge = 'bg-blue-50 text-blue-700 border-blue-200'; else if (status === 'Rejected' || status === 'Cancelled') badge = 'bg-red-50 text-red-700 border-red-200'; else if (status.includes('Pending') || status === 'Correction Needed' || status === 'Pending Review') badge = 'bg-amber-50 text-amber-700 border-amber-200';
+         
+         let actionBtn = '', actionBtnMobile = '';
+         const renderApprovalBtns = (txt) => {
+             const pc = `<div class="flex items-center gap-2 w-full mt-1"><button onclick="approve('${row.id}','${txt}')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 transition"><i class="fas fa-check"></i> Approve</button><button onclick="reject('${row.id}','${txt}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 transition"><i class="fas fa-times"></i> Reject</button></div>`;
+             const mob = `<div class="flex flex-col gap-2 mt-2"><button onclick="approve('${row.id}','${txt}')" class="w-full bg-emerald-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2"><i class="fas fa-check"></i> Approve</button><button onclick="reject('${row.id}','${txt}')" class="w-full bg-red-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2"><i class="fas fa-times"></i> Reject</button></div>`;
+             return { pc, mob };
+         };
+         
+         if (currentUser.role === 'HRGA' && status === 'Pending GA') { const b = renderApprovalBtns('HRGA (L1)'); actionBtn = b.pc; actionBtnMobile = b.mob; }
+         if (status === 'Pending Section Head') {
+             let isAuthorized = false;
+             if (currentUser.role === 'TeamLeader' && currentUser.department === 'HRGA') isAuthorized = true;
+             if (currentUser.role === 'HRGA') isAuthorized = true; 
+             if(isAuthorized) { const b = renderApprovalBtns('TL HRGA (L2)'); actionBtn = b.pc; actionBtnMobile = b.mob; }
+         }
+         if (currentUser.role === 'HRGA' && status === 'Pending Review') {
              actionBtn = `<div class="flex items-center gap-2 w-full mt-1"><button onclick="confirmTrip('${row.id}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action">Confirm Done</button><button onclick="requestCorrection('${row.id}')" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action">Correction</button></div>`; 
              actionBtnMobile = `<div class="flex flex-col gap-2 mt-2"><button onclick="confirmTrip('${row.id}')" class="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm">Confirm Done</button><button onclick="requestCorrection('${row.id}')" class="w-full bg-orange-500 text-white py-3 rounded-lg text-sm font-bold shadow-sm">Correction</button></div>`;
-          }
-          if (row.username === currentUser.username) { 
-              if (status === 'Approved') {
-                  actionBtn = `<div class="flex gap-2 justify-end items-center mt-1"><button onclick="openTripModal('${row.id}', 'startTrip', '${row.startKm}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1"><i class="fas fa-play text-[10px]"></i> Start</button><button onclick="openCancelModal('${row.id}')" class="bg-white border border-slate-300 text-slate-500 hover:text-red-600 hover:border-red-300 px-2 py-1.5 rounded-lg text-xs font-bold btn-action transition"><i class="fas fa-times"></i></button></div>`; 
-                  actionBtnMobile = `<div class="flex gap-2 mt-2"><button onclick="openTripModal('${row.id}', 'startTrip', '${row.startKm}')" class="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2"><i class="fas fa-play"></i> Start Trip</button><button onclick="openCancelModal('${row.id}')" class="bg-slate-200 text-slate-600 px-4 py-3 rounded-lg text-sm font-bold shadow-sm"><i class="fas fa-times"></i></button></div>`;
-              }
-              else if (status === 'Active') {
-                  actionBtn = `<button onclick="openTripModal('${row.id}', 'endTrip', '${row.startKm}')" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-flag-checkered text-[10px]"></i> Finish Trip</button>`; 
-                  actionBtnMobile = `<button onclick="openTripModal('${row.id}', 'endTrip', '${row.startKm}')" class="w-full bg-orange-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-flag-checkered"></i> Finish Trip</button>`;
-              }
-              else if (status === 'Correction Needed') {
-                  actionBtn = `<button onclick="openTripModal('${row.id}', 'submitCorrection', '${row.startKm}')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-edit text-[10px]"></i> Fix Data</button>`; 
-                  actionBtnMobile = `<button onclick="openTripModal('${row.id}', 'submitCorrection', '${row.startKm}')" class="w-full bg-yellow-500 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-edit"></i> Fix Data</button>`;
-              }
-              else if (status.includes('Pending') && status !== 'Pending Review') {
-                  actionBtn = `<button onclick="openCancelModal('${row.id}')" class="w-full bg-slate-400 hover:bg-slate-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-2 mt-1"><i class="fas fa-ban"></i> Cancel Request</button>`; 
-                  actionBtnMobile = `<button onclick="openCancelModal('${row.id}')" class="w-full bg-slate-400 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-ban"></i> Cancel Request</button>`;
-              }
-          }
-          
-          const commentDisplay = row.actionComment ? `<div class="text-[10px] text-slate-600 bg-slate-100 p-2 rounded border border-slate-200 italic max-w-[200px] leading-tight">${row.actionComment}</div>` : '<span class="text-slate-300 text-[10px]">-</span>';
-          const gaBox = getStatusBox('GA', row.appGa, row.gaTime, row.gaBy); 
-          const headBox = getStatusBox('S.HEAD', row.appHead, row.headTime, row.headBy); 
-          let photosHtml = `<div class="text-[10px] text-slate-500 bg-slate-100 px-1 rounded inline-block">ODO: ${row.startKm||'-'} / ${row.endKm||'-'}</div>`; 
-          if (row.startPhoto || row.endPhoto) { photosHtml += `<div class="mt-1 flex justify-center gap-2">`; if (row.startPhoto) photosHtml += `<button onclick="viewPhoto('${row.startPhoto}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-1 rounded transition"><i class="fas fa-camera text-xs"></i></button>`; if (row.endPhoto) photosHtml += `<button onclick="viewPhoto('${row.endPhoto}')" class="text-orange-500 hover:text-orange-700 bg-orange-50 p-1 rounded transition"><i class="fas fa-camera text-xs"></i></button>`; photosHtml += `</div>`; }
-          
-          tbody.innerHTML += `
+         }
+         if (row.username === currentUser.username) { 
+             if (status === 'Approved') {
+                 actionBtn = `<div class="flex gap-2 justify-end items-center mt-1"><button onclick="openTripModal('${row.id}', 'startTrip', '${row.startKm}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1"><i class="fas fa-play text-[10px]"></i> Start</button><button onclick="openCancelModal('${row.id}')" class="bg-white border border-slate-300 text-slate-500 hover:text-red-600 hover:border-red-300 px-2 py-1.5 rounded-lg text-xs font-bold btn-action transition"><i class="fas fa-times"></i></button></div>`; 
+                 actionBtnMobile = `<div class="flex gap-2 mt-2"><button onclick="openTripModal('${row.id}', 'startTrip', '${row.startKm}')" class="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2"><i class="fas fa-play"></i> Start Trip</button><button onclick="openCancelModal('${row.id}')" class="bg-slate-200 text-slate-600 px-4 py-3 rounded-lg text-sm font-bold shadow-sm"><i class="fas fa-times"></i></button></div>`;
+             }
+             else if (status === 'Active') {
+                 actionBtn = `<button onclick="openTripModal('${row.id}', 'endTrip', '${row.startKm}')" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-flag-checkered text-[10px]"></i> Finish Trip</button>`; 
+                 actionBtnMobile = `<button onclick="openTripModal('${row.id}', 'endTrip', '${row.startKm}')" class="w-full bg-orange-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-flag-checkered"></i> Finish Trip</button>`;
+             }
+             else if (status === 'Correction Needed') {
+                 actionBtn = `<button onclick="openTripModal('${row.id}', 'submitCorrection', '${row.startKm}')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-edit text-[10px]"></i> Fix Data</button>`; 
+                 actionBtnMobile = `<button onclick="openTripModal('${row.id}', 'submitCorrection', '${row.startKm}')" class="w-full bg-yellow-500 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-edit"></i> Fix Data</button>`;
+             }
+             else if (status.includes('Pending') && status !== 'Pending Review') {
+                 actionBtn = `<button onclick="openCancelModal('${row.id}')" class="w-full bg-slate-400 hover:bg-slate-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-2 mt-1"><i class="fas fa-ban"></i> Cancel Request</button>`; 
+                 actionBtnMobile = `<button onclick="openCancelModal('${row.id}')" class="w-full bg-slate-400 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-ban"></i> Cancel Request</button>`;
+             }
+         }
+         
+         const commentDisplay = row.actionComment ? `<div class="text-[10px] text-slate-600 bg-slate-100 p-2 rounded border border-slate-200 italic max-w-[200px] leading-tight">${row.actionComment}</div>` : '<span class="text-slate-300 text-[10px]">-</span>';
+         const gaBox = getStatusBox('GA', row.appGa, row.gaTime, row.gaBy); 
+         const headBox = getStatusBox('S.HEAD', row.appHead, row.headTime, row.headBy); 
+         let photosHtml = `<div class="text-[10px] text-slate-500 bg-slate-100 px-1 rounded inline-block">ODO: ${row.startKm||'-'} / ${row.endKm||'-'}</div>`; 
+         if (row.startPhoto || row.endPhoto) { photosHtml += `<div class="mt-1 flex justify-center gap-2">`; if (row.startPhoto) photosHtml += `<button onclick="viewPhoto('${row.startPhoto}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-1 rounded transition"><i class="fas fa-camera text-xs"></i></button>`; if (row.endPhoto) photosHtml += `<button onclick="viewPhoto('${row.endPhoto}')" class="text-orange-500 hover:text-orange-700 bg-orange-50 p-1 rounded transition"><i class="fas fa-camera text-xs"></i></button>`; photosHtml += `</div>`; }
+         
+         tbody.innerHTML += `
             <tr class="hover:bg-slate-50 transition border-b border-slate-50 align-top">
                 <td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${timestamp}</div><div class="text-[10px] text-slate-400">#${idStr}</div></td>
                 <td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${row.username}</div><div class="text-[10px] text-slate-500">${row.department}</div></td>
-                <td class="px-6 py-4"><div class="text-xs font-bold text-blue-700 bg-blue-50 px-1 rounded inline-block mb-1">${row.vehicle}</div><div class="text-xs text-slate-600 italic truncate max-w-[150px]" title="${row.purpose}">${row.purpose}</div></td>
+                <td class="px-6 py-4"><div class="text-xs font-bold text-blue-700 bg-blue-50 px-1 rounded inline-block mb-1">${row.vehicle}</div><div class="text-xs text-slate-600 italic whitespace-normal max-w-[250px]" title="${row.purpose}">${row.purpose}</div></td>
                 <td class="px-6 py-4">
                     <div class="flex flex-col gap-3 w-28">
                         <div class="flex items-start gap-2"><span class="text-[9px] w-6 font-bold text-slate-400 mt-1">GA</span>${gaBox}</div>
                         <div class="flex items-start gap-2"><span class="text-[9px] w-6 font-bold text-slate-400 mt-1">HEAD</span>${headBox}</div>
                     </div>
                 </td>
-                <td class="px-6 py-4 align-middle">${commentDisplay}</td>
+                <td class="px-6 py-4 align-middle whitespace-normal max-w-[200px]">${commentDisplay}</td>
                 <td class="px-6 py-4 text-center"><span class="status-badge ${badge}">${status}</span></td>
                 <td class="px-6 py-4 text-center">${photosHtml}</td>
                 <td class="px-6 py-4 text-right align-top min-w-[160px]">${actionBtn}</td>
             </tr>`;
-          
-          cardCont.innerHTML += `
+         
+         cardCont.innerHTML += `
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 relative">
                <div class="flex justify-between items-start mb-3">
                   <div>
@@ -320,14 +325,17 @@
                </div>
                ${actionBtnMobile ? `<div class="pt-2 border-t border-slate-100">${actionBtnMobile}</div>` : ''}
             </div>
-          `;
+         `;
        });
     }
 
     function populateVehicleSelect() { const sel = document.getElementById('input-vehicle'); sel.innerHTML = '<option value="">-- Select Unit (Available) --</option>'; availableVehicles.filter(v => v.status === 'Available').forEach(v => { sel.innerHTML += `<option value="${v.plant}">${v.plant} - ${v.model}</option>`; }); }
     function submitData() { const v = document.getElementById('input-vehicle').value, p = document.getElementById('input-purpose').value, btn = document.getElementById('btn-create-submit'); if(!v || !p) return showAlert("Error", "Please complete all fields."); btn.disabled = true; btn.innerText = "Processing..."; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'submit', username: currentUser.username, fullname: currentUser.fullname, role: currentUser.role, department: currentUser.department, vehicle: v, purpose: p }) }).then(r => r.json()).then(res => { btn.disabled = false; btn.innerText = "Submit Request"; if(res.success) { closeModal('modal-create'); loadData(); showAlert("Success", "Request sent."); } else { showAlert("Error", res.message); } }); }
     function callUpdate(id, act, comment) { fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: {comment: comment} }) }).then(r => r.json()).then(res => { if(res.success) loadData(); else showAlert("Error", res.message || "Failed to update"); }).catch(e => showAlert("Error", "Connection error")); }
-    function approve(id, role) { showConfirm("Confirm Action", "Are you sure you want to APPROVE this request?", (comment) => { callUpdate(id, 'approve', comment); }); }
+    
+    // MODIFIED: Approve now uses showConfirm to ask for optional comment
+    function approve(id, role) { showConfirm("Approve Request", "You can add an optional note below:", (comment) => { callUpdate(id, 'approve', comment); }); }
+    
     function reject(id, role) { showConfirm("Confirm Rejection", "Please provide a REASON for rejection:", (comment) => { if(!comment) return showAlert("Error", "Reason is required for rejection"); callUpdate(id, 'reject', comment); }); }
     function confirmTrip(id) { showConfirm("Confirm Trip", "Mark trip as Done and Vehicle Available?", (c) => callUpdate(id, 'endTrip', c)); } 
     function requestCorrection(id) { showConfirm("Request Correction", "Send back to user for editing?", (c) => callUpdate(id, 'requestCorrection', c)); }
