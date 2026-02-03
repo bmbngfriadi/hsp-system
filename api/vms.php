@@ -1,17 +1,16 @@
 <?php
-// api/vms.php - FINAL FIX V19 (Hybrid: Helper for WA + Robust Logic)
-// Menggunakan helper.php untuk WA (karena sudah terbukti jalan)
-// Menggunakan Logic V16 untuk aturan Approval & Notifikasi Detail
-
+// api/vms.php - FINAL FIX V23 (Sync Timezone Asia/Jakarta & Smart Notifications)
 error_reporting(0);
 ini_set('display_errors', 0);
 
-// Limit Resource untuk Upload Foto Besar
+// --- 1. SYNC WAKTU REALTIME (WIB) ---
+date_default_timezone_set('Asia/Jakarta');
+
+// Limit Resource
 ini_set('memory_limit', '512M');
 ini_set('post_max_size', '64M');
 ini_set('upload_max_filesize', '64M');
 
-// Mulai buffer output
 if (function_exists('ob_clean')) { ob_end_clean(); }
 ob_start();
 
@@ -20,22 +19,23 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST");
 
 require 'db.php'; 
-require 'helper.php'; // WAJIB: Kita pakai fungsi sendWA dari sini
+require 'helper.php'; 
 
 ob_clean(); 
 
 $input = json_decode(file_get_contents('php://input'), true);
 $action = $input['action'] ?? '';
 
-// Fungsi Helper Respon JSON
+// Variabel Waktu Global (WIB) untuk Database
+$currentDateTime = date('Y-m-d H:i:s');
+
 function sendResponse($data) {
     if (ob_get_length()) ob_clean(); 
     echo json_encode($data);
     exit;
 }
 
-// FUNGSI UPLOAD INTERNAL (Agar tidak error image too large / permission)
-// Kita buat lokal agar tidak bentrok dengan helper.php jika ada
+// Fungsi Upload Internal
 function uploadImageInternal($base64Data, $prefix) {
     $uploadDir = "../uploads/vms/"; 
     if (!is_dir($uploadDir)) { mkdir($uploadDir, 0777, true); }
@@ -63,7 +63,6 @@ try {
         $username = $input['username']; 
         $dept = $input['department'];
         
-        // Data Kendaraan
         $vRes = $conn->query("SELECT plant_plat as plant, merk_tipe as model, status FROM vms_vehicles");
         $vehicles = [];
         if($vRes) {
@@ -79,7 +78,6 @@ try {
             }
         }
 
-        // Data Booking
         $sql = "SELECT * FROM vms_bookings ORDER BY id DESC LIMIT 100";
         $bRes = $conn->query($sql);
         $bookings = [];
@@ -89,14 +87,12 @@ try {
                 $include = false;
                 if (in_array($role, ['Administrator', 'HRGA', 'PlantHead'])) $include = true;
                 elseif ($row['username'] == $username) $include = true;
-                // TeamLeader HRGA bisa lihat semua yang butuh approval L2
                 elseif ($role == 'TeamLeader' && $dept == 'HRGA') $include = true; 
                 elseif ($row['department'] == $dept && ($role == 'SectionHead' || $role == 'TeamLeader')) $include = true;
                 
                 if($include) {
                     $row['id'] = $row['req_id'];
                     $row['timestamp'] = $row['created_at'];
-                    // Mapping data lain sesuai kebutuhan frontend
                     $row['appGa'] = $row['app_ga'];
                     $row['appHead'] = $row['app_head'];
                     $row['gaTime'] = $row['ga_time'];
@@ -108,7 +104,6 @@ try {
                     $row['endKm'] = $row['end_km'];
                     $row['startPhoto'] = $row['start_photo'];
                     $row['endPhoto'] = $row['end_photo'];
-
                     $bookings[] = $row;
                 }
             }
@@ -122,25 +117,22 @@ try {
         $status = 'Pending GA';
         $appGa = 'Pending';
         
-        $stmt = $conn->prepare("INSERT INTO vms_bookings (req_id, username, fullname, role, department, vehicle, purpose, status, app_ga) VALUES (?,?,?,?,?,?,?,?,?)");
-        $stmt->bind_param("sssssssss", $reqId, $input['username'], $input['fullname'], $input['role'], $input['department'], $input['vehicle'], $input['purpose'], $status, $appGa);
+        $stmt = $conn->prepare("INSERT INTO vms_bookings (req_id, username, fullname, role, department, vehicle, purpose, status, app_ga, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)");
+        $stmt->bind_param("ssssssssss", $reqId, $input['username'], $input['fullname'], $input['role'], $input['department'], $input['vehicle'], $input['purpose'], $status, $appGa, $currentDateTime);
         
         if($stmt->execute()) {
             $conn->query("UPDATE vms_vehicles SET status = 'Reserved' WHERE plant_plat = '{$input['vehicle']}'");
             
-            // --- NOTIFIKASI SUBMIT ---
             try {
-                // Ke User
+                // Notif ke User
                 $userPhone = getUserPhone($conn, $input['username']);
-                $msgUser = "📋 *VMS - SUBMITTED*\nUnit: {$input['vehicle']}\nTujuan: {$input['purpose']}\nStatus: Menunggu Approval HRGA.";
+                $msgUser = "📋 *VMS - SUBMITTED*\nUnit: {$input['vehicle']}\nTujuan: {$input['purpose']}\nStatus: Menunggu Approval HRGA.\nWaktu: " . date('d-m-Y H:i');
                 if($userPhone) sendWA($userPhone, $msgUser);
 
-                // Ke HRGA (Level 1)
+                // Notif ke HRGA
                 $phones = getPhones($conn, 'HRGA'); 
-                $msgHrga = "🚗 *VMS - APPROVAL L1 (HRGA)*\nUser: {$input['fullname']} ({$input['department']})\nUnit: {$input['vehicle']}\nTujuan: {$input['purpose']}\n👉 _Mohon dicek & Approve._";
-                if(is_array($phones)) {
-                    foreach($phones as $ph) sendWA($ph, $msgHrga);
-                }
+                $msgHrga = "🚗 *VMS - APPROVAL L1 (HRGA)*\nUser: {$input['fullname']} ({$input['department']})\nUnit: {$input['vehicle']}\nTujuan: {$input['purpose']}\nWaktu: " . date('d-m-Y H:i') . "\n👉 _Mohon dicek & Approve._";
+                if(is_array($phones)) foreach($phones as $ph) sendWA($ph, $msgHrga);
             } catch (Exception $e) {}
             
             sendResponse(['success' => true]);
@@ -167,22 +159,18 @@ try {
             $rawComment = $conn->real_escape_string($extra['comment'] ?? '');
             $dbComment = $rawComment ? "Approved by $approverName: $rawComment" : ""; 
             $waNote = $rawComment ? "\n📝 *Note:* $rawComment" : "";
-
-            // --- L1 APPROVAL (GA) -> Next: L2 (TeamLeader HRGA) ---
+            
+            // L1 APPROVAL
             if ($currentStatus == 'Pending GA') {
-                $sql = "UPDATE vms_bookings SET status = 'Pending Section Head', app_ga = 'Approved', ga_time = NOW(), ga_by = '$approverName', action_comment = '$dbComment' WHERE req_id = '$id'";
+                $sql = "UPDATE vms_bookings SET status = 'Pending Section Head', app_ga = 'Approved', ga_time = '$currentDateTime', ga_by = '$approverName', action_comment = '$dbComment' WHERE req_id = '$id'";
                 if(!$conn->query($sql)) sendResponse(['success'=>false, 'message'=>'DB Error L1']);
                 
                 try {
-                    // Notif ke User
                     if($userPhone) sendWA($userPhone, "✅ *VMS - L1 APPROVED*\nHRGA ($approverName) telah menyetujui.$waNote\nMenunggu approval Final (TeamLeader HRGA).");
                     
-                    // Notif ke L2 (TeamLeader HRGA & Role HRGA sebagai backup)
-                    // Menggunakan fungsi getPhones dari helper.php
+                    // Logic L2: Hanya TeamLeader HRGA & Role HRGA
                     $tlHrga = getPhones($conn, 'TeamLeader', 'HRGA'); 
                     $roleHrga = getPhones($conn, 'HRGA');
-                    
-                    // Gabungkan array, cek if array valid
                     $phonesL2 = [];
                     if(is_array($tlHrga)) $phonesL2 = array_merge($phonesL2, $tlHrga);
                     if(is_array($roleHrga)) $phonesL2 = array_merge($phonesL2, $roleHrga);
@@ -193,16 +181,13 @@ try {
                     }
                 } catch (Exception $e) {}
             }
-            // --- L2 APPROVAL (HEAD) -> DONE ---
+            // L2 APPROVAL
             elseif ($currentStatus == 'Pending Section Head') {
-                $sql = "UPDATE vms_bookings SET status = 'Approved', app_head = 'Approved', head_time = NOW(), head_by = '$approverName', action_comment = '$dbComment' WHERE req_id = '$id'";
+                $sql = "UPDATE vms_bookings SET status = 'Approved', app_head = 'Approved', head_time = '$currentDateTime', head_by = '$approverName', action_comment = '$dbComment' WHERE req_id = '$id'";
                 if(!$conn->query($sql)) sendResponse(['success'=>false, 'message'=>'DB Error L2']);
 
                 try {
-                    // Notif ke User
                     if($userPhone) sendWA($userPhone, "✅ *VMS - FULL APPROVED*\nDisetujui oleh: $approverName.$waNote\nUnit: {$reqData['vehicle']}\nTujuan: {$reqData['purpose']}\n🔑 _Silakan ambil kunci & Start Trip._");
-                    
-                    // Notif ke HRGA (Info)
                     $phones = getPhones($conn, 'HRGA');
                     if(is_array($phones)) foreach($phones as $ph) sendWA($ph, "ℹ️ *VMS - APPROVED*\nRequest {$reqData['fullname']}\nTujuan: {$reqData['purpose']}\nTelah FULL APPROVED oleh $approverName.$waNote");
                 } catch (Exception $e) {}
@@ -212,66 +197,88 @@ try {
             $reason = $conn->real_escape_string($extra['comment'] ?? '-');
             $fullComment = "Rejected by {$approverName}: {$reason}";
             
-            // Logic update status reject tergantung posisi sekarang
-            if($currentStatus == 'Pending GA') {
-                $sql = "UPDATE vms_bookings SET status = 'Rejected', app_ga = 'Rejected', ga_by = '$approverName', action_comment = '$fullComment' WHERE req_id = '$id'";
-            } elseif ($currentStatus == 'Pending Section Head') {
-                $sql = "UPDATE vms_bookings SET status = 'Rejected', app_head = 'Rejected', head_by = '$approverName', action_comment = '$fullComment' WHERE req_id = '$id'";
-            } else {
-                $sql = "UPDATE vms_bookings SET status = 'Rejected', action_comment = '$fullComment' WHERE req_id = '$id'";
-            }
+            // Logic update status agar presisi
+            $updatePart = "";
+            if($currentStatus == 'Pending GA') $updatePart = ", app_ga = 'Rejected', ga_by = '$approverName'";
+            elseif($currentStatus == 'Pending Section Head') $updatePart = ", app_head = 'Rejected', head_by = '$approverName'";
+            
+            $sql = "UPDATE vms_bookings SET status = 'Rejected', action_comment = '$fullComment' $updatePart WHERE req_id = '$id'";
             
             $conn->query($sql);
             $conn->query("UPDATE vms_vehicles SET status = 'Available' WHERE plant_plat = '{$reqData['vehicle']}'");
             
-            try {
-                if($userPhone) sendWA($userPhone, "❌ *VMS - REJECTED*\nDitolak oleh {$approverName}.\nAlasan: {$reason}");
-            } catch (Exception $e) {}
+            try { if($userPhone) sendWA($userPhone, "❌ *VMS - REJECTED*\nDitolak oleh {$approverName}.\nAlasan: {$reason}"); } catch (Exception $e) {}
         }
         elseif($act == 'cancel') {
             $comment = $conn->real_escape_string($extra['comment'] ?? 'User Cancelled');
             $userFullname = $reqData['fullname']; $unit = $reqData['vehicle']; $purpose = $reqData['purpose']; $oldStatus = $reqData['status'];
             
             $conn->query("UPDATE vms_bookings SET status = 'Cancelled', action_comment = '$comment' WHERE req_id = '$id'");
-            $conn->query("UPDATE vms_vehicles SET status = 'Available' WHERE plant_plat = '{$reqData['vehicle']}'");
+            $conn->query("UPDATE vms_vehicles SET status = 'Available' WHERE plant_plat = '$unit'");
             
             try {
-                // Notifikasi Cancel
-                // 1. HRGA selalu dapat info
                 $phonesToNotify = getPhones($conn, 'HRGA'); 
                 if(!is_array($phonesToNotify)) $phonesToNotify = [];
-
-                // 2. Jika pending L2, kabari TeamLeader HRGA juga
                 if ($oldStatus == 'Pending Section Head') {
                     $tlHrga = getPhones($conn, 'TeamLeader', 'HRGA');
                     if(is_array($tlHrga)) $phonesToNotify = array_merge($phonesToNotify, $tlHrga);
                 }
-                
                 $phonesToNotify = array_unique($phonesToNotify);
                 $msg = "🚫 *VMS - CANCELLED (By User)*\nUser: $userFullname\nUnit: $unit\nTujuan: $purpose\nStatus Awal: $oldStatus\n📝 *Alasan:* $comment\n_Tidak perlu approval._";
-                
                 foreach($phonesToNotify as $ph) sendWA($ph, $msg);
             } catch (Exception $e) {}
         }
         elseif($act == 'startTrip') {
-            // Pakai fungsi internal upload (bukan helper) untuk keamanan file
-            $url = uploadImageInternal($extra['photoBase64'], "START_$id");
-            
+            $url = uploadImageInternal($extra['photoBase64'], "START_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
             if($url) {
-                $conn->query("UPDATE vms_bookings SET status = 'Active', start_km = '{$extra['km']}', start_photo = '$url', depart_time = NOW() WHERE req_id = '$id'");
+                // Gunakan $currentDateTime (WIB)
+                $conn->query("UPDATE vms_bookings SET status = 'Active', start_km = '{$extra['km']}', start_photo = '$url', depart_time = '$currentDateTime' WHERE req_id = '$id'");
                 $conn->query("UPDATE vms_vehicles SET status = 'In Use' WHERE plant_plat = '{$reqData['vehicle']}'");
+
+                // NOTIFIKASI START TRIP (WIB)
+                try {
+                    $msgStart = "🚗 *VMS - VEHICLE OUT (Start Trip)*\n" .
+                                "User: {$reqData['fullname']}\n" .
+                                "Unit: {$reqData['vehicle']}\n" .
+                                "ODO Awal: {$extra['km']} km\n" .
+                                "Waktu: " . date('d-m-Y H:i'); // Ini sudah WIB
+                    
+                    if($userPhone) sendWA($userPhone, $msgStart);
+                    $phones = getPhones($conn, 'HRGA');
+                    if(is_array($phones)) foreach($phones as $ph) sendWA($ph, $msgStart);
+                } catch (Exception $e) {}
+
             } else {
                 sendResponse(['success' => false, 'message' => 'Gagal simpan foto start trip']);
             }
         }
         elseif($act == 'endTrip') {
-            // Pakai fungsi internal upload
-            $url = uploadImageInternal($extra['photoBase64'], "END_$id");
-            
+            $url = uploadImageInternal($extra['photoBase64'], "END_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
             if($url) {
                 $route = $conn->real_escape_string($extra['route'] ?? '-');
-                $conn->query("UPDATE vms_bookings SET status = 'Done', end_km = '{$extra['km']}', end_photo = '$url', action_comment = '$route', return_time = NOW() WHERE req_id = '$id'");
+                $startKM = intval($reqData['start_km']);
+                $endKM = intval($extra['km']);
+                $totalDist = $endKM - $startKM;
+
+                // Gunakan $currentDateTime (WIB)
+                $conn->query("UPDATE vms_bookings SET status = 'Done', end_km = '$endKM', end_photo = '$url', action_comment = '$route', return_time = '$currentDateTime' WHERE req_id = '$id'");
                 $conn->query("UPDATE vms_vehicles SET status = 'Available' WHERE plant_plat = '{$reqData['vehicle']}'");
+
+                // NOTIFIKASI END TRIP (WIB)
+                try {
+                    $msgEnd = "🏁 *VMS - TRIP FINISHED (Vehicle In)*\n" .
+                              "User: {$reqData['fullname']}\n" .
+                              "Unit: {$reqData['vehicle']}\n" .
+                              "ODO Awal: $startKM km\n" .
+                              "ODO Akhir: $endKM km\n" .
+                              "Total Jarak: $totalDist km\n" .
+                              "Waktu: " . date('d-m-Y H:i'); // Ini sudah WIB
+
+                    if($userPhone) sendWA($userPhone, $msgEnd);
+                    $phones = getPhones($conn, 'HRGA');
+                    if(is_array($phones)) foreach($phones as $ph) sendWA($ph, $msgEnd);
+                } catch (Exception $e) {}
+
             } else {
                 sendResponse(['success' => false, 'message' => 'Gagal simpan foto end trip']);
             }
@@ -284,7 +291,6 @@ try {
         
         sendResponse(['success' => true]);
     }
-
 } catch (Exception $e) {
     sendResponse(['success' => false, 'message' => $e->getMessage()]);
 }

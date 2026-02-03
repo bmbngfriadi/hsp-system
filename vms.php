@@ -68,9 +68,7 @@
                     <th class="px-6 py-4 w-[150px]" data-i18n="th_unit">Unit & Purpose</th>
                     <th class="px-6 py-4 w-[120px]" data-i18n="th_approval">Approval</th>
                     <th class="px-6 py-4 w-[160px]" >Notes</th>
-                    
                     <th class="px-6 py-4 text-center min-w-[160px]" data-i18n="th_status">Status</th>
-                    
                     <th class="px-6 py-4 text-center w-[120px]" data-i18n="th_trip">Trip Info</th>
                     <th class="px-6 py-4 text-right w-[140px]" data-i18n="th_action">Action</th>
                 </tr>
