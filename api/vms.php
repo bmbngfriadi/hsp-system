@@ -1,9 +1,9 @@
 <?php
-// api/vms.php - FINAL FIX V23 (Sync Timezone Asia/Jakarta & Smart Notifications)
+// api/vms.php - FINAL FIX V24 (Trip Verification Workflow & Route Notification)
 error_reporting(0);
 ini_set('display_errors', 0);
 
-// --- 1. SYNC WAKTU REALTIME (WIB) ---
+// 1. SYNC WAKTU REALTIME (WIB)
 date_default_timezone_set('Asia/Jakarta');
 
 // Limit Resource
@@ -19,14 +19,12 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST");
 
 require 'db.php'; 
-require 'helper.php'; 
+require 'helper.php'; // Menggunakan helper.php untuk sendWA
 
 ob_clean(); 
 
 $input = json_decode(file_get_contents('php://input'), true);
 $action = $input['action'] ?? '';
-
-// Variabel Waktu Global (WIB) untuk Database
 $currentDateTime = date('Y-m-d H:i:s');
 
 function sendResponse($data) {
@@ -124,14 +122,12 @@ try {
             $conn->query("UPDATE vms_vehicles SET status = 'Reserved' WHERE plant_plat = '{$input['vehicle']}'");
             
             try {
-                // Notif ke User
                 $userPhone = getUserPhone($conn, $input['username']);
                 $msgUser = "📋 *VMS - SUBMITTED*\nUnit: {$input['vehicle']}\nTujuan: {$input['purpose']}\nStatus: Menunggu Approval HRGA.\nWaktu: " . date('d-m-Y H:i');
                 if($userPhone) sendWA($userPhone, $msgUser);
 
-                // Notif ke HRGA
                 $phones = getPhones($conn, 'HRGA'); 
-                $msgHrga = "🚗 *VMS - APPROVAL L1 (HRGA)*\nUser: {$input['fullname']} ({$input['department']})\nUnit: {$input['vehicle']}\nTujuan: {$input['purpose']}\nWaktu: " . date('d-m-Y H:i') . "\n👉 _Mohon dicek & Approve._";
+                $msgHrga = "🚗 *VMS - APPROVAL (HRGA)*\nUser: {$input['fullname']} ({$input['department']})\nUnit: {$input['vehicle']}\nTujuan: {$input['purpose']}\nWaktu: " . date('d-m-Y H:i') . "\n👉 _Mohon dicek & Approve._";
                 if(is_array($phones)) foreach($phones as $ph) sendWA($ph, $msgHrga);
             } catch (Exception $e) {}
             
@@ -160,28 +156,22 @@ try {
             $dbComment = $rawComment ? "Approved by $approverName: $rawComment" : ""; 
             $waNote = $rawComment ? "\n📝 *Note:* $rawComment" : "";
             
-            // L1 APPROVAL
             if ($currentStatus == 'Pending GA') {
                 $sql = "UPDATE vms_bookings SET status = 'Pending Section Head', app_ga = 'Approved', ga_time = '$currentDateTime', ga_by = '$approverName', action_comment = '$dbComment' WHERE req_id = '$id'";
                 if(!$conn->query($sql)) sendResponse(['success'=>false, 'message'=>'DB Error L1']);
                 
                 try {
-                    if($userPhone) sendWA($userPhone, "✅ *VMS - L1 APPROVED*\nHRGA ($approverName) telah menyetujui.$waNote\nMenunggu approval Final (TeamLeader HRGA).");
+                    if($userPhone) sendWA($userPhone, "✅ *VMS - GA APPROVED*\nHRGA ($approverName) telah menyetujui.$waNote\nMenunggu approval Final (TeamLeader HRGA).");
                     
-                    // Logic L2: Hanya TeamLeader HRGA & Role HRGA
                     $tlHrga = getPhones($conn, 'TeamLeader', 'HRGA'); 
                     $roleHrga = getPhones($conn, 'HRGA');
-                    $phonesL2 = [];
-                    if(is_array($tlHrga)) $phonesL2 = array_merge($phonesL2, $tlHrga);
-                    if(is_array($roleHrga)) $phonesL2 = array_merge($phonesL2, $roleHrga);
-                    $phonesL2 = array_unique($phonesL2);
+                    $phonesL2 = array_unique(array_merge(is_array($tlHrga)?$tlHrga:[], is_array($roleHrga)?$roleHrga:[]));
 
                     foreach($phonesL2 as $ph) {
-                        sendWA($ph, "🚗 *VMS - APPROVAL L2*\nUser: {$reqData['fullname']} ({$reqData['department']})\nUnit: {$reqData['vehicle']}\nTujuan: {$reqData['purpose']}\n✅ *L1 Approved by: $approverName*$waNote\n👉 _Mohon persetujuan Final._");
+                        sendWA($ph, "🚗 *VMS - APPROVAL TL*\nUser: {$reqData['fullname']} ({$reqData['department']})\nUnit: {$reqData['vehicle']}\nTujuan: {$reqData['purpose']}\n✅ *GA Approved by: $approverName*$waNote\n👉 _Mohon persetujuan Final._");
                     }
                 } catch (Exception $e) {}
             }
-            // L2 APPROVAL
             elseif ($currentStatus == 'Pending Section Head') {
                 $sql = "UPDATE vms_bookings SET status = 'Approved', app_head = 'Approved', head_time = '$currentDateTime', head_by = '$approverName', action_comment = '$dbComment' WHERE req_id = '$id'";
                 if(!$conn->query($sql)) sendResponse(['success'=>false, 'message'=>'DB Error L2']);
@@ -196,23 +186,17 @@ try {
         elseif($act == 'reject') {
             $reason = $conn->real_escape_string($extra['comment'] ?? '-');
             $fullComment = "Rejected by {$approverName}: {$reason}";
-            
-            // Logic update status agar presisi
             $updatePart = "";
             if($currentStatus == 'Pending GA') $updatePart = ", app_ga = 'Rejected', ga_by = '$approverName'";
             elseif($currentStatus == 'Pending Section Head') $updatePart = ", app_head = 'Rejected', head_by = '$approverName'";
-            
             $sql = "UPDATE vms_bookings SET status = 'Rejected', action_comment = '$fullComment' $updatePart WHERE req_id = '$id'";
-            
             $conn->query($sql);
             $conn->query("UPDATE vms_vehicles SET status = 'Available' WHERE plant_plat = '{$reqData['vehicle']}'");
-            
             try { if($userPhone) sendWA($userPhone, "❌ *VMS - REJECTED*\nDitolak oleh {$approverName}.\nAlasan: {$reason}"); } catch (Exception $e) {}
         }
         elseif($act == 'cancel') {
             $comment = $conn->real_escape_string($extra['comment'] ?? 'User Cancelled');
             $userFullname = $reqData['fullname']; $unit = $reqData['vehicle']; $purpose = $reqData['purpose']; $oldStatus = $reqData['status'];
-            
             $conn->query("UPDATE vms_bookings SET status = 'Cancelled', action_comment = '$comment' WHERE req_id = '$id'");
             $conn->query("UPDATE vms_vehicles SET status = 'Available' WHERE plant_plat = '$unit'");
             
@@ -231,27 +215,20 @@ try {
         elseif($act == 'startTrip') {
             $url = uploadImageInternal($extra['photoBase64'], "START_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
             if($url) {
-                // Gunakan $currentDateTime (WIB)
                 $conn->query("UPDATE vms_bookings SET status = 'Active', start_km = '{$extra['km']}', start_photo = '$url', depart_time = '$currentDateTime' WHERE req_id = '$id'");
                 $conn->query("UPDATE vms_vehicles SET status = 'In Use' WHERE plant_plat = '{$reqData['vehicle']}'");
 
-                // NOTIFIKASI START TRIP (WIB)
                 try {
-                    $msgStart = "🚗 *VMS - VEHICLE OUT (Start Trip)*\n" .
-                                "User: {$reqData['fullname']}\n" .
-                                "Unit: {$reqData['vehicle']}\n" .
-                                "ODO Awal: {$extra['km']} km\n" .
-                                "Waktu: " . date('d-m-Y H:i'); // Ini sudah WIB
-                    
+                    $msgStart = "🚗 *VMS - VEHICLE OUT (Start Trip)*\nUser: {$reqData['fullname']}\nUnit: {$reqData['vehicle']}\nODO Awal: {$extra['km']} km\nWaktu: " . date('d-m-Y H:i');
                     if($userPhone) sendWA($userPhone, $msgStart);
                     $phones = getPhones($conn, 'HRGA');
                     if(is_array($phones)) foreach($phones as $ph) sendWA($ph, $msgStart);
                 } catch (Exception $e) {}
-
             } else {
                 sendResponse(['success' => false, 'message' => 'Gagal simpan foto start trip']);
             }
         }
+        // --- 4. END TRIP: Status -> Pending Review, Mobil -> In Use ---
         elseif($act == 'endTrip') {
             $url = uploadImageInternal($extra['photoBase64'], "END_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
             if($url) {
@@ -260,33 +237,67 @@ try {
                 $endKM = intval($extra['km']);
                 $totalDist = $endKM - $startKM;
 
-                // Gunakan $currentDateTime (WIB)
-                $conn->query("UPDATE vms_bookings SET status = 'Done', end_km = '$endKM', end_photo = '$url', action_comment = '$route', return_time = '$currentDateTime' WHERE req_id = '$id'");
-                $conn->query("UPDATE vms_vehicles SET status = 'Available' WHERE plant_plat = '{$reqData['vehicle']}'");
-
-                // NOTIFIKASI END TRIP (WIB)
+                // UPDATE: Status jadi 'Pending Review', Mobil TETAP 'In Use'
+                $conn->query("UPDATE vms_bookings SET status = 'Pending Review', end_km = '$endKM', end_photo = '$url', action_comment = '$route', return_time = '$currentDateTime' WHERE req_id = '$id'");
+                
+                // NOTIF KE HRGA UNTUK VERIFIKASI (Dengan Info Route)
                 try {
-                    $msgEnd = "🏁 *VMS - TRIP FINISHED (Vehicle In)*\n" .
-                              "User: {$reqData['fullname']}\n" .
-                              "Unit: {$reqData['vehicle']}\n" .
-                              "ODO Awal: $startKM km\n" .
-                              "ODO Akhir: $endKM km\n" .
-                              "Total Jarak: $totalDist km\n" .
-                              "Waktu: " . date('d-m-Y H:i'); // Ini sudah WIB
+                    $msgVerif = "🏁 *VMS - TRIP FINISHED (Need Verification)*\n" .
+                                "User: {$reqData['fullname']}\n" .
+                                "Unit: {$reqData['vehicle']}\n" .
+                                "Rute: $route\n" .
+                                "ODO Awal: $startKM km\n" .
+                                "ODO Akhir: $endKM km\n" .
+                                "Total Jarak: $totalDist km\n" .
+                                "👉 _Mohon Login ke Dashboard HRGA untuk verifikasi._";
 
-                    if($userPhone) sendWA($userPhone, $msgEnd);
                     $phones = getPhones($conn, 'HRGA');
-                    if(is_array($phones)) foreach($phones as $ph) sendWA($ph, $msgEnd);
+                    if(is_array($phones)) foreach($phones as $ph) sendWA($ph, $msgVerif);
                 } catch (Exception $e) {}
 
             } else {
                 sendResponse(['success' => false, 'message' => 'Gagal simpan foto end trip']);
             }
         }
+        // --- 5. HRGA: VERIFY TRIP (DONE) ---
+        elseif($act == 'verifyTrip') {
+            // Status jadi 'Done', Mobil jadi 'Available'
+            $conn->query("UPDATE vms_bookings SET status = 'Done' WHERE req_id = '$id'");
+            $conn->query("UPDATE vms_vehicles SET status = 'Available' WHERE plant_plat = '{$reqData['vehicle']}'");
+            
+            try {
+                $msgDone = "✅ *VMS - TRIP VERIFIED*\nUser: {$reqData['fullname']}\nUnit: {$reqData['vehicle']}\nStatus: DONE\n_Unit kembali Available._";
+                if($userPhone) sendWA($userPhone, $msgDone);
+            } catch(Exception $e) {}
+        }
+        // --- 6. HRGA: REQUEST CORRECTION ---
         elseif($act == 'requestCorrection') {
             $reason = $conn->real_escape_string($extra['comment']);
+            // Status jadi 'Correction Needed', Mobil TETAP 'In Use'
             $conn->query("UPDATE vms_bookings SET status = 'Correction Needed', action_comment = 'Correction requested by $approverName: $reason' WHERE req_id = '$id'");
-            try { if($userPhone) sendWA($userPhone, "⚠️ *VMS - REVISI*\nMohon koreksi data trip.\nNote: $reason"); } catch(Exception $e) {}
+            
+            try { 
+                if($userPhone) sendWA($userPhone, "⚠️ *VMS - REVISI DATA TRIP*\nMohon perbaiki data trip Anda.\nNote: $reason\n👉 _Buka aplikasi dan klik tombol Fix Data._"); 
+            } catch(Exception $e) {}
+        }
+        // --- 7. USER: SUBMIT CORRECTION ---
+        elseif($act == 'submitCorrection') {
+            // User upload ulang foto/data
+            $url = uploadImageInternal($extra['photoBase64'], "FIX_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
+            if($url) {
+                $route = $conn->real_escape_string($extra['route'] ?? '-');
+                $endKM = intval($extra['km']);
+                
+                // Status kembali ke 'Pending Review'
+                $conn->query("UPDATE vms_bookings SET status = 'Pending Review', end_km = '$endKM', end_photo = '$url', action_comment = '$route' WHERE req_id = '$id'");
+                
+                try {
+                    $phones = getPhones($conn, 'HRGA');
+                    if(is_array($phones)) foreach($phones as $ph) sendWA($ph, "🔄 *VMS - REVISI SUBMITTED*\nUser: {$reqData['fullname']}\nUnit: {$reqData['vehicle']}\nData telah diperbaiki.\n👉 _Mohon verifikasi ulang._");
+                } catch (Exception $e) {}
+            } else {
+                sendResponse(['success' => false, 'message' => 'Gagal simpan foto revisi']);
+            }
         }
         
         sendResponse(['success' => true]);

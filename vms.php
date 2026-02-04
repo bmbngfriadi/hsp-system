@@ -244,9 +244,10 @@
              if (currentUser.role === 'HRGA') isAuthorized = true; 
              if(isAuthorized) { const b = renderApprovalBtns('TL HRGA (L2)'); actionBtn = b.pc; actionBtnMobile = b.mob; }
          }
+         // -- FIX V24: HRGA VERIFICATION BUTTONS --
          if (currentUser.role === 'HRGA' && status === 'Pending Review') {
-             actionBtn = `<div class="flex items-center gap-2 w-full mt-1"><button onclick="confirmTrip('${row.id}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action">Confirm Done</button><button onclick="requestCorrection('${row.id}')" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action">Correction</button></div>`; 
-             actionBtnMobile = `<div class="flex flex-col gap-2 mt-2"><button onclick="confirmTrip('${row.id}')" class="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm">Confirm Done</button><button onclick="requestCorrection('${row.id}')" class="w-full bg-orange-500 text-white py-3 rounded-lg text-sm font-bold shadow-sm">Correction</button></div>`;
+             actionBtn = `<div class="flex items-center gap-2 w-full mt-1"><button onclick="confirmTrip('${row.id}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action"><i class="fas fa-check-double mr-1"></i> Verify Done</button><button onclick="requestCorrection('${row.id}')" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action"><i class="fas fa-edit mr-1"></i> Correction</button></div>`; 
+             actionBtnMobile = `<div class="flex flex-col gap-2 mt-2"><button onclick="confirmTrip('${row.id}')" class="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm">Verify Done</button><button onclick="requestCorrection('${row.id}')" class="w-full bg-orange-500 text-white py-3 rounded-lg text-sm font-bold shadow-sm">Request Correction</button></div>`;
          }
          if (row.username === currentUser.username) { 
              if (status === 'Approved') {
@@ -257,9 +258,10 @@
                  actionBtn = `<button onclick="openTripModal('${row.id}', 'endTrip', '${row.startKm}')" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-flag-checkered text-[10px]"></i> Finish Trip</button>`; 
                  actionBtnMobile = `<button onclick="openTripModal('${row.id}', 'endTrip', '${row.startKm}')" class="w-full bg-orange-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-flag-checkered"></i> Finish Trip</button>`;
              }
+             // -- FIX V24: USER CORRECTION BUTTON --
              else if (status === 'Correction Needed') {
-                 actionBtn = `<button onclick="openTripModal('${row.id}', 'submitCorrection', '${row.startKm}')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-edit text-[10px]"></i> Fix Data</button>`; 
-                 actionBtnMobile = `<button onclick="openTripModal('${row.id}', 'submitCorrection', '${row.startKm}')" class="w-full bg-yellow-500 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-edit"></i> Fix Data</button>`;
+                 actionBtn = `<button onclick="openTripModal('${row.id}', 'submitCorrection', '${row.startKm}')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-tools text-[10px]"></i> Fix Data</button>`; 
+                 actionBtnMobile = `<button onclick="openTripModal('${row.id}', 'submitCorrection', '${row.startKm}')" class="w-full bg-yellow-500 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-tools"></i> Fix Data</button>`;
              }
              else if (status.includes('Pending') && status !== 'Pending Review') {
                  actionBtn = `<button onclick="openCancelModal('${row.id}')" class="w-full bg-slate-400 hover:bg-slate-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-2 mt-1"><i class="fas fa-ban"></i> Cancel Request</button>`; 
@@ -333,11 +335,51 @@
     function submitData() { const v = document.getElementById('input-vehicle').value, p = document.getElementById('input-purpose').value, btn = document.getElementById('btn-create-submit'); if(!v || !p) return showAlert("Error", "Please complete all fields."); btn.disabled = true; btn.innerText = "Processing..."; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'submit', username: currentUser.username, fullname: currentUser.fullname, role: currentUser.role, department: currentUser.department, vehicle: v, purpose: p }) }).then(r => r.json()).then(res => { btn.disabled = false; btn.innerText = "Submit Request"; if(res.success) { closeModal('modal-create'); loadData(); showAlert("Success", "Request sent."); } else { showAlert("Error", res.message); } }); }
     function callUpdate(id, act, comment) { fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: {comment: comment} }) }).then(r => r.json()).then(res => { if(res.success) loadData(); else showAlert("Error", res.message || "Failed to update"); }).catch(e => showAlert("Error", "Connection error")); }
     
+    // MODIFIED: Approve now uses showConfirm to ask for optional comment
     function approve(id, role) { showConfirm("Approve Request", "You can add an optional note below:", (comment) => { callUpdate(id, 'approve', comment); }); }
+    
     function reject(id, role) { showConfirm("Confirm Rejection", "Please provide a REASON for rejection:", (comment) => { if(!comment) return showAlert("Error", "Reason is required for rejection"); callUpdate(id, 'reject', comment); }); }
-    function confirmTrip(id) { showConfirm("Confirm Trip", "Mark trip as Done and Vehicle Available?", (c) => callUpdate(id, 'endTrip', c)); } 
-    function requestCorrection(id) { showConfirm("Request Correction", "Send back to user for editing?", (c) => callUpdate(id, 'requestCorrection', c)); }
-    function openTripModal(id, act, startKmVal) { document.getElementById('trip-id').value = id; document.getElementById('trip-action').value = act; const titleMap = { 'startTrip': 'Departure Update', 'endTrip': 'Arrival Update', 'submitCorrection': 'Correct Trip Data' }; document.getElementById('modal-trip-title').innerText = titleMap[act]; document.getElementById('lbl-km').innerText = act === 'startTrip' ? 'Start KM' : 'End KM'; const startVal = parseInt(startKmVal) || 0; document.getElementById('modal-start-km-val').value = startVal; document.getElementById('disp-start-km').innerText = startVal; document.getElementById('input-km').value = ''; document.getElementById('input-route-update').value = ''; document.getElementById('disp-total-km').innerText = '0'; document.getElementById('input-photo').value = ''; togglePhotoSource('file'); if (act === 'endTrip' || act === 'submitCorrection') { document.getElementById('div-route-update').classList.remove('hidden'); document.getElementById('input-route-update').required = true; document.getElementById('div-calc-distance').classList.remove('hidden'); } else { document.getElementById('div-route-update').classList.add('hidden'); document.getElementById('input-route-update').required = false; document.getElementById('div-calc-distance').classList.add('hidden'); } openModal('modal-trip'); }
+    
+    // --- FIX V24: HRGA ACTIONS ---
+    function confirmTrip(id) { showConfirm("Verify Trip", "Verify that this trip is completed and data is correct?", (c) => callUpdate(id, 'verifyTrip', c)); } 
+    function requestCorrection(id) { showConfirm("Request Correction", "Reason for correction (sent to user):", (c) => { if(!c) return showAlert("Error", "Reason required"); callUpdate(id, 'requestCorrection', c); }); }
+    
+    // --- FIX V24: MODAL HANDLER ---
+    function openTripModal(id, act, startKmVal) { 
+        document.getElementById('trip-id').value = id; 
+        document.getElementById('trip-action').value = act; 
+        
+        const titleMap = { 
+            'startTrip': 'Departure Update', 
+            'endTrip': 'Arrival Update', 
+            'submitCorrection': 'Correct Trip Data' 
+        }; 
+        document.getElementById('modal-trip-title').innerText = titleMap[act]; 
+        document.getElementById('lbl-km').innerText = act === 'startTrip' ? 'Start KM' : 'End KM'; 
+        
+        const startVal = parseInt(startKmVal) || 0; 
+        document.getElementById('modal-start-km-val').value = startVal; 
+        document.getElementById('disp-start-km').innerText = startVal; 
+        
+        // Reset Inputs
+        document.getElementById('input-km').value = ''; 
+        document.getElementById('input-route-update').value = ''; 
+        document.getElementById('disp-total-km').innerText = '0'; 
+        document.getElementById('input-photo').value = ''; 
+        togglePhotoSource('file'); 
+        
+        // Logic tampilan input
+        if (act === 'endTrip' || act === 'submitCorrection') { 
+            document.getElementById('div-route-update').classList.remove('hidden'); 
+            document.getElementById('input-route-update').required = true; 
+            document.getElementById('div-calc-distance').classList.remove('hidden'); 
+        } else { 
+            document.getElementById('div-route-update').classList.add('hidden'); 
+            document.getElementById('input-route-update').required = false; 
+            document.getElementById('div-calc-distance').classList.add('hidden'); 
+        } 
+        openModal('modal-trip'); 
+    }
 
     // --- CLIENT-SIDE IMAGE COMPRESSION ---
     function compressImage(base64Str, maxWidth = 800, quality = 0.5) {

@@ -2,6 +2,13 @@
 require 'db.php'; 
 require 'helper.php';
 
+// --- SYNC WAKTU WIB (REALTIME) ---
+// Set timezone PHP ke Asia/Jakarta
+date_default_timezone_set('Asia/Jakarta'); 
+// Set timezone sesi MySQL ke +07:00 (WIB) agar 'created_at' database sinkron
+$conn->query("SET time_zone = '+07:00'");
+// ---------------------------------
+
 // Suppress Error Display agar output bersih JSON
 error_reporting(0); 
 ini_set('display_errors', 0);
