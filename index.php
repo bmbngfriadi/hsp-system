@@ -56,17 +56,27 @@
             <h1 class="text-2xl font-extrabold text-slate-800">HRGA Services Portal</h1>
             <p class="text-sm text-slate-500">PT Cemindo Gemilang Tbk - Plant Batam</p>
          </div>
+         
          <form onsubmit="event.preventDefault(); handleLogin();" class="space-y-4">
             <div>
                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Username</label>
-               <input type="text" id="login-u" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition" required>
+               <input type="text" id="login-u" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition" required placeholder="Enter username">
             </div>
             <div>
                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
-               <input type="password" id="login-p" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition" required>
+               <div class="relative">
+                   <input type="password" id="login-p" class="w-full border border-slate-300 rounded-lg p-3 pr-10 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition" required placeholder="******">
+                   <button type="button" onclick="togglePass('login-p', 'icon-login-pass')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-blue-600 focus:outline-none">
+                       <i id="icon-login-pass" class="fas fa-eye"></i>
+                   </button>
+               </div>
+               <div class="text-right mt-1">
+                   <button type="button" onclick="openForgotModal()" class="text-xs text-blue-600 hover:text-blue-800 font-semibold hover:underline">Forgot Password?</button>
+               </div>
             </div>
             <button type="submit" id="btn-login" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-3 rounded-lg shadow hover:opacity-90 transition">Login</button>
          </form>
+         
          <div id="login-msg" class="mt-4 text-center text-xs text-red-500 font-bold hidden"></div>
       </div>
   </div>
@@ -102,6 +112,25 @@
     </div>
   </div>
 
+  <div id="modal-forgot" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-fade-in-up overflow-hidden">
+        <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700">Reset Password</h3>
+            <button onclick="document.getElementById('modal-forgot').classList.add('hidden')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-6">
+            <div class="mb-4 bg-blue-50 text-blue-700 text-xs p-3 rounded-lg border border-blue-100">
+                <i class="fab fa-whatsapp mr-1"></i> We will send a reset link to your registered WhatsApp number.
+            </div>
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Enter your Username</label>
+                <input type="text" id="forgot-username" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500" placeholder="e.g. johndoe">
+            </div>
+            <button onclick="submitForgot()" id="btn-forgot" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg shadow hover:bg-blue-700 transition">Send WhatsApp Link</button>
+        </div>
+    </div>
+  </div>
+
   <div id="modal-profile" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-xl w-full max-w-md shadow-2xl overflow-hidden animate-fade-in-up flex flex-col max-h-[85vh] sm:max-h-[90vh]">
          <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center flex-none">
@@ -123,7 +152,21 @@
             </div>
             <div class="space-y-4 mt-2">
                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-1" data-i18n="wa_phone">WhatsApp Number</label><div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fab fa-whatsapp"></i></span><input id="prof-phone" type="tel" class="w-full border border-slate-300 rounded-lg p-2.5 pl-9 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="0812..."></div></div>
-               <div><label class="block text-xs font-bold text-slate-600 uppercase mb-1"><span data-i18n="new_pass">New Password</span> <span class="text-[10px] text-slate-400 font-normal lowercase" data-i18n="leave_blank">(leave empty if unchanged)</span></label><div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fas fa-lock"></i></span><input type="password" id="prof-pass" class="w-full border border-slate-300 rounded-lg p-2.5 pl-9 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="******"></div></div>
+               
+               <div>
+                   <label class="block text-xs font-bold text-slate-600 uppercase mb-1">
+                       <span data-i18n="new_pass">New Password</span> 
+                       <span class="text-[10px] text-slate-400 font-normal lowercase" data-i18n="leave_blank">(leave empty if unchanged)</span>
+                   </label>
+                   <div class="relative">
+                       <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fas fa-lock"></i></span>
+                       <input type="password" id="prof-pass" class="w-full border border-slate-300 rounded-lg p-2.5 pl-9 pr-10 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="******">
+                       <button type="button" onclick="togglePass('prof-pass', 'icon-prof-pass')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-blue-600 focus:outline-none">
+                           <i id="icon-prof-pass" class="fas fa-eye"></i>
+                       </button>
+                   </div>
+               </div>
+
             </div>
          </div>
          
@@ -154,7 +197,17 @@
                     <form id="user-form" onsubmit="event.preventDefault(); saveUser();">
                         <div class="grid grid-cols-2 gap-5">
                             <div class="col-span-1"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Username</label><input type="text" id="u-username" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-slate-50" required placeholder="e.g. johndoe"></div>
-                            <div class="col-span-1"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label><input type="text" id="u-password" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required placeholder="******"></div>
+                            
+                            <div class="col-span-1">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
+                                <div class="relative">
+                                    <input type="password" id="u-password" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-sm" required placeholder="******">
+                                    <button type="button" onclick="togglePass('u-password', 'icon-u-pass')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-blue-600 focus:outline-none">
+                                        <i id="icon-u-pass" class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="col-span-2"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Full Name</label><input type="text" id="u-fullname" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required placeholder="John Doe"></div>
                             <div class="col-span-1"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">NIK</label><input type="text" id="u-nik" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="12345"></div>
                             <div class="col-span-1"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Phone (WA)</label><input type="text" id="u-phone" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="0812..."></div>
@@ -182,7 +235,7 @@
     // --- GLOBAL ESC LISTENER ---
     document.addEventListener('keydown', function(event) {
         if (event.key === "Escape") {
-            const modals = ['modal-profile', 'modal-users'];
+            const modals = ['modal-profile', 'modal-users', 'modal-forgot'];
             modals.forEach(id => closeModal(id));
         }
     });
@@ -218,6 +271,22 @@
         const stored = localStorage.getItem('portal_user');
         if(stored) { currentUser = JSON.parse(stored); showDashboard(); } else { showLogin(); }
     };
+
+    // --- FUNGSI TOGGLE PASSWORD VISIBILITY (BARU) ---
+    function togglePass(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        
+        if (input.type === "password") {
+            input.type = "text";
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = "password";
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
 
     function toggleLanguage() {
         currentLang = (currentLang === 'en') ? 'id' : 'en';
@@ -301,6 +370,44 @@
              container.innerHTML += html;
           }
        });
+    }
+
+    // --- FORGOT PASSWORD LOGIC ---
+    function openForgotModal() {
+        document.getElementById('modal-forgot').classList.remove('hidden');
+        document.getElementById('forgot-username').value = '';
+    }
+
+    function submitForgot() {
+        const u = document.getElementById('forgot-username').value;
+        if(!u) return alert("Please enter username");
+        
+        const btn = document.getElementById('btn-forgot');
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = "Sending...";
+
+        fetch('api/auth.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ action: 'requestReset', username: u })
+        })
+        .then(r => r.json())
+        .then(res => {
+            btn.disabled = false;
+            btn.innerText = originalText;
+            if(res.success) {
+                alert(res.message);
+                document.getElementById('modal-forgot').classList.add('hidden');
+            } else {
+                alert("Error: " + res.message);
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerText = originalText;
+            alert("Connection Error");
+        });
     }
 
     // --- PROFILE MODAL ---
