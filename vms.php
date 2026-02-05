@@ -7,6 +7,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
     .loader-spin { border: 3px solid #e2e8f0; border-top: 3px solid #2563eb; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle; }
@@ -97,33 +100,34 @@
   <div id="modal-export" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up">
         <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center"><h3 class="font-bold text-slate-700">Export Report</h3><button onclick="closeModal('modal-export')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button></div>
-        <div class="p-6"><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Start Date</label><input type="date" id="exp-start" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div><div class="mb-6"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">End Date</label><input type="date" id="exp-end" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div><div class="flex items-center gap-3 mb-6"><div class="flex-grow h-px bg-slate-200"></div><span class="text-[10px] text-slate-400 font-bold uppercase">OR</span><div class="flex-grow h-px bg-slate-200"></div></div><button onclick="alert('Export not available in demo')" id="btn-exp-all" class="w-full mb-4 bg-indigo-50 text-indigo-700 border border-indigo-200 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-100 flex items-center justify-center gap-2"><i class="fas fa-database"></i> Export All Time Data</button><div class="grid grid-cols-2 gap-3"><button onclick="alert('Coming soon')" id="btn-exp-excel" class="bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-700 flex items-center justify-center gap-2"><i class="fas fa-file-excel"></i> Excel</button><button onclick="alert('Coming soon')" id="btn-exp-pdf" class="bg-red-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-red-700 flex items-center justify-center gap-2"><i class="fas fa-file-pdf"></i> PDF</button></div></div>
+        <div class="p-6">
+            <div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Start Date</label><input type="date" id="exp-start" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div>
+            <div class="mb-6"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">End Date</label><input type="date" id="exp-end" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div>
+            <button onclick="doExport('excel', true)" class="w-full mb-3 bg-blue-50 text-blue-700 border border-blue-200 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-100 flex items-center justify-center gap-2"><i class="fas fa-database"></i> Export All Time (Excel)</button>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="doExport('excel', false)" class="bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-700 flex items-center justify-center gap-2"><i class="fas fa-file-excel"></i> Excel</button>
+                <button onclick="doExport('pdf', false)" class="bg-red-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-red-700 flex items-center justify-center gap-2"><i class="fas fa-file-pdf"></i> PDF</button>
+            </div>
+            <div id="exp-loading" class="hidden text-center mt-3 text-xs text-slate-500"><i class="fas fa-spinner fa-spin mr-1"></i> Generating Report...</div>
+        </div>
     </div>
   </div>
 
   <div id="modal-trip" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"><div class="bg-white rounded-t-2xl sm:rounded-xl w-full max-w-5xl shadow-2xl flex flex-col max-h-[90vh] animate-slide-up"><div class="flex-none bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center rounded-t-2xl sm:rounded-t-xl"><h3 class="font-bold text-slate-700" id="modal-trip-title">Update KM</h3><button onclick="closeModal('modal-trip')" class="text-slate-400 hover:text-red-500 p-2"><i class="fas fa-times text-lg"></i></button></div><form onsubmit="event.preventDefault(); submitTripUpdate();" class="flex flex-col flex-grow overflow-hidden"><input type="hidden" id="trip-id"><input type="hidden" id="trip-action"><input type="hidden" id="modal-start-km-val" value="0"><div class="flex-grow overflow-y-auto p-6 custom-scrollbar"><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="flex flex-col gap-5"><div id="div-calc-distance" class="hidden p-4 bg-blue-50 rounded-lg border border-blue-100"><div class="flex justify-between items-center text-sm"><span class="text-slate-500 font-medium">Start KM: <b id="disp-start-km" class="text-slate-700">0</b></span><span class="font-bold text-blue-700">Total: <span id="disp-total-km">0</span> KM</span></div></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-2" id="lbl-km">Odometer Input (KM)</label><input type="number" id="input-km" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 shadow-sm" required placeholder="Example: 12500" onkeyup="calcTotalDistance()"></div><div id="div-route-update" class="hidden flex-grow"><label class="block text-xs font-bold text-slate-500 uppercase mb-2">Actual Route Details</label><textarea id="input-route-update" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 h-full min-h-[80px]" rows="3"></textarea></div></div><div class="flex flex-col"><label class="block text-xs font-bold text-slate-500 uppercase mb-2">Dashboard Photo</label><div class="flex gap-2 mb-3"><button type="button" onclick="togglePhotoSource('file')" id="btn-src-file" class="flex-1 py-2 text-xs font-bold rounded-lg bg-blue-600 text-white shadow-sm transition"><i class="fas fa-file-upload mr-1"></i> Upload</button><button type="button" onclick="togglePhotoSource('camera')" id="btn-src-cam" class="flex-1 py-2 text-xs font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition"><i class="fas fa-camera mr-1"></i> Camera</button></div><div id="source-file-container" class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:bg-slate-50 transition flex items-center justify-center h-48 bg-slate-50"><div class="space-y-2"><i class="fas fa-cloud-upload-alt text-3xl text-slate-300"></i><input type="file" id="input-photo" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer"></div></div><div id="source-camera-container" class="hidden border border-slate-200 rounded-lg overflow-hidden bg-black relative h-48 sm:h-64 shadow-inner"><video id="camera-stream" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline></video><canvas id="camera-canvas" class="hidden"></canvas><img id="camera-preview" class="hidden w-full h-full object-cover"><div class="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-20"><button type="button" onclick="takeSnapshot()" id="btn-capture" class="bg-white/90 backdrop-blur rounded-full p-3 shadow-lg text-slate-800 hover:text-blue-600 hover:scale-110 transition duration-200"><i class="fas fa-camera text-xl"></i></button><button type="button" onclick="retakePhoto()" id="btn-retake" class="hidden bg-white/90 backdrop-blur rounded-full p-3 shadow-lg text-red-600 hover:scale-110 transition duration-200"><i class="fas fa-redo text-xl"></i></button></div></div><div id="cam-status" class="text-[10px] text-center text-slate-400 mt-2 h-4"></div></div></div></div><div class="flex-none p-4 border-t border-slate-100 bg-white flex justify-end gap-3 pb-6 sm:pb-4"><button type="button" onclick="closeModal('modal-trip')" class="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold transition border border-slate-300" data-i18n="cancel">Cancel</button><button type="submit" id="btn-trip-submit" class="px-8 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-bold shadow-md hover:shadow-lg flex items-center gap-2 btn-action transition">Save Update</button></div></form></div></div>
-
   <div id="modal-confirm" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden"><div class="p-6 text-center"><div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 shadow-sm"><i class="fas fa-question text-xl"></i></div><h3 class="text-lg font-bold text-slate-700 mb-2" id="conf-title">Confirm</h3><p class="text-sm text-slate-500 mb-4" id="conf-msg">Are you sure?</p><div class="mb-4 text-left"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Comment (Optional / Reason)</label><textarea id="conf-comment" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500" rows="2" placeholder="Write a note here..."></textarea></div><div class="flex gap-3"><button onclick="closeModal('modal-confirm')" class="flex-1 py-2.5 border border-slate-300 rounded-lg text-slate-600 font-bold text-sm hover:bg-slate-50 transition" data-i18n="cancel">Cancel</button><button onclick="execConfirm()" id="btn-conf-yes" class="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 shadow-sm transition" data-i18n="yes">Yes, Proceed</button></div></div></div></div>
-  
   <div id="modal-alert" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden"><div class="p-6 text-center"><div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 shadow-sm"><i class="fas fa-info text-xl"></i></div><h3 class="text-lg font-bold text-slate-700 mb-2" id="alert-title">Information</h3><p class="text-sm text-slate-500 mb-6" id="alert-msg">System Message.</p><button onclick="closeModal('modal-alert')" class="w-full py-2.5 bg-slate-800 text-white rounded-lg font-bold text-sm hover:bg-slate-900 shadow-sm transition">OK</button></div></div></div>
-  
   <div id="modal-cancel" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl relative animate-slide-up"><button onclick="closeModal('modal-cancel')" class="absolute top-4 right-4 text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button><h3 class="text-lg font-bold mb-4 text-slate-800">Cancel Booking</h3><form onsubmit="event.preventDefault(); submitCancel();"><input type="hidden" id="cancel-id"><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Reason / Note</label><textarea id="cancel-note" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500" rows="3"></textarea></div><div class="flex justify-end gap-3"><button type="button" onclick="closeModal('modal-cancel')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold" data-i18n="cancel">Back</button><button type="submit" id="btn-cancel-submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-bold shadow-sm btn-action">Yes, Cancel</button></div></form></div></div>
 
   <script>
     document.addEventListener('keydown', function(event) { if (event.key === "Escape") { const modals = ['modal-create', 'modal-export', 'modal-trip', 'modal-confirm', 'modal-alert', 'modal-cancel']; modals.forEach(id => closeModal(id)); } });
-
     let currentUser = null, availableVehicles = [], allBookingsData = [], confirmCallback = null, videoStream = null, capturedImageBase64 = null, activePhotoSource = 'file';
     let currentLang = localStorage.getItem('portal_lang') || 'en';
-    const i18n = {
-        en: { fleet_avail: "Fleet Availability", trip_history: "Trip History", click_filter: "Click statistics above to filter.", new_booking: "New Booking", th_id: "ID & Date", th_user: "User Info", th_unit: "Unit & Purpose", th_approval: "Approval Status", th_status: "Status", th_trip: "Trip Info", th_action: "Action", modal_book_title: "Vehicle Booking", select_unit: "Select Unit (Available)", purpose: "Purpose", cancel: "Cancel", submit_req: "Submit Request", yes: "Yes, Proceed" },
-        id: { fleet_avail: "Ketersediaan Armada", trip_history: "Riwayat Perjalanan", click_filter: "Klik statistik di atas untuk filter.", new_booking: "Pesan Baru", th_id: "ID & Tanggal", th_user: "Info Pengguna", th_unit: "Unit & Tujuan", th_approval: "Status Persetujuan", th_status: "Status", th_trip: "Info Perjalanan", th_action: "Aksi", modal_book_title: "Pemesanan Kendaraan", select_unit: "Pilih Unit (Tersedia)", purpose: "Tujuan", cancel: "Batal", submit_req: "Kirim Permintaan", yes: "Ya, Lanjutkan" }
-    };
+    const i18n = { en: { fleet_avail: "Fleet Availability", trip_history: "Trip History", click_filter: "Click statistics above to filter.", new_booking: "New Booking", th_id: "ID & Date", th_user: "User Info", th_unit: "Unit & Purpose", th_approval: "Approval Status", th_status: "Status", th_trip: "Trip Info", th_action: "Action", modal_book_title: "Vehicle Booking", select_unit: "Select Unit (Available)", purpose: "Purpose", cancel: "Cancel", submit_req: "Submit Request", yes: "Yes, Proceed" }, id: { fleet_avail: "Ketersediaan Armada", trip_history: "Riwayat Perjalanan", click_filter: "Klik statistik di atas untuk filter.", new_booking: "Pesan Baru", th_id: "ID & Tanggal", th_user: "Info Pengguna", th_unit: "Unit & Tujuan", th_approval: "Status Persetujuan", th_status: "Status", th_trip: "Info Perjalanan", th_action: "Aksi", modal_book_title: "Pemesanan Kendaraan", select_unit: "Pilih Unit (Tersedia)", purpose: "Tujuan", cancel: "Batal", submit_req: "Kirim Permintaan", yes: "Ya, Lanjutkan" } };
     const rawUser = localStorage.getItem('portal_user');
     if(!rawUser) { window.location.href = "index.php"; } else { currentUser = JSON.parse(rawUser); }
 
     function toggleLanguage() { currentLang = (currentLang === 'en') ? 'id' : 'en'; localStorage.setItem('portal_lang', currentLang); applyLanguage(); }
     function applyLanguage() { document.getElementById('lang-label').innerText = currentLang.toUpperCase(); document.querySelectorAll('[data-i18n]').forEach(el => { const k = el.getAttribute('data-i18n'); if(i18n[currentLang][k]) el.innerText = i18n[currentLang][k]; }); }
-
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); if(id === 'modal-trip') stopCamera(); }
     function goBackToPortal() { window.location.href = "index.php"; }
@@ -136,358 +140,146 @@
        document.getElementById('nav-user-name').innerText = currentUser.fullname;
        document.getElementById('nav-user-dept').innerText = currentUser.department || '-'; 
        document.getElementById('display-user-dept').innerText = currentUser.department || '-'; 
-       
        if(['User', 'GA', 'SectionHead', 'TeamLeader', 'HRGA'].includes(currentUser.role)) { document.getElementById('btn-create').classList.remove('hidden'); }
        if(['Administrator', 'HRGA'].includes(currentUser.role)) { document.getElementById('export-controls').classList.remove('hidden'); }
        loadData();
     };
 
+    // --- EXPORT LOGIC DETAILED ---
     function openExportModal() { openModal('modal-export'); }
-
-    function loadData() { 
-        document.getElementById('data-table-body').innerHTML = '<tr><td colspan="8" class="text-center py-10 text-slate-400"><span class="loader-spin mr-2"></span> Fetching data...</td></tr>'; 
+    
+    function doExport(type, isAllTime) {
+        const start = document.getElementById('exp-start').value;
+        const end = document.getElementById('exp-end').value;
+        const loader = document.getElementById('exp-loading');
+        
+        if(!isAllTime && (!start || !end)) { showAlert("Error", "Please select dates."); return; }
+        loader.classList.remove('hidden');
+        
         fetch('api/vms.php', {
             method: 'POST',
-            body: JSON.stringify({ 
-                action: 'getData', 
-                role: currentUser.role, 
-                username: currentUser.username, 
-                department: currentUser.department 
+            body: JSON.stringify({
+                action: 'exportData',
+                role: currentUser.role,
+                department: currentUser.department,
+                startDate: start,
+                endDate: end
             })
         })
         .then(r => r.json())
         .then(res => {
-            if(res.success) {
-                availableVehicles = res.vehicles || []; 
-                allBookingsData = res.bookings || []; 
-                renderFleetStatus(availableVehicles); 
-                renderStats(); 
-                renderTable(allBookingsData); 
-                populateVehicleSelect(); 
-            } else {
-                document.getElementById('data-table-body').innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">Error: ${res.message}</td></tr>`; 
-            }
-        }).catch(err => {
-             console.error(err);
-             document.getElementById('data-table-body').innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">Connection Error (JSON Invalid or Network)</td></tr>`;
+            loader.classList.add('hidden');
+            if(!res.success || !res.bookings.length) { showAlert("Info", "No data available."); return; }
+            if(type === 'excel') exportExcel(res.bookings);
+            if(type === 'pdf') exportPdf(res.bookings);
+            closeModal('modal-export');
+        })
+        .catch(() => { loader.classList.add('hidden'); showAlert("Error", "Export failed."); });
+    }
+
+    function exportExcel(data) {
+        const wb = XLSX.utils.book_new();
+        let rows = [];
+        
+        // Header Info
+        rows.push(["VEHICLE MANAGEMENT SYSTEM - OFFICIAL REPORT"]);
+        rows.push(["Generated At: " + new Date().toLocaleString()]);
+        rows.push(["Generated By: " + currentUser.fullname]);
+        rows.push([]); // Spacing
+
+        // Professional Detailed Headers
+        rows.push([
+            "Request ID", "Date Created", "Time", "Requester Name", "Department", "Role", 
+            "Vehicle Unit", "Trip Purpose", 
+            "Departure Time", "Start KM", "Return Time", "End KM", "Total Distance (KM)", "Route Details",
+            "Current Status", 
+            "GA Approver", "GA Approved Time", 
+            "Head Approver", "Head Approved Time",
+            "Action Note / Rejection Reason"
+        ]);
+
+        data.forEach(r => {
+            const startK = parseInt(r.startKm) || 0;
+            const endK = parseInt(r.endKm) || 0;
+            const dist = (endK > 0 && endK >= startK) ? (endK - startK) : "-";
+            const dateOnly = r.timestamp ? r.timestamp.split(' ')[0] : '-';
+            const timeOnly = r.timestamp ? r.timestamp.split(' ')[1] : '-';
+
+            rows.push([
+                r.id, dateOnly, timeOnly, r.fullname, r.department, r.role,
+                r.vehicle, r.purpose,
+                r.departTime || '-', r.startKm || '-', r.returnTime || '-', r.endKm || '-', dist, r.actionComment || '-',
+                r.status,
+                r.gaBy, r.gaTime || '-',
+                r.headBy, r.headTime || '-',
+                r.actionComment // Notes often stored here for rejection too
+            ]);
         });
+
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        
+        // Auto-width adjustment approximation
+        const wscols = [
+            {wch:15}, {wch:12}, {wch:10}, {wch:20}, {wch:15}, {wch:10},
+            {wch:15}, {wch:30},
+            {wch:18}, {wch:10}, {wch:18}, {wch:10}, {wch:10}, {wch:25},
+            {wch:15},
+            {wch:20}, {wch:18},
+            {wch:20}, {wch:18},
+            {wch:30}
+        ];
+        ws['!cols'] = wscols;
+
+        XLSX.utils.book_append_sheet(wb, ws, "VMS Data");
+        XLSX.writeFile(wb, "VMS_Report_" + new Date().toISOString().slice(0,10) + ".xlsx");
     }
 
-    function renderStats() { const total = allBookingsData.length; const pending = allBookingsData.filter(r => r.status.includes('Pending') || r.status === 'Pending Review' || r.status === 'Correction Needed').length; const active = allBookingsData.filter(r => r.status === 'Active').length; const done = allBookingsData.filter(r => r.status === 'Done').length; const failed = allBookingsData.filter(r => r.status === 'Rejected' || r.status === 'Cancelled').length;
-       const makeCard = (title, count, icon, color, filterType) => `<div onclick="filterTableByStatus('${filterType}')" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 stats-card relative overflow-hidden group"><div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition"><i class="fas ${icon} text-4xl text-${color}-500"></i></div><div class="text-slate-500 text-xs font-bold uppercase mb-1">${title}</div><div class="text-2xl font-bold text-slate-800">${count}</div></div>`;
-       document.getElementById('stats-container').innerHTML = makeCard('Total Requests', total, 'fa-list', 'blue', 'All') + makeCard('Pending', pending, 'fa-clock', 'yellow', 'Pending') + makeCard('Active Trip', active, 'fa-road', 'blue', 'Active') + makeCard('Completed', done, 'fa-check-circle', 'emerald', 'Done') + makeCard('Cancelled/Reject', failed, 'fa-times-circle', 'red', 'Failed'); 
+    function exportPdf(data) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a3'); // A3 Landscape for more columns
+        
+        doc.setFontSize(14); doc.setTextColor(37, 99, 235);
+        doc.text("Vehicle Management Report", 14, 15);
+        
+        doc.setFontSize(9); doc.setTextColor(100);
+        doc.text("Generated: " + new Date().toLocaleString(), 14, 20);
+        
+        const body = data.map(r => [
+            r.id, r.timestamp.split(' ')[0], r.fullname, r.vehicle, 
+            r.purpose, 
+            `${r.startKm || 0} - ${r.endKm || 0}`, 
+            r.status,
+            r.gaBy || '-', r.headBy || '-'
+        ]);
+        
+        doc.autoTable({
+            startY: 25,
+            head: [['ID', 'Date', 'User', 'Vehicle', 'Purpose', 'KM (Start-End)', 'Status', 'GA Appr', 'Head Appr']],
+            body: body,
+            theme: 'grid',
+            headStyles: { fillColor: [37, 99, 235] },
+            styles: { fontSize: 8 }
+        });
+        doc.save("VMS_Report.pdf");
     }
-    function filterTableByStatus(filterType) { const cards = document.querySelectorAll('.stats-card'); cards.forEach(c => c.classList.remove('stats-active')); let filtered = []; if (filterType === 'All') filtered = allBookingsData; else if (filterType === 'Pending') filtered = allBookingsData.filter(r => r.status.includes('Pending') || r.status === 'Correction Needed' || r.status === 'Pending Review'); else if (filterType === 'Failed') filtered = allBookingsData.filter(r => r.status === 'Rejected' || r.status === 'Cancelled'); else filtered = allBookingsData.filter(r => r.status === filterType); renderTable(filtered); }
-    
-    function renderFleetStatus(vehicles) { 
-        const container = document.getElementById('fleet-status-container'); 
-        container.innerHTML = ''; 
-        if(vehicles.length === 0) { container.innerHTML = '<div class="text-slate-500 text-sm italic">No fleet available.</div>'; return; } 
-        vehicles.forEach(v => { 
-            let colorClass = 'bg-white border-slate-200 text-slate-600', icon = 'fa-car', statusText = 'Unknown'; 
-            let extraInfo = '';
-            if(v.status === 'Available') { 
-                colorClass = 'bg-green-50 border-green-200 text-green-700'; icon = 'fa-check-circle'; statusText = 'Available'; 
-            } else if (v.status === 'In Use') { 
-                colorClass = 'bg-blue-50 border-blue-200 text-blue-700'; icon = 'fa-road'; statusText = 'In Use'; 
-                if(v.holder_name) extraInfo = `<div class="mt-2 pt-2 border-t border-blue-200 text-[10px] text-blue-800"><div class="font-bold truncate">${v.holder_name}</div><div class="opacity-75 truncate">${v.holder_dept}</div></div>`;
-            } else if (v.status === 'Reserved') { 
-                colorClass = 'bg-yellow-50 border-yellow-200 text-yellow-700'; icon = 'fa-clock'; statusText = 'Reserved'; 
-                if(v.holder_name) extraInfo = `<div class="mt-2 pt-2 border-t border-yellow-200 text-[10px] text-yellow-800"><div class="font-bold truncate">${v.holder_name}</div><div class="opacity-75 truncate">${v.holder_dept}</div></div>`;
-            } else { 
-                colorClass = 'bg-red-50 border-red-200 text-red-700'; icon = 'fa-ban'; statusText = 'Maintenance'; 
-            } 
-            container.innerHTML += `<div class="${colorClass} border p-4 rounded-xl shadow-sm h-full flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-default"><div><div class="flex justify-between items-start mb-2"><div><div class="font-bold text-sm text-slate-800">${v.plant}</div><div class="text-[10px] uppercase font-semibold opacity-70 mt-0.5">${v.model}</div></div><i class="fas ${icon} text-lg opacity-50"></i></div><div class="text-right text-xs font-bold mb-1">${statusText}</div>${extraInfo}</div></div>`; 
-        }); 
-    }
-    
-    function renderTable(data) {
-       const tbody = document.getElementById('data-table-body'); const cardCont = document.getElementById('data-card-container'); tbody.innerHTML = ''; cardCont.innerHTML = ''; if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-slate-400 italic">No data found.</td></tr>'; cardCont.innerHTML = '<div class="text-center py-10 text-slate-400 italic">No data found.</div>'; return; }
-       
-       const getStatusBox = (role, text, time, byName) => { 
-           let cls = "bg-gray-50 text-gray-400 border-gray-200", icon = "fa-minus"; 
-           let txt = text || "Pending"; 
-           if(txt.includes('Approved')) { cls="bg-green-50 text-green-700 border-green-200"; icon="fa-check"; } 
-           else if(txt.includes('Pending')) { cls="bg-yellow-50 text-yellow-600 border-yellow-200"; icon="fa-clock"; } 
-           else if(txt.includes('Rejected')) { cls="bg-red-50 text-red-700 border-red-200"; icon="fa-times"; } 
-           
-           let displayTxt = txt.replace('Approved by ', '').replace('Rejected by ', ''); 
-           if(displayTxt === 'Pending') displayTxt = 'Pending'; 
-           
-           let approverHtml = '';
-           if (txt === 'Approved' && byName) {
-               approverHtml = `<div class="text-[9px] text-green-800 mt-0.5 truncate w-20" title="${byName}">By: ${byName}</div>`;
-           } else if (txt === 'Rejected' && byName) {
-               approverHtml = `<div class="text-[9px] text-red-800 mt-0.5 truncate w-20" title="${byName}">By: ${byName}</div>`;
-           }
-           
-           const timeHtml = time ? `<div class="text-[8px] text-slate-400 mt-1 font-mono tracking-tighter">${time}</div>` : ''; 
-           
-           return `<div class="flex flex-col"><div class="app-box ${cls}"><i class="fas ${icon} text-xs w-3"></i><span class="text-[10px] font-bold uppercase leading-none" title="${txt}">${displayTxt.substring(0,8)}</span></div>${approverHtml}${timeHtml}</div>`; 
-       };
-       
-       data.forEach(row => {
-         const status = row.status || 'Unknown'; const timestamp = row.timestamp ? row.timestamp.split(' ')[0] : '-'; const idStr = row.id ? String(row.id).slice(-4) : '????';
-         let badge = 'bg-gray-100 text-gray-600 border-gray-200'; if (status === 'Done') badge = 'bg-emerald-50 text-emerald-700 border-emerald-200'; else if (status === 'Active') badge = 'bg-blue-50 text-blue-700 border-blue-200'; else if (status === 'Rejected' || status === 'Cancelled') badge = 'bg-red-50 text-red-700 border-red-200'; else if (status.includes('Pending') || status === 'Correction Needed' || status === 'Pending Review') badge = 'bg-amber-50 text-amber-700 border-amber-200';
-         
-         let actionBtn = '', actionBtnMobile = '';
-         const renderApprovalBtns = (txt) => {
-             const pc = `<div class="flex items-center gap-2 w-full mt-1"><button onclick="approve('${row.id}','${txt}')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 transition"><i class="fas fa-check"></i> Approve</button><button onclick="reject('${row.id}','${txt}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 transition"><i class="fas fa-times"></i> Reject</button></div>`;
-             const mob = `<div class="flex flex-col gap-2 mt-2"><button onclick="approve('${row.id}','${txt}')" class="w-full bg-emerald-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2"><i class="fas fa-check"></i> Approve</button><button onclick="reject('${row.id}','${txt}')" class="w-full bg-red-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2"><i class="fas fa-times"></i> Reject</button></div>`;
-             return { pc, mob };
-         };
-         
-         if (currentUser.role === 'HRGA' && status === 'Pending GA') { const b = renderApprovalBtns('HRGA (L1)'); actionBtn = b.pc; actionBtnMobile = b.mob; }
-         if (status === 'Pending Section Head') {
-             let isAuthorized = false;
-             if (currentUser.role === 'TeamLeader' && currentUser.department === 'HRGA') isAuthorized = true;
-             if (currentUser.role === 'HRGA') isAuthorized = true; 
-             if(isAuthorized) { const b = renderApprovalBtns('TL HRGA (L2)'); actionBtn = b.pc; actionBtnMobile = b.mob; }
-         }
-         // -- FIX V24: HRGA VERIFICATION BUTTONS --
-         if (currentUser.role === 'HRGA' && status === 'Pending Review') {
-             actionBtn = `<div class="flex items-center gap-2 w-full mt-1"><button onclick="confirmTrip('${row.id}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action"><i class="fas fa-check-double mr-1"></i> Verify Done</button><button onclick="requestCorrection('${row.id}')" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action"><i class="fas fa-edit mr-1"></i> Correction</button></div>`; 
-             actionBtnMobile = `<div class="flex flex-col gap-2 mt-2"><button onclick="confirmTrip('${row.id}')" class="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm">Verify Done</button><button onclick="requestCorrection('${row.id}')" class="w-full bg-orange-500 text-white py-3 rounded-lg text-sm font-bold shadow-sm">Request Correction</button></div>`;
-         }
-         if (row.username === currentUser.username) { 
-             if (status === 'Approved') {
-                 actionBtn = `<div class="flex gap-2 justify-end items-center mt-1"><button onclick="openTripModal('${row.id}', 'startTrip', '${row.startKm}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1"><i class="fas fa-play text-[10px]"></i> Start</button><button onclick="openCancelModal('${row.id}')" class="bg-white border border-slate-300 text-slate-500 hover:text-red-600 hover:border-red-300 px-2 py-1.5 rounded-lg text-xs font-bold btn-action transition"><i class="fas fa-times"></i></button></div>`; 
-                 actionBtnMobile = `<div class="flex gap-2 mt-2"><button onclick="openTripModal('${row.id}', 'startTrip', '${row.startKm}')" class="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2"><i class="fas fa-play"></i> Start Trip</button><button onclick="openCancelModal('${row.id}')" class="bg-slate-200 text-slate-600 px-4 py-3 rounded-lg text-sm font-bold shadow-sm"><i class="fas fa-times"></i></button></div>`;
-             }
-             else if (status === 'Active') {
-                 actionBtn = `<button onclick="openTripModal('${row.id}', 'endTrip', '${row.startKm}')" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-flag-checkered text-[10px]"></i> Finish Trip</button>`; 
-                 actionBtnMobile = `<button onclick="openTripModal('${row.id}', 'endTrip', '${row.startKm}')" class="w-full bg-orange-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-flag-checkered"></i> Finish Trip</button>`;
-             }
-             // -- FIX V24: USER CORRECTION BUTTON --
-             else if (status === 'Correction Needed') {
-                 actionBtn = `<button onclick="openTripModal('${row.id}', 'submitCorrection', '${row.startKm}')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-tools text-[10px]"></i> Fix Data</button>`; 
-                 actionBtnMobile = `<button onclick="openTripModal('${row.id}', 'submitCorrection', '${row.startKm}')" class="w-full bg-yellow-500 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-tools"></i> Fix Data</button>`;
-             }
-             else if (status.includes('Pending') && status !== 'Pending Review') {
-                 actionBtn = `<button onclick="openCancelModal('${row.id}')" class="w-full bg-slate-400 hover:bg-slate-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-2 mt-1"><i class="fas fa-ban"></i> Cancel Request</button>`; 
-                 actionBtnMobile = `<button onclick="openCancelModal('${row.id}')" class="w-full bg-slate-400 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-ban"></i> Cancel Request</button>`;
-             }
-         }
-         
-         const commentDisplay = row.actionComment ? `<div class="text-[10px] text-slate-600 bg-slate-100 p-2 rounded border border-slate-200 italic max-w-[200px] leading-tight">${row.actionComment}</div>` : '<span class="text-slate-300 text-[10px]">-</span>';
-         const gaBox = getStatusBox('GA', row.appGa, row.gaTime, row.gaBy); 
-         const headBox = getStatusBox('S.HEAD', row.appHead, row.headTime, row.headBy); 
-         let photosHtml = `<div class="text-[10px] text-slate-500 bg-slate-100 px-1 rounded inline-block">ODO: ${row.startKm||'-'} / ${row.endKm||'-'}</div>`; 
-         if (row.startPhoto || row.endPhoto) { photosHtml += `<div class="mt-1 flex justify-center gap-2">`; if (row.startPhoto) photosHtml += `<button onclick="viewPhoto('${row.startPhoto}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-1 rounded transition"><i class="fas fa-camera text-xs"></i></button>`; if (row.endPhoto) photosHtml += `<button onclick="viewPhoto('${row.endPhoto}')" class="text-orange-500 hover:text-orange-700 bg-orange-50 p-1 rounded transition"><i class="fas fa-camera text-xs"></i></button>`; photosHtml += `</div>`; }
-         
-         tbody.innerHTML += `
-            <tr class="hover:bg-slate-50 transition border-b border-slate-50 align-top">
-                <td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${timestamp}</div><div class="text-[10px] text-slate-400">#${idStr}</div></td>
-                <td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${row.username}</div><div class="text-[10px] text-slate-500">${row.department}</div></td>
-                <td class="px-6 py-4 whitespace-normal w-[150px]"><div class="text-xs font-bold text-blue-700 bg-blue-50 px-1 rounded inline-block mb-1">${row.vehicle}</div><div class="text-xs text-slate-600 italic break-words max-w-[150px]" title="${row.purpose}">${row.purpose}</div></td>
-                <td class="px-6 py-4">
-                    <div class="flex flex-col gap-3 w-28">
-                        <div class="flex items-start gap-2"><span class="text-[9px] w-6 font-bold text-slate-400 mt-1">GA</span>${gaBox}</div>
-                        <div class="flex items-start gap-2"><span class="text-[9px] w-6 font-bold text-slate-400 mt-1">HEAD</span>${headBox}</div>
-                    </div>
-                </td>
-                <td class="px-6 py-4 align-middle whitespace-normal max-w-[200px]">${commentDisplay}</td>
-                <td class="px-6 py-4 text-center"><span class="status-badge ${badge} whitespace-nowrap">${status}</span></td>
-                <td class="px-6 py-4 text-center">${photosHtml}</td>
-                <td class="px-6 py-4 text-right align-top min-w-[160px]">${actionBtn}</td>
-            </tr>`;
-         
-         cardCont.innerHTML += `
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 relative">
-               <div class="flex justify-between items-start mb-3">
-                  <div>
-                    <div class="font-bold text-sm text-slate-800">#${idStr} • ${timestamp}</div>
-                    <div class="text-xs text-slate-500">${row.username} (${row.department})</div>
-                  </div>
-                  <span class="status-badge ${badge}">${status}</span>
-               </div>
-               
-               <div class="bg-blue-50 p-3 rounded mb-3 border border-blue-100">
-                  <div class="text-[10px] font-bold text-blue-400 uppercase">Unit & Purpose</div>
-                  <div class="font-bold text-blue-800">${row.vehicle}</div>
-                  <div class="text-xs italic text-blue-600 mt-1">"${row.purpose}"</div>
-               </div>
+    // --- END EXPORT ---
 
-               <div class="grid grid-cols-2 gap-3 mb-4">
-                  <div><div class="text-[9px] font-bold text-slate-400 mb-1">GA APPROVAL</div>${gaBox}</div>
-                  <div><div class="text-[9px] font-bold text-slate-400 mb-1">HEAD APPROVAL</div>${headBox}</div>
-               </div>
-               
-               ${row.actionComment ? `<div class="mb-3 text-xs text-slate-600 italic bg-red-50 p-2 rounded border border-red-100"><i class="fas fa-comment text-red-400 mr-1"></i> ${row.actionComment}</div>` : ''}
-
-               <div class="border-t border-slate-100 pt-3 flex justify-between items-center mb-2">
-                  <div class="text-xs font-bold text-slate-500">Trip Info</div>
-                  <div class="flex gap-2">
-                      ${row.startPhoto ? `<button onclick="viewPhoto('${row.startPhoto}')" class="text-blue-500 bg-blue-50 p-2 rounded"><i class="fas fa-camera"></i> Start</button>` : ''}
-                      ${row.endPhoto ? `<button onclick="viewPhoto('${row.endPhoto}')" class="text-orange-500 bg-orange-50 p-2 rounded"><i class="fas fa-camera"></i> End</button>` : ''}
-                  </div>
-               </div>
-               <div class="text-xs bg-slate-100 p-2 rounded mb-3 text-center font-mono">
-                  KM: ${row.startKm||'0'} <i class="fas fa-arrow-right mx-1 text-slate-400"></i> ${row.endKm||'0'}
-               </div>
-               ${actionBtnMobile ? `<div class="pt-2 border-t border-slate-100">${actionBtnMobile}</div>` : ''}
-            </div>
-         `;
-       });
-    }
-
+    function loadData() { document.getElementById('data-table-body').innerHTML = '<tr><td colspan="8" class="text-center py-10 text-slate-400"><span class="loader-spin mr-2"></span> Fetching data...</td></tr>'; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'getData', role: currentUser.role, username: currentUser.username, department: currentUser.department }) }).then(r => r.json()).then(res => { if(res.success) { availableVehicles = res.vehicles || []; allBookingsData = res.bookings || []; renderFleetStatus(availableVehicles); renderStats(); renderTable(allBookingsData); populateVehicleSelect(); } else { document.getElementById('data-table-body').innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">Error: ${res.message}</td></tr>`; } }).catch(err => { document.getElementById('data-table-body').innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">Connection Error</td></tr>`; }); }
+    function renderStats(){const t=allBookingsData.length,p=allBookingsData.filter(r=>r.status.includes('Pending')||r.status==='Pending Review'||r.status==='Correction Needed').length,a=allBookingsData.filter(r=>r.status==='Active').length,d=allBookingsData.filter(r=>r.status==='Done').length,f=allBookingsData.filter(r=>r.status==='Rejected'||r.status==='Cancelled').length;const mc=(t,c,i,cl,ft)=>`<div onclick="filterTableByStatus('${ft}')" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 stats-card relative overflow-hidden group"><div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition"><i class="fas ${i} text-4xl text-${cl}-500"></i></div><div class="text-slate-500 text-xs font-bold uppercase mb-1">${t}</div><div class="text-2xl font-bold text-slate-800">${c}</div></div>`;document.getElementById('stats-container').innerHTML=mc('Total Requests',t,'fa-list','blue','All')+mc('Pending',p,'fa-clock','yellow','Pending')+mc('Active Trip',a,'fa-road','blue','Active')+mc('Completed',d,'fa-check-circle','emerald','Done')+mc('Cancelled/Reject',f,'fa-times-circle','red','Failed');}
+    function filterTableByStatus(f){const cards=document.querySelectorAll('.stats-card');cards.forEach(c=>c.classList.remove('stats-active'));let filtered=[];if(f==='All')filtered=allBookingsData;else if(f==='Pending')filtered=allBookingsData.filter(r=>r.status.includes('Pending')||r.status==='Correction Needed'||r.status==='Pending Review');else if(f==='Failed')filtered=allBookingsData.filter(r=>r.status==='Rejected'||r.status==='Cancelled');else filtered=allBookingsData.filter(r=>r.status===f);renderTable(filtered);}
+    function renderFleetStatus(v){const c=document.getElementById('fleet-status-container');c.innerHTML='';if(v.length===0){c.innerHTML='<div class="text-slate-500 text-sm italic">No fleet available.</div>';return;}v.forEach(x=>{let cl='bg-white border-slate-200 text-slate-600',ic='fa-car',st='Unknown',ei='';if(x.status==='Available'){cl='bg-green-50 border-green-200 text-green-700';ic='fa-check-circle';st='Available';}else if(x.status==='In Use'){cl='bg-blue-50 border-blue-200 text-blue-700';ic='fa-road';st='In Use';if(x.holder_name)ei=`<div class="mt-2 pt-2 border-t border-blue-200 text-[10px] text-blue-800"><div class="font-bold truncate">${x.holder_name}</div><div class="opacity-75 truncate">${x.holder_dept}</div></div>`;}else if(x.status==='Reserved'){cl='bg-yellow-50 border-yellow-200 text-yellow-700';ic='fa-clock';st='Reserved';if(x.holder_name)ei=`<div class="mt-2 pt-2 border-t border-yellow-200 text-[10px] text-yellow-800"><div class="font-bold truncate">${x.holder_name}</div><div class="opacity-75 truncate">${x.holder_dept}</div></div>`;}else{cl='bg-red-50 border-red-200 text-red-700';ic='fa-ban';st='Maintenance';}c.innerHTML+=`<div class="${cl} border p-4 rounded-xl shadow-sm h-full flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-default"><div><div class="flex justify-between items-start mb-2"><div><div class="font-bold text-sm text-slate-800">${x.plant}</div><div class="text-[10px] uppercase font-semibold opacity-70 mt-0.5">${x.model}</div></div><i class="fas ${ic} text-lg opacity-50"></i></div><div class="text-right text-xs font-bold mb-1">${st}</div>${ei}</div></div>`;});}
+    function renderTable(d){const tb=document.getElementById('data-table-body'),cc=document.getElementById('data-card-container');tb.innerHTML='';cc.innerHTML='';if(d.length===0){tb.innerHTML='<tr><td colspan="8" class="text-center py-10 text-slate-400 italic">No data found.</td></tr>';cc.innerHTML='<div class="text-center py-10 text-slate-400 italic">No data found.</div>';return;}const gSB=(r,t,tm,bn)=>{let cl="bg-gray-50 text-gray-400 border-gray-200",ic="fa-minus",tx=t||"Pending";if(tx.includes('Approved')){cl="bg-green-50 text-green-700 border-green-200";ic="fa-check";}else if(tx.includes('Pending')){cl="bg-yellow-50 text-yellow-600 border-yellow-200";ic="fa-clock";}else if(tx.includes('Rejected')){cl="bg-red-50 text-red-700 border-red-200";ic="fa-times";}let dt=tx.replace('Approved by ','').replace('Rejected by ','');if(dt==='Pending')dt='Pending';let ah='';if(tx==='Approved'&&bn)ah=`<div class="text-[9px] text-green-800 mt-0.5 truncate w-20" title="${bn}">By: ${bn}</div>`;else if(tx==='Rejected'&&bn)ah=`<div class="text-[9px] text-red-800 mt-0.5 truncate w-20" title="${bn}">By: ${bn}</div>`;const th=tm?`<div class="text-[8px] text-slate-400 mt-1 font-mono tracking-tighter">${tm}</div>`:'';return `<div class="flex flex-col"><div class="app-box ${cl}"><i class="fas ${ic} text-xs w-3"></i><span class="text-[10px] font-bold uppercase leading-none" title="${tx}">${dt.substring(0,8)}</span></div>${ah}${th}</div>`;};d.forEach(r=>{const s=r.status||'Unknown',ts=r.timestamp?r.timestamp.split(' ')[0]:'-',is=r.id?String(r.id).slice(-4):'????';let b='bg-gray-100 text-gray-600 border-gray-200';if(s==='Done')b='bg-emerald-50 text-emerald-700 border-emerald-200';else if(s==='Active')b='bg-blue-50 text-blue-700 border-blue-200';else if(s==='Rejected'||s==='Cancelled')b='bg-red-50 text-red-700 border-red-200';else if(s.includes('Pending')||s==='Correction Needed'||s==='Pending Review')b='bg-amber-50 text-amber-700 border-amber-200';let ab='',abm='';const rAB=(t)=>{const p=`<div class="flex items-center gap-2 w-full mt-1"><button onclick="approve('${r.id}','${t}')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 transition"><i class="fas fa-check"></i> Approve</button><button onclick="reject('${r.id}','${t}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 transition"><i class="fas fa-times"></i> Reject</button></div>`;const m=`<div class="flex flex-col gap-2 mt-2"><button onclick="approve('${r.id}','${t}')" class="w-full bg-emerald-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2"><i class="fas fa-check"></i> Approve</button><button onclick="reject('${r.id}','${t}')" class="w-full bg-red-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2"><i class="fas fa-times"></i> Reject</button></div>`;return{pc:p,mob:m};};if(currentUser.role==='HRGA'&&s==='Pending GA'){const x=rAB('HRGA (L1)');ab=x.pc;abm=x.mob;}if(s==='Pending Section Head'){let ia=false;if(currentUser.role==='TeamLeader'&&currentUser.department==='HRGA')ia=true;if(currentUser.role==='HRGA')ia=true;if(ia){const x=rAB('TL HRGA (L2)');ab=x.pc;abm=x.mob;}}if(currentUser.role==='HRGA'&&s==='Pending Review'){ab=`<div class="flex items-center gap-2 w-full mt-1"><button onclick="confirmTrip('${r.id}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action"><i class="fas fa-check-double mr-1"></i> Verify Done</button><button onclick="requestCorrection('${r.id}')" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action"><i class="fas fa-edit mr-1"></i> Correction</button></div>`;abm=`<div class="flex flex-col gap-2 mt-2"><button onclick="confirmTrip('${r.id}')" class="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm">Verify Done</button><button onclick="requestCorrection('${r.id}')" class="w-full bg-orange-500 text-white py-3 rounded-lg text-sm font-bold shadow-sm">Request Correction</button></div>`;}if(r.username===currentUser.username){if(s==='Approved'){ab=`<div class="flex gap-2 justify-end items-center mt-1"><button onclick="openTripModal('${r.id}', 'startTrip', '${r.startKm}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1"><i class="fas fa-play text-[10px]"></i> Start</button><button onclick="openCancelModal('${r.id}')" class="bg-white border border-slate-300 text-slate-500 hover:text-red-600 hover:border-red-300 px-2 py-1.5 rounded-lg text-xs font-bold btn-action transition"><i class="fas fa-times"></i></button></div>`;abm=`<div class="flex gap-2 mt-2"><button onclick="openTripModal('${r.id}', 'startTrip', '${r.startKm}')" class="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2"><i class="fas fa-play"></i> Start Trip</button><button onclick="openCancelModal('${r.id}')" class="bg-slate-200 text-slate-600 px-4 py-3 rounded-lg text-sm font-bold shadow-sm"><i class="fas fa-times"></i></button></div>`;}else if(s==='Active'){ab=`<button onclick="openTripModal('${r.id}', 'endTrip', '${r.startKm}')" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-flag-checkered text-[10px]"></i> Finish Trip</button>`;abm=`<button onclick="openTripModal('${r.id}', 'endTrip', '${r.startKm}')" class="w-full bg-orange-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-flag-checkered"></i> Finish Trip</button>`;}else if(s==='Correction Needed'){ab=`<button onclick="openTripModal('${r.id}', 'submitCorrection', '${r.startKm}')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-tools text-[10px]"></i> Fix Data</button>`;abm=`<button onclick="openTripModal('${r.id}', 'submitCorrection', '${r.startKm}')" class="w-full bg-yellow-500 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-tools"></i> Fix Data</button>`;}else if(s.includes('Pending')&&s!=='Pending Review'){ab=`<button onclick="openCancelModal('${r.id}')" class="w-full bg-slate-400 hover:bg-slate-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-2 mt-1"><i class="fas fa-ban"></i> Cancel Request</button>`;abm=`<button onclick="openCancelModal('${r.id}')" class="w-full bg-slate-400 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-ban"></i> Cancel Request</button>`;}}const cd=r.actionComment?`<div class="text-[10px] text-slate-600 bg-slate-100 p-2 rounded border border-slate-200 italic max-w-[200px] leading-tight">${r.actionComment}</div>`:'<span class="text-slate-300 text-[10px]">-</span>';const gb=gSB('GA',r.appGa,r.gaTime,r.gaBy);const hb=gSB('S.HEAD',r.appHead,r.headTime,r.headBy);let ph=`<div class="text-[10px] text-slate-500 bg-slate-100 px-1 rounded inline-block">ODO: ${r.startKm||'-'} / ${r.endKm||'-'}</div>`;if(r.startPhoto||r.endPhoto){ph+=`<div class="mt-1 flex justify-center gap-2">`;if(r.startPhoto)ph+=`<button onclick="viewPhoto('${r.startPhoto}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-1 rounded transition"><i class="fas fa-camera text-xs"></i></button>`;if(r.endPhoto)ph+=`<button onclick="viewPhoto('${r.endPhoto}')" class="text-orange-500 hover:text-orange-700 bg-orange-50 p-1 rounded transition"><i class="fas fa-camera text-xs"></i></button>`;ph+=`</div>`;}tb.innerHTML+=`<tr class="hover:bg-slate-50 transition border-b border-slate-50 align-top"><td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${ts}</div><div class="text-[10px] text-slate-400">#${is}</div></td><td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${r.username}</div><div class="text-[10px] text-slate-500">${r.department}</div></td><td class="px-6 py-4 whitespace-normal w-[150px]"><div class="text-xs font-bold text-blue-700 bg-blue-50 px-1 rounded inline-block mb-1">${r.vehicle}</div><div class="text-xs text-slate-600 italic break-words max-w-[150px]" title="${r.purpose}">${r.purpose}</div></td><td class="px-6 py-4"><div class="flex flex-col gap-3 w-28"><div class="flex items-start gap-2"><span class="text-[9px] w-6 font-bold text-slate-400 mt-1">GA</span>${gb}</div><div class="flex items-start gap-2"><span class="text-[9px] w-6 font-bold text-slate-400 mt-1">HEAD</span>${hb}</div></div></td><td class="px-6 py-4 align-middle whitespace-normal max-w-[200px]">${cd}</td><td class="px-6 py-4 text-center"><span class="status-badge ${b} whitespace-nowrap">${s}</span></td><td class="px-6 py-4 text-center">${ph}</td><td class="px-6 py-4 text-right align-top min-w-[160px]">${ab}</td></tr>`;cc.innerHTML+=`<div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 relative"><div class="flex justify-between items-start mb-3"><div><div class="font-bold text-sm text-slate-800">#${is} • ${ts}</div><div class="text-xs text-slate-500">${r.username} (${r.department})</div></div><span class="status-badge ${b}">${s}</span></div><div class="bg-blue-50 p-3 rounded mb-3 border border-blue-100"><div class="text-[10px] font-bold text-blue-400 uppercase">Unit & Purpose</div><div class="font-bold text-blue-800">${r.vehicle}</div><div class="text-xs italic text-blue-600 mt-1">"${r.purpose}"</div></div><div class="grid grid-cols-2 gap-3 mb-4"><div><div class="text-[9px] font-bold text-slate-400 mb-1">GA APPROVAL</div>${gb}</div><div><div class="text-[9px] font-bold text-slate-400 mb-1">HEAD APPROVAL</div>${hb}</div></div>${r.actionComment?`<div class="mb-3 text-xs text-slate-600 italic bg-red-50 p-2 rounded border border-red-100"><i class="fas fa-comment text-red-400 mr-1"></i> ${r.actionComment}</div>`:''}<div class="border-t border-slate-100 pt-3 flex justify-between items-center mb-2"><div class="text-xs font-bold text-slate-500">Trip Info</div><div class="flex gap-2">${r.startPhoto?`<button onclick="viewPhoto('${r.startPhoto}')" class="text-blue-500 bg-blue-50 p-2 rounded"><i class="fas fa-camera"></i> Start</button>`:''}${r.endPhoto?`<button onclick="viewPhoto('${r.endPhoto}')" class="text-orange-500 bg-orange-50 p-2 rounded"><i class="fas fa-camera"></i> End</button>`:''}</div></div><div class="text-xs bg-slate-100 p-2 rounded mb-3 text-center font-mono">KM: ${r.startKm||'0'} <i class="fas fa-arrow-right mx-1 text-slate-400"></i> ${r.endKm||'0'}</div>${abm?`<div class="pt-2 border-t border-slate-100">${abm}</div>`:''}</div>`;});}
     function populateVehicleSelect() { const sel = document.getElementById('input-vehicle'); sel.innerHTML = '<option value="">-- Select Unit (Available) --</option>'; availableVehicles.filter(v => v.status === 'Available').forEach(v => { sel.innerHTML += `<option value="${v.plant}">${v.plant} - ${v.model}</option>`; }); }
     function submitData() { const v = document.getElementById('input-vehicle').value, p = document.getElementById('input-purpose').value, btn = document.getElementById('btn-create-submit'); if(!v || !p) return showAlert("Error", "Please complete all fields."); btn.disabled = true; btn.innerText = "Processing..."; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'submit', username: currentUser.username, fullname: currentUser.fullname, role: currentUser.role, department: currentUser.department, vehicle: v, purpose: p }) }).then(r => r.json()).then(res => { btn.disabled = false; btn.innerText = "Submit Request"; if(res.success) { closeModal('modal-create'); loadData(); showAlert("Success", "Request sent."); } else { showAlert("Error", res.message); } }); }
     function callUpdate(id, act, comment) { fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: {comment: comment} }) }).then(r => r.json()).then(res => { if(res.success) loadData(); else showAlert("Error", res.message || "Failed to update"); }).catch(e => showAlert("Error", "Connection error")); }
-    
-    // MODIFIED: Approve now uses showConfirm to ask for optional comment
     function approve(id, role) { showConfirm("Approve Request", "You can add an optional note below:", (comment) => { callUpdate(id, 'approve', comment); }); }
-    
     function reject(id, role) { showConfirm("Confirm Rejection", "Please provide a REASON for rejection:", (comment) => { if(!comment) return showAlert("Error", "Reason is required for rejection"); callUpdate(id, 'reject', comment); }); }
-    
-    // --- FIX V24: HRGA ACTIONS ---
     function confirmTrip(id) { showConfirm("Verify Trip", "Verify that this trip is completed and data is correct?", (c) => callUpdate(id, 'verifyTrip', c)); } 
     function requestCorrection(id) { showConfirm("Request Correction", "Reason for correction (sent to user):", (c) => { if(!c) return showAlert("Error", "Reason required"); callUpdate(id, 'requestCorrection', c); }); }
-    
-    // --- FIX V24: MODAL HANDLER ---
-    function openTripModal(id, act, startKmVal) { 
-        document.getElementById('trip-id').value = id; 
-        document.getElementById('trip-action').value = act; 
-        
-        const titleMap = { 
-            'startTrip': 'Departure Update', 
-            'endTrip': 'Arrival Update', 
-            'submitCorrection': 'Correct Trip Data' 
-        }; 
-        document.getElementById('modal-trip-title').innerText = titleMap[act]; 
-        document.getElementById('lbl-km').innerText = act === 'startTrip' ? 'Start KM' : 'End KM'; 
-        
-        const startVal = parseInt(startKmVal) || 0; 
-        document.getElementById('modal-start-km-val').value = startVal; 
-        document.getElementById('disp-start-km').innerText = startVal; 
-        
-        // Reset Inputs
-        document.getElementById('input-km').value = ''; 
-        document.getElementById('input-route-update').value = ''; 
-        document.getElementById('disp-total-km').innerText = '0'; 
-        document.getElementById('input-photo').value = ''; 
-        togglePhotoSource('file'); 
-        
-        // Logic tampilan input
-        if (act === 'endTrip' || act === 'submitCorrection') { 
-            document.getElementById('div-route-update').classList.remove('hidden'); 
-            document.getElementById('input-route-update').required = true; 
-            document.getElementById('div-calc-distance').classList.remove('hidden'); 
-        } else { 
-            document.getElementById('div-route-update').classList.add('hidden'); 
-            document.getElementById('input-route-update').required = false; 
-            document.getElementById('div-calc-distance').classList.add('hidden'); 
-        } 
-        openModal('modal-trip'); 
-    }
-
-    // --- CLIENT-SIDE IMAGE COMPRESSION ---
-    function compressImage(base64Str, maxWidth = 800, quality = 0.5) {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.src = base64Str;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                if (width > maxWidth) {
-                    height *= maxWidth / width;
-                    width = maxWidth;
-                }
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                resolve(canvas.toDataURL('image/jpeg', quality));
-            };
-        });
-    }
-
-    async function submitTripUpdate() { 
-        try {
-            const id = document.getElementById('trip-id').value;
-            const act = document.getElementById('trip-action').value;
-            const km = document.getElementById('input-km').value;
-            const routeVal = document.getElementById('input-route-update').value;
-            const btn = document.getElementById('btn-trip-submit');
-            
-            if(!km) return showAlert("Error", "KM Required");
-            
-            btn.disabled = true;
-            btn.innerText = "Processing Image...";
-
-            let base64Data = null;
-            if (activePhotoSource === 'camera') {
-                if (!capturedImageBase64) { btn.disabled=false; btn.innerText="Save Update"; return showAlert("Error", "Please capture a photo."); }
-                base64Data = capturedImageBase64;
-            } else {
-                const fileInput = document.getElementById('input-photo');
-                if (fileInput.files.length === 0) { btn.disabled=false; btn.innerText="Save Update"; return showAlert("Error", "Please upload a photo."); }
-                const file = fileInput.files[0];
-                base64Data = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
-            }
-
-            const compressedBase64 = await compressImage(base64Data);
-            const cleanBase64 = compressedBase64.split(',')[1];
-
-            sendTripData(id, act, km, cleanBase64, routeVal);
-
-        } catch (err) {
-            console.error(err);
-            showAlert("Error", "Image processing failed.");
-            document.getElementById('btn-trip-submit').disabled = false;
-            document.getElementById('btn-trip-submit').innerText = "Save Update";
-        }
-    }
-
-    function sendTripData(id, act, km, photoBase64, route) { 
-        const btn = document.getElementById('btn-trip-submit'); 
-        btn.innerText = "Sending Data..."; 
-        
-        fetch('api/vms.php', { 
-            method: 'POST', 
-            body: JSON.stringify({ 
-                action: 'updateStatus', 
-                id: id, 
-                act: act, 
-                userRole: currentUser.role, 
-                approverName: currentUser.fullname, 
-                extraData: { km: km, photoBase64: photoBase64, route: route } 
-            }) 
-        })
-        .then(r => {
-            if (!r.ok) throw new Error("Server Error: " + r.statusText);
-            return r.text(); 
-        })
-        .then(text => {
-            try {
-                const res = JSON.parse(text); 
-                btn.disabled = false;
-                btn.innerText = "Save Update";
-                if(res.success) {
-                    closeModal('modal-trip'); 
-                    loadData();
-                } else {
-                    showAlert("Error", res.message);
-                }
-            } catch (e) {
-                console.error("Server Response Invalid:", text);
-                throw new Error("Server Response Invalid (Check Console)");
-            }
-        })
-        .catch(err => {
-            btn.disabled = false;
-            btn.innerText = "Save Update";
-            console.error(err);
-            showAlert("Error", "Connection Failed: " + err.message);
-        });
-    }
-
+    function openTripModal(id, act, startKmVal) { document.getElementById('trip-id').value = id; document.getElementById('trip-action').value = act; const titleMap = { 'startTrip': 'Departure Update', 'endTrip': 'Arrival Update', 'submitCorrection': 'Correct Trip Data' }; document.getElementById('modal-trip-title').innerText = titleMap[act]; document.getElementById('lbl-km').innerText = act === 'startTrip' ? 'Start KM' : 'End KM'; const startVal = parseInt(startKmVal) || 0; document.getElementById('modal-start-km-val').value = startVal; document.getElementById('disp-start-km').innerText = startVal; document.getElementById('input-km').value = ''; document.getElementById('input-route-update').value = ''; document.getElementById('disp-total-km').innerText = '0'; document.getElementById('input-photo').value = ''; togglePhotoSource('file'); if (act === 'endTrip' || act === 'submitCorrection') { document.getElementById('div-route-update').classList.remove('hidden'); document.getElementById('input-route-update').required = true; document.getElementById('div-calc-distance').classList.remove('hidden'); } else { document.getElementById('div-route-update').classList.add('hidden'); document.getElementById('input-route-update').required = false; document.getElementById('div-calc-distance').classList.add('hidden'); } openModal('modal-trip'); }
+    function compressImage(base64Str, maxWidth = 800, quality = 0.5) { return new Promise((resolve) => { const img = new Image(); img.src = base64Str; img.onload = () => { const canvas = document.createElement('canvas'); let width = img.width; let height = img.height; if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', quality)); }; }); }
+    async function submitTripUpdate() { try { const id = document.getElementById('trip-id').value; const act = document.getElementById('trip-action').value; const km = document.getElementById('input-km').value; const routeVal = document.getElementById('input-route-update').value; const btn = document.getElementById('btn-trip-submit'); if(!km) return showAlert("Error", "KM Required"); btn.disabled = true; btn.innerText = "Processing Image..."; let base64Data = null; if (activePhotoSource === 'camera') { if (!capturedImageBase64) { btn.disabled=false; btn.innerText="Save Update"; return showAlert("Error", "Please capture a photo."); } base64Data = capturedImageBase64; } else { const fileInput = document.getElementById('input-photo'); if (fileInput.files.length === 0) { btn.disabled=false; btn.innerText="Save Update"; return showAlert("Error", "Please upload a photo."); } const file = fileInput.files[0]; base64Data = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (e) => resolve(e.target.result); reader.onerror = reject; reader.readAsDataURL(file); }); } const compressedBase64 = await compressImage(base64Data); const cleanBase64 = compressedBase64.split(',')[1]; sendTripData(id, act, km, cleanBase64, routeVal); } catch (err) { console.error(err); showAlert("Error", "Image processing failed."); document.getElementById('btn-trip-submit').disabled = false; document.getElementById('btn-trip-submit').innerText = "Save Update"; } }
+    function sendTripData(id, act, km, photoBase64, route) { const btn = document.getElementById('btn-trip-submit'); btn.innerText = "Sending Data..."; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: { km: km, photoBase64: photoBase64, route: route } }) }).then(r => { if (!r.ok) throw new Error("Server Error: " + r.statusText); return r.text(); }).then(text => { try { const res = JSON.parse(text); btn.disabled = false; btn.innerText = "Save Update"; if(res.success) { closeModal('modal-trip'); loadData(); } else { showAlert("Error", res.message); } } catch (e) { console.error("Server Response Invalid:", text); throw new Error("Server Response Invalid (Check Console)"); } }).catch(err => { btn.disabled = false; btn.innerText = "Save Update"; console.error(err); showAlert("Error", "Connection Failed: " + err.message); }); }
     function calcTotalDistance() { const start = parseInt(document.getElementById('modal-start-km-val').value) || 0; const end = parseInt(document.getElementById('input-km').value) || 0; const total = end - start; const disp = document.getElementById('disp-total-km'); if (total < 0) { disp.innerText = "Check ODO"; disp.className = "text-red-600 font-bold"; } else { disp.innerText = total; disp.className = ""; } }
     function togglePhotoSource(source) { activePhotoSource = source; const btnFile = document.getElementById('btn-src-file'); const btnCam = document.getElementById('btn-src-cam'); const contFile = document.getElementById('source-file-container'); const contCam = document.getElementById('source-camera-container'); if(source === 'camera') { btnCam.classList.replace('bg-slate-100','bg-blue-600'); btnCam.classList.replace('text-slate-600','text-white'); btnFile.classList.replace('bg-blue-600','bg-slate-100'); btnFile.classList.replace('text-white','text-slate-600'); contFile.classList.add('hidden'); contCam.classList.remove('hidden'); startCamera(); } else { btnFile.classList.replace('bg-slate-100','bg-blue-600'); btnFile.classList.replace('text-slate-600','text-white'); btnCam.classList.replace('bg-blue-600','bg-slate-100'); btnCam.classList.replace('text-white','text-slate-600'); contCam.classList.add('hidden'); contFile.classList.remove('hidden'); stopCamera(); } }
     async function startCamera() { const video = document.getElementById('camera-stream'); const status = document.getElementById('cam-status'); document.getElementById('camera-preview').classList.add('hidden'); video.classList.remove('hidden'); document.getElementById('btn-capture').classList.remove('hidden'); document.getElementById('btn-retake').classList.add('hidden'); capturedImageBase64 = null; try { videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); video.srcObject = videoStream; status.innerText = "Camera Active"; status.classList.remove('hidden'); } catch (err) { showAlert("Camera Error", "Cannot access camera. Please use File Upload."); togglePhotoSource('file'); } }

@@ -1,24 +1,39 @@
 <?php
-require 'db.php'; require 'helper.php';
+require 'db.php'; 
+require 'helper.php';
 
-// --- SYNC WAKTU WIB (REALTIME) ---
-// Set timezone PHP ke Asia/Jakarta
 date_default_timezone_set('Asia/Jakarta'); 
-// Set timezone sesi MySQL ke +07:00 (WIB) agar 'created_at' database sinkron
 $conn->query("SET time_zone = '+07:00'");
-// ---------------------------------
 
 $input = json_decode(file_get_contents('php://input'), true);
 $action = $input['action'] ?? '';
 
-// 1. GET DATA
-if($action == 'getData') {
-    $res = $conn->query("SELECT * FROM mgp_transactions ORDER BY id DESC LIMIT 50");
+// 1. GET DATA (NORMAL & EXPORT)
+if($action == 'getData' || $action == 'exportData') {
+    $sql = "SELECT * FROM mgp_transactions WHERE 1=1";
+    
+    // Filter Date Export
+    if ($action == 'exportData') {
+        if (!empty($input['startDate']) && !empty($input['endDate'])) {
+            $start = $input['startDate'];
+            $end = $input['endDate'];
+            $sql .= " AND created_at BETWEEN '$start 00:00:00' AND '$end 23:59:59'";
+        }
+        $sql .= " ORDER BY created_at ASC";
+    } else {
+        $sql .= " ORDER BY id DESC LIMIT 50";
+    }
+
+    $res = $conn->query($sql);
     $data = [];
     while($row = $res->fetch_assoc()) {
         $include = false;
-        if(in_array($input['role'], ['Administrator','Management','Chief Security','Security'])) $include = true;
+        if(in_array($input['role'], ['Administrator','Management','Chief Security','Security', 'HRGA'])) $include = true;
         elseif($row['username'] == $input['username']) $include = true;
+        
+        // Admin Override for Export
+        if($action == 'exportData' && in_array($input['role'], ['Administrator', 'HRGA'])) $include = true;
+
         if($include) {
             $row['timestamp'] = $row['created_at']; $row['id'] = $row['req_id'];
             $row['itemName'] = $row['item_name'];
@@ -35,18 +50,9 @@ if($action == 'submit') {
     $sql = "INSERT INTO mgp_transactions (req_id, username, department, item_name, qty, unit, owner, destination, remarks, status, app_mgmt, app_chief, is_returnable) VALUES ('$reqId', '{$input['username']}', '{$input['department']}', '{$input['itemName']}', '{$input['qty']}', '{$input['unit']}', '{$input['owner']}', '{$input['destination']}', '{$input['remarks']}', 'Pending Management', 'Pending', 'Pending', '{$input['isReturnable']}')";
     
     if($conn->query($sql)) {
-        // Notif ke Management
         $phones = getPhones($conn, 'Management');
-        $msg = "📦 *MGP - NEW REQUEST*\n" .
-               "--------------------------------\n" .
-               "Izin Keluar Barang:\n\n" .
-               "👤 *User:* {$input['username']}\n" .
-               "📦 *Barang:* {$input['itemName']} ({$input['qty']} {$input['unit']})\n" .
-               "🎯 *Tujuan:* {$input['destination']}\n" .
-               "📝 *Ket:* {$input['remarks']}\n\n" .
-               "👉 _Mohon Approval Management._";
+        $msg = "📦 *MGP - NEW REQUEST*\nUser: {$input['username']}\nItem: {$input['itemName']}\nDest: {$input['destination']}\n👉 Approve di Portal.";
         foreach($phones as $ph) sendWA($ph, $msg);
-        
         sendJson(['success'=>true]);
     } else {
         sendJson(['success'=>false]);
@@ -63,17 +69,12 @@ if($action == 'updateStatus') {
 
     if($act == 'approve_mgmt') {
         $conn->query("UPDATE mgp_transactions SET status='Pending Chief', app_mgmt='Approved by {$u['fullname']}' WHERE req_id='$id'");
-        // Notif ke Chief Security
         $phones = getPhones($conn, 'Chief Security');
-        foreach($phones as $ph) sendWA($ph, "🛡️ *MGP - VALIDASI*\nMgmt Approved.\nUser: {$reqData['username']}\nBarang: {$reqData['item_name']}\n\nMohon validasi Chief.");
+        foreach($phones as $ph) sendWA($ph, "🛡️ *MGP - VALIDASI*\nMgmt Approved.\nItem: {$reqData['item_name']}\nMohon validasi Chief.");
     }
     if($act == 'approve_chief') {
         $conn->query("UPDATE mgp_transactions SET status='Approved', app_chief='Approved by {$u['fullname']}' WHERE req_id='$id'");
-        
-        // Notif ke User
-        if($userPhone) sendWA($userPhone, "✅ *MGP - APPROVED*\nIzin barang disetujui (Final).\nBarang: {$reqData['item_name']}\n\n👮 _Tunjukkan ke Security._");
-        
-        // Notif ke Security
+        if($userPhone) sendWA($userPhone, "✅ *MGP - APPROVED*\nItem: {$reqData['item_name']}\nTunjukkan ke Security.");
         $phones = getPhones($conn, 'Security');
         foreach($phones as $ph) sendWA($ph, "👮 *MGP INFO*\nBarang Approved akan keluar.\nItem: {$reqData['item_name']}");
     }
@@ -89,7 +90,7 @@ if($action == 'updateStatus') {
     if($act == 'security_in') {
         $url = saveBase64Image($extra['photo'], "IN_$id", "mgp");
         $conn->query("UPDATE mgp_transactions SET status='Returned', sec_in=NOW(), photo_in='$url' WHERE req_id='$id'");
-        if($userPhone) sendWA($userPhone, "📥 *MGP - RETURNED*\nBarang telah kembali/masuk.");
+        if($userPhone) sendWA($userPhone, "📥 *MGP - RETURNED*\nBarang telah kembali.");
     }
     sendJson(['success'=>true]);
 }

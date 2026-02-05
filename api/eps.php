@@ -1,28 +1,45 @@
 <?php
-require 'db.php'; require 'helper.php';
+require 'db.php'; 
+require 'helper.php';
 
-// --- SYNC WAKTU WIB (REALTIME) ---
-// Set timezone PHP ke Asia/Jakarta
 date_default_timezone_set('Asia/Jakarta'); 
-// Set timezone sesi MySQL ke +07:00 (WIB) agar 'created_at' database sinkron
 $conn->query("SET time_zone = '+07:00'");
-// ---------------------------------
 
 $input = json_decode(file_get_contents('php://input'), true);
 $action = $input['action'] ?? '';
 
-// 1. GET DATA
-if ($action == 'getData') {
-    $role = $input['role']; $username = $input['username']; $dept = $input['department'];
-    $sql = "SELECT * FROM eps_permits ORDER BY id DESC LIMIT 50";
+// 1. GET DATA (VIEW & EXPORT)
+if ($action == 'getData' || $action == 'exportData') {
+    $role = $input['role']; 
+    $username = $input['username']; 
+    $dept = $input['department'];
+    
+    $sql = "SELECT * FROM eps_permits WHERE 1=1";
+    
+    // Filter Date Export
+    if ($action == 'exportData') {
+        if (!empty($input['startDate']) && !empty($input['endDate'])) {
+            $start = $input['startDate'];
+            $end = $input['endDate'];
+            $sql .= " AND date_permit BETWEEN '$start' AND '$end'";
+        }
+        $sql .= " ORDER BY date_permit ASC, created_at ASC";
+    } else {
+        $sql .= " ORDER BY id DESC LIMIT 50";
+    }
+
     $res = $conn->query($sql);
     $data = [];
     while ($row = $res->fetch_assoc()) {
         $include = false;
+        // Logic Visibility View
         if (in_array($role, ['Administrator', 'Security', 'Plant Head'])) $include = true;
         elseif ($role == 'HRGA' && $dept == 'HRGA') $include = true;
         elseif ($role == 'SectionHead' && $row['department'] == $dept) $include = true;
         elseif ($row['username'] == $username) $include = true;
+        
+        // Export Override: Admin/HRGA can export all data filtered by query
+        if ($action == 'exportData' && in_array($role, ['Administrator', 'HRGA'])) $include = true;
 
         if ($include) {
             $row['timestamp'] = $row['created_at']; $row['id'] = $row['req_id'];
@@ -43,18 +60,8 @@ if ($action == 'submit') {
             VALUES ('$reqId', '{$input['username']}', '{$input['fullname']}', '{$input['nik']}', '{$input['department']}', '{$input['purpose']}', '{$input['typePermit']}', '{$input['datePermit']}', '{$input['timeOut']}', '{$input['timeIn']}', 'Pending Head', '{$input['returnStatus']}')";
     
     if($conn->query($sql)) {
-        // Notif ke Section Head
         $phones = getPhones($conn, 'SectionHead', $input['department']);
-        $msg = "📄 *EPS - APPROVAL REQUEST*\n" .
-               "--------------------------------\n" .
-               "Mohon persetujuan izin keluar:\n\n" .
-               "👤 *Nama:* {$input['fullname']}\n" .
-               "📂 *Dept:* {$input['department']}\n" .
-               "📝 *Tujuan:* {$input['purpose']}\n" .
-               "📅 *Waktu:* {$input['datePermit']} ({$input['timeOut']} - {$input['timeIn']})\n" .
-               "📌 *Tipe:* {$input['typePermit']}\n\n" .
-               "👉 _Login ke Portal untuk Approve._";
-        
+        $msg = "📄 *EPS - NEW REQUEST*\nUser: {$input['fullname']}\nDept: {$input['department']}\nTujuan: {$input['purpose']}\nWaktu: {$input['datePermit']} ({$input['timeOut']} - {$input['timeIn']})\n👉 Login untuk Approve.";
         foreach($phones as $ph) sendWA($ph, $msg);
         sendJson(['success' => true]);
     } else {
@@ -73,61 +80,24 @@ if ($action == 'updateStatus') {
     if ($act == 'approve') {
         if ($role == 'SectionHead') {
             $conn->query("UPDATE eps_permits SET status = 'Pending HRGA', app_head = 'Approved by $fullname' WHERE req_id = '$id'");
-            
-            // Notif ke HRGA
             $phones = getPhones($conn, 'HRGA');
-            $msg = "⏳ *EPS - VERIFIKASI HRGA*\n" .
-                   "--------------------------------\n" .
-                   "Approved by Head ($fullname).\n" .
-                   "Mohon verifikasi lanjutan.\n\n" .
-                   "👤 *User:* {$reqData['fullname']}\n" .
-                   "📝 *Tujuan:* {$reqData['purpose']}";
-            foreach($phones as $ph) sendWA($ph, $msg);
-
+            foreach($phones as $ph) sendWA($ph, "⏳ *EPS - APPROVAL (HRGA)*\nUser: {$reqData['fullname']}\nHead Approved.\nMohon verifikasi.");
         } elseif ($role == 'HRGA') {
             $conn->query("UPDATE eps_permits SET status = 'Approved', app_hrga = 'Approved by $fullname' WHERE req_id = '$id'");
-            
-            // Notif ke User
-            if($requesterPhone) {
-                $msg = "✅ *EPS - DISETUJUI*\n" .
-                       "--------------------------------\n" .
-                       "Izin keluar Anda telah disetujui (Final).\n" .
-                       "🆔 *ID:* $id\n\n" .
-                       "👮 _Tunjukkan pesan ini ke Security saat keluar._";
-                sendWA($requesterPhone, $msg);
-            }
+            if($requesterPhone) sendWA($requesterPhone, "✅ *EPS - DISETUJUI*\nSilakan tunjukkan ke Security saat keluar.");
         }
     } 
     elseif ($act == 'reject') {
         $conn->query("UPDATE eps_permits SET status = 'Rejected' WHERE req_id = '$id'");
-        if($requesterPhone) {
-            $msg = "❌ *EPS - DITOLAK*\n" .
-                   "--------------------------------\n" .
-                   "Izin keluar Anda ditolak oleh $fullname.\n" .
-                   "💬 *Catatan:* " . ($extra['note'] ?? '-');
-            sendWA($requesterPhone, $msg);
-        }
+        if($requesterPhone) sendWA($requesterPhone, "❌ *EPS - DITOLAK*\nOleh: $fullname");
     } 
     elseif ($act == 'security_out') {
         $conn->query("UPDATE eps_permits SET status = 'On Leave', actual_out = NOW(), sec_out_name = '$fullname' WHERE req_id = '$id'");
-        if($requesterPhone) {
-            $msg = "👋 *EPS - GATE OUT*\n" .
-                   "--------------------------------\n" .
-                   "Anda tercatat keluar area perusahaan.\n" .
-                   "🕒 *Waktu:* " . date('H:i') . "\n" .
-                   "👮 *Security:* $fullname";
-            sendWA($requesterPhone, $msg);
-        }
+        if($requesterPhone) sendWA($requesterPhone, "👋 *EPS - GATE OUT*\nAnda tercatat keluar.");
     } 
     elseif ($act == 'security_in') {
         $conn->query("UPDATE eps_permits SET status = 'Returned', actual_in = NOW(), sec_in_name = '$fullname' WHERE req_id = '$id'");
-        if($requesterPhone) {
-            $msg = "🏠 *EPS - GATE IN*\n" .
-                   "--------------------------------\n" .
-                   "Anda tercatat kembali ke perusahaan.\n" .
-                   "🕒 *Waktu:* " . date('H:i');
-            sendWA($requesterPhone, $msg);
-        }
+        if($requesterPhone) sendWA($requesterPhone, "🏠 *EPS - GATE IN*\nAnda tercatat kembali.");
     } 
     elseif ($act == 'cancel') {
         $conn->query("UPDATE eps_permits SET status = 'Canceled' WHERE req_id = '$id'");
