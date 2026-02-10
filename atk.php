@@ -15,16 +15,17 @@
     .hidden-important { display: none !important; }
     .loader-spin { border: 3px solid #e2e8f0; border-top: 3px solid #d97706; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .status-badge { padding: 4px 10px; border-radius: 9999px; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; border: 1px solid transparent; }
+    .status-badge { padding: 4px 10px; border-radius: 9999px; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; border: 1px solid transparent; display: inline-block; }
     .animate-slide-up { animation: slideUp 0.3s ease-out; }
     @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .btn-action { transition: all 0.2s; }
-    .btn-action:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
     .tab-active { border-bottom: 2px solid #d97706; color: #d97706; font-weight: 700; }
     .tab-inactive { color: #64748b; font-weight: 500; }
     .dropdown-scroll::-webkit-scrollbar { width: 5px; }
     .dropdown-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
     .dropdown-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    th, td { vertical-align: top; }
+    .cursor-sort { cursor: pointer; user-select: none; }
+    .cursor-sort:hover { color: #d97706; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
@@ -39,43 +40,49 @@
              <button onclick="toggleLanguage()" class="bg-yellow-900/40 w-8 h-8 rounded-full hover:bg-yellow-900 text-[10px] font-bold border border-yellow-400/50 transition flex items-center justify-center text-yellow-100 hover:text-white"><span id="lang-label">EN</span></button>
              <div class="text-right text-xs hidden sm:block"><div id="nav-user-name" class="font-bold">User</div><div id="nav-user-dept" class="text-yellow-100">Dept</div></div>
              <div class="h-8 w-px bg-yellow-400/50 mx-1 hidden sm:block"></div>
-             <button onclick="goBackToPortal()" class="bg-red-900/40 p-2.5 rounded-full hover:bg-red-900 text-xs border border-red-400/50 transition flex items-center justify-center text-red-100 hover:text-white btn-action" title="Home"><i class="fas fa-home text-sm"></i></button>
+             <button onclick="goBackToPortal()" class="bg-red-900/40 p-2.5 rounded-full hover:bg-red-900 text-xs border border-red-400/50 transition flex items-center justify-center text-red-100 hover:text-white" title="Home"><i class="fas fa-home text-sm"></i></button>
          </div>
        </div>
     </nav>
 
     <main class="flex-grow container mx-auto px-4 py-6 overflow-y-auto scroller pb-20 sm:pb-6" onclick="closeAllDropdowns(event)">
-      
       <div class="flex border-b border-slate-200 mb-6">
-          <button onclick="switchTab('request')" id="tab-request" class="px-6 py-3 text-sm tab-active transition-colors"><i class="fas fa-list-alt mr-2"></i> Requests History</button>
-          <button onclick="switchTab('inventory')" id="tab-inventory" class="px-6 py-3 text-sm tab-inactive transition-colors"><i class="fas fa-boxes mr-2"></i> Dept Inventory</button>
+          <button onclick="switchTab('request')" id="tab-request" class="px-6 py-3 text-sm tab-active transition-colors"><i class="fas fa-list-alt mr-2"></i> <span data-i18n="tab_req">Requests History</span></button>
+          <button onclick="switchTab('inventory')" id="tab-inventory" class="px-6 py-3 text-sm tab-inactive transition-colors"><i class="fas fa-boxes mr-2"></i> <span data-i18n="tab_inv">Dept Inventory</span></button>
       </div>
 
       <div id="view-request" class="animate-fade-in space-y-6">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-           <div onclick="filterTable('All')" class="cursor-pointer bg-white p-4 rounded-xl shadow-sm border border-slate-200 stats-card hover:shadow-md transition active:scale-95"><div class="text-slate-500 text-xs font-bold uppercase mb-1">Total</div><div class="text-2xl font-bold text-slate-800" id="stat-total">0</div></div>
-           <div onclick="filterTable('Pending')" class="cursor-pointer bg-white p-4 rounded-xl shadow-sm border border-slate-200 stats-card hover:shadow-md transition active:scale-95"><div class="text-slate-500 text-xs font-bold uppercase mb-1">Pending</div><div class="text-2xl font-bold text-yellow-600" id="stat-pending">0</div></div>
-           <div onclick="filterTable('Approved')" class="cursor-pointer bg-white p-4 rounded-xl shadow-sm border border-slate-200 stats-card hover:shadow-md transition active:scale-95"><div class="text-slate-500 text-xs font-bold uppercase mb-1">Approved</div><div class="text-2xl font-bold text-green-600" id="stat-approved">0</div></div>
-           <div onclick="filterTable('Completed')" class="cursor-pointer bg-white p-4 rounded-xl shadow-sm border border-slate-200 stats-card hover:shadow-md transition active:scale-95"><div class="text-slate-500 text-xs font-bold uppercase mb-1">Completed</div><div class="text-2xl font-bold text-blue-600" id="stat-completed">0</div></div>
+           <div onclick="filterTable('All')" class="cursor-pointer bg-white p-4 rounded-xl shadow-sm border border-slate-200 stats-card hover:shadow-md transition active:scale-95"><div class="text-slate-500 text-xs font-bold uppercase mb-1" data-i18n="stat_total">Total</div><div class="text-2xl font-bold text-slate-800" id="stat-total">0</div></div>
+           <div onclick="filterTable('Pending')" class="cursor-pointer bg-white p-4 rounded-xl shadow-sm border border-slate-200 stats-card hover:shadow-md transition active:scale-95"><div class="text-slate-500 text-xs font-bold uppercase mb-1" data-i18n="stat_pending">Pending</div><div class="text-2xl font-bold text-yellow-600" id="stat-pending">0</div></div>
+           <div onclick="filterTable('Approved')" class="cursor-pointer bg-white p-4 rounded-xl shadow-sm border border-slate-200 stats-card hover:shadow-md transition active:scale-95"><div class="text-slate-500 text-xs font-bold uppercase mb-1" data-i18n="stat_approved">Approved</div><div class="text-2xl font-bold text-green-600" id="stat-approved">0</div></div>
+           <div onclick="filterTable('Completed')" class="cursor-pointer bg-white p-4 rounded-xl shadow-sm border border-slate-200 stats-card hover:shadow-md transition active:scale-95"><div class="text-slate-500 text-xs font-bold uppercase mb-1" data-i18n="stat_completed">Completed</div><div class="text-2xl font-bold text-blue-600" id="stat-completed">0</div></div>
         </div>
 
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-           <div><h2 class="text-xl font-bold text-slate-700">Request History</h2><p class="text-xs text-slate-500">Showing: <span id="current-filter-label" class="font-bold text-amber-600">All Data</span></p></div>
+           <div><h2 class="text-xl font-bold text-slate-700" data-i18n="hist_title">Request History</h2><p class="text-xs text-slate-500"><span data-i18n="showing">Showing:</span> <span id="current-filter-label" class="font-bold text-amber-600">All Data</span></p></div>
            <div class="flex gap-2 w-full sm:w-auto">
              <div id="export-controls" class="hidden flex gap-2">
-                 <button onclick="openExportModal()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-700 btn-action"><i class="fas fa-file-export"></i> Export</button>
+                 <button onclick="openExportModal()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-700"><i class="fas fa-file-export"></i> <span data-i18n="btn_export">Export</span></button>
              </div>
-             <button onclick="loadData()" class="bg-white border border-gray-300 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 btn-action"><i class="fas fa-sync-alt"></i></button>
-             <button id="btn-create" onclick="openCreateModal()" class="flex-1 sm:flex-none bg-amber-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-amber-700 transition items-center justify-center gap-2 btn-action"><i class="fas fa-plus"></i> New Request</button>
+             <button onclick="loadData()" class="bg-white border border-gray-300 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50"><i class="fas fa-sync-alt"></i></button>
+             <button id="btn-create" onclick="openCreateModal()" class="flex-1 sm:flex-none bg-amber-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-amber-700 transition items-center justify-center gap-2"><i class="fas fa-plus"></i> <span data-i18n="btn_new">New Request</span></button>
            </div>
         </div>
 
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
            <div id="data-card-container" class="md:hidden bg-slate-50 p-3 space-y-4"></div>
            <div class="hidden md:block overflow-x-auto">
-             <table class="w-full text-left text-sm whitespace-nowrap">
+             <table class="w-full text-left text-sm">
                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs font-bold">
-                 <tr><th class="px-6 py-4">ID / Period</th><th class="px-6 py-4">Requester</th><th class="px-6 py-4">Items Details</th><th class="px-6 py-4 text-center">Status</th><th class="px-6 py-4 text-right">Action</th></tr>
+                 <tr>
+                    <th class="px-4 py-4 w-[140px] min-w-[140px]" data-i18n="th_id">ID / Date</th>
+                    <th class="px-4 py-4 w-[180px] min-w-[180px]" data-i18n="th_req">Requester</th>
+                    <th class="px-4 py-4 min-w-[250px]" data-i18n="th_items">Items Details</th>
+                    <th class="px-4 py-4 w-[240px] min-w-[240px]" data-i18n="th_app">Approval Status</th>
+                    <th class="px-4 py-4 text-center w-[150px] min-w-[150px]" data-i18n="th_stat">Status</th>
+                    <th class="px-4 py-4 text-right w-[130px] min-w-[130px]" data-i18n="th_act">Action</th>
+                 </tr>
                </thead>
                <tbody id="data-table-body" class="divide-y divide-slate-100"></tbody>
              </table>
@@ -85,19 +92,36 @@
 
       <div id="view-inventory" class="hidden animate-fade-in space-y-6">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div><h2 class="text-xl font-bold text-slate-700">Inventory Stock</h2><p class="text-xs text-slate-500">Monitoring stock levels.</p></div>
-            <div class="flex gap-2 w-full sm:w-auto items-center">
+            <div><h2 class="text-xl font-bold text-slate-700" data-i18n="inv_title">Inventory Stock</h2><p class="text-xs text-slate-500" data-i18n="inv_desc">Monitoring stock levels.</p></div>
+            <div class="flex flex-wrap gap-2 w-full sm:w-auto items-center">
+                <div class="relative w-full sm:w-48">
+                    <input type="text" id="search-inv" placeholder="Search item..." class="w-full border border-slate-300 rounded-lg py-2 px-3 pl-8 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                </div>
+                
+                <button id="btn-import-master" onclick="openImportModal()" class="hidden bg-emerald-600 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-700 transition items-center gap-2"><i class="fas fa-file-import"></i> <span data-i18n="btn_import">Import Master</span></button>
                 <div id="hrga-inv-control" class="hidden w-full sm:w-auto">
                     <select id="inv-dept-select" onchange="loadInventoryStock()" class="w-full bg-white border border-slate-300 text-slate-700 py-2 px-3 rounded-lg text-sm font-bold shadow-sm focus:ring-2 focus:ring-amber-500 outline-none"><option value="All">All Departments</option></select>
                 </div>
-                <button onclick="loadInventoryStock()" class="bg-white border border-gray-300 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 btn-action whitespace-nowrap"><i class="fas fa-sync-alt"></i> Refresh</button>
+
+                <button id="btn-bulk-edit" onclick="toggleBulkEdit()" class="hidden bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition items-center gap-2"><i class="fas fa-pencil-alt"></i> Bulk Edit</button>
+                <button id="btn-bulk-save" onclick="saveBulkStock()" class="hidden bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-green-700 transition items-center gap-2"><i class="fas fa-save"></i> Save All</button>
+
+                <button onclick="loadInventoryStock()" class="bg-white border border-gray-300 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 whitespace-nowrap"><i class="fas fa-sync-alt"></i></button>
             </div>
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs font-bold">
-                        <tr><th class="px-6 py-4 w-10">#</th><th class="px-6 py-4 hidden" id="th-dept">Department</th><th class="px-6 py-4">Item Name</th><th class="px-6 py-4 text-center">Current Qty</th><th class="px-6 py-4">Last Updated</th></tr>
+                        <tr>
+                            <th class="px-6 py-4 w-10">#</th>
+                            <th class="px-6 py-4 hidden" id="th-dept" data-i18n="th_dept">Department</th>
+                            <th class="px-6 py-4 cursor-sort hover:bg-slate-100" onclick="sortInventory('item_name')"><span data-i18n="th_item_name">Item Name</span> <i class="fas fa-sort ml-1 text-slate-400"></i></th>
+                            <th class="px-6 py-4 text-center cursor-sort hover:bg-slate-100" onclick="sortInventory('qty')"><span data-i18n="th_qty">Current Qty</span> <i class="fas fa-sort ml-1 text-slate-400"></i></th>
+                            <th class="px-6 py-4" data-i18n="th_updated">Last Updated</th>
+                            <th class="px-6 py-4 text-center w-20 hidden" id="th-inv-action">Action</th>
+                        </tr>
                     </thead>
                     <tbody id="inventory-table-body" class="divide-y divide-slate-100"></tbody>
                 </table>
@@ -110,13 +134,14 @@
   <div id="modal-create" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
     <div class="bg-white rounded-xl w-full max-w-4xl shadow-2xl overflow-hidden animate-slide-up max-h-[90vh] flex flex-col">
         <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center flex-none">
-            <h3 class="font-bold text-slate-700">ATK Request Form</h3>
+            <h3 class="font-bold text-slate-700" id="modal-create-title" data-i18n="modal_req_title">ATK Request Form</h3>
             <button onclick="closeModal('modal-create')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
         </div>
         <div class="p-6 overflow-y-auto flex-1">
             <form id="form-create-atk" onsubmit="event.preventDefault(); submitRequest();">
+                <input type="hidden" id="edit-req-id">
                 <div class="mb-4">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Submission Period (Month)</label>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1" data-i18n="lbl_period">Submission Period</label>
                     <select id="req-period" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-amber-500 bg-white" required>
                         <option value="">-- Select Month --</option>
                         <option value="JANUARY">JANUARY</option><option value="FEBRUARY">FEBRUARY</option><option value="MARCH">MARCH</option>
@@ -126,259 +151,233 @@
                     </select>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Item List</label>
-                    <div class="text-[10px] text-amber-600 mb-2 italic bg-amber-50 p-2 rounded border border-amber-100 flex items-start gap-2">
-                        <i class="fas fa-info-circle mt-0.5"></i> 
-                        <div>
-                            <b>Note:</b> "Last Stock" is automatically loaded from your Dept Inventory. <br>
-                            Input "Last Usage" to report consumption (This will deduct your Dept Inventory).
-                        </div>
-                    </div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2" data-i18n="lbl_list">Item List</label>
+                    <div class="text-[10px] text-amber-600 mb-2 italic bg-amber-50 p-2 rounded border border-amber-100 flex items-start gap-2"><i class="fas fa-info-circle mt-0.5"></i> <div data-i18n="note_stock"><b>Note:</b> "Last Stock" is from Inventory. "Last Usage" deducts Inventory.</div></div>
                     <div class="grid grid-cols-12 gap-2 mb-1 px-1">
-                        <div class="col-span-4 text-[10px] font-bold text-slate-400 uppercase">Item Name</div>
-                        <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase text-center">Last Stock</div>
-                        <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase text-center">Last Usage</div>
-                        <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase text-center">Request Qty</div>
-                        <div class="col-span-1 text-[10px] font-bold text-slate-400 uppercase">Unit</div>
+                        <div class="col-span-4 text-[10px] font-bold text-slate-400 uppercase" data-i18n="th_item_name">Item</div>
+                        <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase text-center" data-i18n="th_last_stock">Last Stock</div>
+                        <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase text-center" data-i18n="th_usage">Usage</div>
+                        <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase text-center" data-i18n="th_req_qty">Request</div>
+                        <div class="col-span-1 text-[10px] font-bold text-slate-400 uppercase" data-i18n="th_unit">Unit</div>
                         <div class="col-span-1"></div>
                     </div>
                     <div id="items-container" class="space-y-2"></div>
-                    <button type="button" onclick="addItemRow()" class="mt-4 text-sm bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-3 px-3 rounded-lg flex items-center gap-2 border border-blue-200 w-full justify-center border-dashed transition"><i class="fas fa-plus-circle"></i> Add Item Row</button>
+                    <button type="button" onclick="addItemRow()" class="mt-4 text-sm bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-3 px-3 rounded-lg flex items-center gap-2 border border-blue-200 w-full justify-center border-dashed transition"><i class="fas fa-plus-circle"></i> <span data-i18n="btn_add_row">Add Item Row</span></button>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Reason</label>
-                    <textarea id="req-reason" rows="2" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-amber-500" required placeholder="Explain why you need these items..."></textarea>
-                </div>
+                <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1" data-i18n="lbl_reason">Reason</label><textarea id="req-reason" rows="2" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-amber-500" required placeholder="Explain why you need these items..."></textarea></div>
             </form>
         </div>
         <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 flex-none">
-            <button onclick="closeModal('modal-create')" class="text-slate-500 font-bold text-sm px-4 py-2 hover:bg-slate-200 rounded">Cancel</button>
-            <button onclick="submitRequest()" id="btn-submit-req" class="bg-amber-600 text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-amber-700 btn-action transition">Submit Request</button>
+            <button onclick="closeModal('modal-create')" class="text-slate-500 font-bold text-sm px-4 py-2 hover:bg-slate-200 rounded" data-i18n="btn_cancel">Cancel</button>
+            <button onclick="submitRequest()" id="btn-submit-req" class="bg-amber-600 text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-amber-700 transition" data-i18n="btn_submit_req">Submit Request</button>
         </div>
     </div>
   </div>
 
-  <div id="modal-confirm" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden"><div class="p-6 text-center"><h3 class="text-lg font-bold text-slate-700 mb-2" id="conf-title">Confirm</h3><p class="text-sm text-slate-500 mb-6" id="conf-msg">Are you sure?</p><div class="flex gap-3"><button onclick="closeModal('modal-confirm')" class="flex-1 py-2.5 border border-slate-300 rounded-lg text-slate-600 font-bold text-sm hover:bg-slate-50 transition">Cancel</button><button onclick="execConfirm()" id="btn-conf-yes" class="flex-1 py-2.5 bg-amber-600 text-white rounded-lg font-bold text-sm hover:bg-amber-700 shadow-sm transition">Yes</button></div></div></div></div>
+  <div id="modal-edit-stock" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up">
+        <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700">Update Stock (Admin)</h3>
+            <button onclick="closeModal('modal-edit-stock')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-6">
+            <input type="hidden" id="edit-stock-dept"><input type="hidden" id="edit-stock-item">
+            <div class="mb-3"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Item Name</label><div id="disp-edit-item" class="text-sm font-bold text-slate-700 bg-slate-100 p-2 rounded"></div></div>
+            <div class="mb-4"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Department</label><div id="disp-edit-dept" class="text-sm font-bold text-slate-700 bg-slate-100 p-2 rounded"></div></div>
+            <div class="grid grid-cols-2 gap-3">
+                <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Actual Qty</label><input type="number" id="edit-stock-qty" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-amber-500"></div>
+                <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Unit</label><input type="text" id="edit-stock-unit" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-amber-500"></div>
+            </div>
+        </div>
+        <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+            <button onclick="closeModal('modal-edit-stock')" class="px-4 py-2 text-slate-500 font-bold text-sm hover:bg-slate-200 rounded">Cancel</button>
+            <button onclick="submitStockUpdate()" class="px-6 py-2 bg-blue-600 text-white font-bold text-sm rounded shadow hover:bg-blue-700">Save</button>
+        </div>
+    </div>
+  </div>
+
+  <div id="modal-import" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden animate-slide-up">
+        <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700" data-i18n="modal_import_title">Import Master Items</h3>
+            <button onclick="closeModal('modal-import')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-6">
+            <div class="text-xs text-slate-500 mb-3" data-i18n="import_instr">Copy data from Excel (2 columns: <b>Item Name</b> | <b>Unit</b>) and paste below.</div>
+            <textarea id="import-area" class="w-full border border-slate-300 rounded-lg p-3 text-xs font-mono h-48 focus:ring-2 focus:ring-emerald-500" placeholder="Pencil 2B&#9;Pcs&#10;Ballpoint Black&#9;Box&#10;..."></textarea>
+        </div>
+        <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+            <button onclick="closeModal('modal-import')" class="px-4 py-2 text-slate-500 font-bold text-sm hover:bg-slate-200 rounded" data-i18n="btn_cancel">Cancel</button>
+            <button onclick="submitImport()" id="btn-do-import" class="px-6 py-2 bg-emerald-600 text-white font-bold text-sm rounded shadow hover:bg-emerald-700" data-i18n="btn_process">Process Import</button>
+        </div>
+    </div>
+  </div>
+
+  <div id="modal-confirm-reason" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden"><div class="p-6"><div class="text-center mb-4"><h3 class="text-lg font-bold text-slate-700" id="reason-title">Reason</h3><p class="text-xs text-slate-500" id="reason-desc">Please provide a reason.</p></div><textarea id="reason-input" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500 outline-none" rows="3" placeholder="Type reason here..."></textarea><div class="flex gap-3 mt-4"><button onclick="closeModal('modal-confirm-reason')" class="flex-1 py-2 border border-slate-300 rounded-lg text-slate-600 font-bold text-sm hover:bg-slate-50">Cancel</button><button onclick="execConfirmReason()" id="btn-reason-yes" class="flex-1 py-2 bg-red-600 text-white rounded-lg font-bold text-sm hover:bg-red-700 shadow-sm">Confirm</button></div></div></div></div>
+
+  <div id="modal-confirm" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden"><div class="p-6 text-center"><h3 class="text-lg font-bold text-slate-700 mb-2" id="conf-title">Confirm</h3><p class="text-sm text-slate-500 mb-6" id="conf-msg">Are you sure?</p><div class="flex gap-3"><button onclick="closeModal('modal-confirm')" class="flex-1 py-2.5 border border-slate-300 rounded-lg text-slate-600 font-bold text-sm hover:bg-slate-50 transition" data-i18n="btn_cancel">Cancel</button><button onclick="execConfirm()" id="btn-conf-yes" class="flex-1 py-2.5 bg-amber-600 text-white rounded-lg font-bold text-sm hover:bg-amber-700 shadow-sm transition" data-i18n="btn_yes">Yes</button></div></div></div></div>
   <div id="modal-alert" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden"><div class="p-6 text-center"><h3 class="text-lg font-bold text-slate-700 mb-2" id="alert-title">Info</h3><p class="text-sm text-slate-500 mb-6" id="alert-msg">Message</p><button onclick="closeModal('modal-alert')" class="w-full py-2.5 bg-slate-800 text-white rounded-lg font-bold text-sm">OK</button></div></div></div>
-  <div id="modal-export" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up"><div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center"><h3 class="font-bold text-slate-700">Export Report</h3><button onclick="closeModal('modal-export')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button></div><div class="p-6"><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Start Date</label><input type="date" id="exp-start" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div><div class="mb-6"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">End Date</label><input type="date" id="exp-end" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div><button onclick="doExport('excel', true)" class="w-full mb-3 bg-amber-50 text-amber-700 border border-amber-200 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-amber-100 flex items-center justify-center gap-2">Export All Time</button><div class="grid grid-cols-2 gap-3"><button onclick="doExport('excel', false)" class="bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-700 flex items-center justify-center gap-2">Excel</button><button onclick="doExport('pdf', false)" class="bg-red-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-red-700 flex items-center justify-center gap-2">PDF</button></div><div id="exp-loading" class="hidden text-center mt-3 text-xs text-slate-500">Generating Report...</div></div></div></div>
+  <div id="modal-export" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up"><div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center"><h3 class="font-bold text-slate-700" data-i18n="btn_export">Export Report</h3><button onclick="closeModal('modal-export')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button></div><div class="p-6"><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1" data-i18n="lbl_start">Start Date</label><input type="date" id="exp-start" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div><div class="mb-6"><label class="block text-xs font-bold text-slate-500 uppercase mb-1" data-i18n="lbl_end">End Date</label><input type="date" id="exp-end" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div><button onclick="doExport('excel', true)" class="w-full mb-3 bg-amber-50 text-amber-700 border border-amber-200 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-amber-100 flex items-center justify-center gap-2">Export All Time</button><div class="grid grid-cols-2 gap-3"><button onclick="doExport('excel', false)" class="bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-700 flex items-center justify-center gap-2">Excel</button><button onclick="doExport('pdf', false)" class="bg-red-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-red-700 flex items-center justify-center gap-2">PDF</button></div><div id="exp-loading" class="hidden text-center mt-3 text-xs text-slate-500">Generating Report...</div></div></div></div>
 
   <script>
-    document.addEventListener('keydown', function(event) { if (event.key === "Escape") { const modals = ['modal-create', 'modal-confirm', 'modal-alert', 'modal-export']; modals.forEach(id => closeModal(id)); } });
-    let currentUser = null, itemCount = 0, confirmCallback = null, currentData = [], atkInventory = [];
-    let myDeptStock = []; // Store stock data for modal
+    document.addEventListener('keydown', function(event) { if (event.key === "Escape") { const modals = ['modal-create', 'modal-confirm', 'modal-alert', 'modal-export', 'modal-import', 'modal-edit-stock', 'modal-confirm-reason']; modals.forEach(id => closeModal(id)); } });
+    let currentUser = null, itemCount = 0, confirmCallback = null, confirmReasonCallback = null, currentData = [], atkInventory = [], myDeptStock = [], fullInventoryData = [];
     let currentLang = localStorage.getItem('portal_lang') || 'en';
+    let isBulkEditMode = false;
     const rawUser = localStorage.getItem('portal_user');
     if(!rawUser) { window.location.href = "index.php"; } else { currentUser = JSON.parse(rawUser); }
     
-    // Toggles & Helpers
-    function toggleLanguage() { currentLang = (currentLang === 'en') ? 'id' : 'en'; localStorage.setItem('portal_lang', currentLang); document.getElementById('lang-label').innerText = currentLang.toUpperCase(); }
+    const i18n = { en: { tab_req: "Requests History", tab_inv: "Dept Inventory", stat_total: "Total", stat_pending: "Pending", stat_approved: "Approved", stat_completed: "Completed", hist_title: "Request History", showing: "Showing:", btn_export: "Export", btn_new: "New Request", th_id: "ID / Date", th_req: "Requester", th_items: "Items Details", th_app: "Approval Status", th_stat: "Status", th_act: "Action", inv_title: "Inventory Stock", inv_desc: "Monitoring stock levels.", btn_import: "Import Master Items", th_dept: "Department", th_item_name: "Item Name", th_qty: "Current Qty", th_updated: "Last Updated", modal_req_title: "ATK Request Form", lbl_period: "Submission Period", lbl_list: "Item List", note_stock: "<b>Note:</b> 'Last Stock' is from Inventory. 'Last Usage' deducts Inventory.", th_last_stock: "Last Stock", th_usage: "Usage", th_req_qty: "Request", th_unit: "Unit", btn_add_row: "Add Item Row", lbl_reason: "Reason", btn_cancel: "Cancel", btn_submit_req: "Submit Request", modal_import_title: "Import Master Items", import_instr: "Copy data from Excel (2 columns: <b>Item Name</b> | <b>Unit</b>) and paste below.", btn_process: "Process Import", btn_yes: "Yes", lbl_start: "Start Date", lbl_end: "End Date" }, id: { tab_req: "Riwayat Permintaan", tab_inv: "Stok Departemen", stat_total: "Total", stat_pending: "Menunggu", stat_approved: "Disetujui", stat_completed: "Selesai", hist_title: "Riwayat Permintaan", showing: "Menampilkan:", btn_export: "Ekspor Laporan", btn_new: "Buat Baru", th_id: "ID / Tanggal", th_req: "Pemohon", th_items: "Detail Barang", th_app: "Status Persetujuan", th_stat: "Status", th_act: "Aksi", inv_title: "Stok Inventaris", inv_desc: "Monitoring jumlah stok.", btn_import: "Import Data Master", th_dept: "Departemen", th_item_name: "Nama Barang", th_qty: "Stok Saat Ini", th_updated: "Terakhir Update", modal_req_title: "Formulir Permintaan ATK", lbl_period: "Periode Pengajuan", lbl_list: "Daftar Barang", note_stock: "<b>Catatan:</b> 'Last Stock' dari Inventory. 'Usage' memotong Inventory.", th_last_stock: "Stok Awal", th_usage: "Pemakaian", th_req_qty: "Jml Minta", th_unit: "Satuan", btn_add_row: "Tambah Baris", lbl_reason: "Alasan", btn_cancel: "Batal", btn_submit_req: "Kirim Permintaan", modal_import_title: "Import Barang Master", import_instr: "Copy data dari Excel (2 kolom: <b>Nama Barang</b> | <b>Satuan</b>) dan paste di bawah.", btn_process: "Proses Import", btn_yes: "Ya", lbl_start: "Tanggal Awal", lbl_end: "Tanggal Akhir" } };
+
+    function applyLanguage() { document.getElementById('lang-label').innerText = currentLang.toUpperCase(); document.querySelectorAll('[data-i18n]').forEach(el => { const k = el.getAttribute('data-i18n'); if(i18n[currentLang][k]) el.innerHTML = i18n[currentLang][k]; }); if(currentLang === 'id') { document.getElementById('req-reason').placeholder = "Jelaskan kebutuhan..."; document.getElementById('import-area').placeholder = "Pensil 2B\tPcs\nPulpen Hitam\tBox\n..."; } else { document.getElementById('req-reason').placeholder = "Explain requirement..."; document.getElementById('import-area').placeholder = "Pencil 2B\tPcs\nBallpoint Black\tBox\n..."; } }
+    function toggleLanguage() { currentLang = (currentLang === 'en') ? 'id' : 'en'; localStorage.setItem('portal_lang', currentLang); applyLanguage(); }
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     function goBackToPortal() { window.location.href = "index.php"; }
     function showConfirm(title, message, callback) { document.getElementById('conf-title').innerText = title; document.getElementById('conf-msg').innerText = message; confirmCallback = callback; openModal('modal-confirm'); }
     function execConfirm() { if (confirmCallback) confirmCallback(); closeModal('modal-confirm'); confirmCallback = null; }
+    function showConfirmReason(title, message, callback) { document.getElementById('reason-title').innerText = title; document.getElementById('reason-desc').innerText = message; document.getElementById('reason-input').value = ''; confirmReasonCallback = callback; openModal('modal-confirm-reason'); }
+    function execConfirmReason() { const reason = document.getElementById('reason-input').value; if(!reason.trim()) { showAlert("Error", "Please provide a reason."); return; } if (confirmReasonCallback) confirmReasonCallback(reason); closeModal('modal-confirm-reason'); confirmReasonCallback = null; }
     function showAlert(title, message) { document.getElementById('alert-title').innerText = title; document.getElementById('alert-msg').innerText = message; openModal('modal-alert'); }
 
     window.onload = function() {
+        applyLanguage();
         document.getElementById('nav-user-name').innerText = currentUser.fullname;
         document.getElementById('nav-user-dept').innerText = currentUser.department;
-        document.getElementById('lang-label').innerText = currentLang.toUpperCase();
-        
         if(['SectionHead', 'PlantHead'].includes(currentUser.role)) { document.getElementById('btn-create').classList.add('hidden-important'); } 
         else { document.getElementById('btn-create').classList.remove('hidden-important'); }
         if(['Administrator', 'HRGA'].includes(currentUser.role)) { document.getElementById('export-controls').classList.remove('hidden'); }
-        
+        if(currentUser.role === 'Administrator') { document.getElementById('btn-import-master').classList.remove('hidden'); document.getElementById('btn-import-master').classList.add('flex'); }
         loadData(); loadInventoryMaster();
+        document.getElementById('search-inv').addEventListener('keyup', (e) => { const term = e.target.value.toLowerCase(); const filtered = fullInventoryData.filter(i => i.item_name.toLowerCase().includes(term)); renderInventoryTable(filtered); });
     };
 
     function switchTab(tab) {
-        if(tab === 'request') {
-            document.getElementById('view-request').classList.remove('hidden'); document.getElementById('view-inventory').classList.add('hidden');
-            document.getElementById('tab-request').className = "px-6 py-3 text-sm tab-active transition-colors"; document.getElementById('tab-inventory').className = "px-6 py-3 text-sm tab-inactive transition-colors";
-        } else {
-            document.getElementById('view-request').classList.add('hidden'); document.getElementById('view-inventory').classList.remove('hidden');
-            document.getElementById('tab-request').className = "px-6 py-3 text-sm tab-inactive transition-colors"; document.getElementById('tab-inventory').className = "px-6 py-3 text-sm tab-active transition-colors";
-            if(['HRGA', 'Administrator'].includes(currentUser.role)) { document.getElementById('hrga-inv-control').classList.remove('hidden'); loadDeptListForHRGA(); } else { document.getElementById('hrga-inv-control').classList.add('hidden'); }
-            loadInventoryStock();
-        }
+        if(tab === 'request') { document.getElementById('view-request').classList.remove('hidden'); document.getElementById('view-inventory').classList.add('hidden'); document.getElementById('tab-request').className = "px-6 py-3 text-sm tab-active transition-colors"; document.getElementById('tab-inventory').className = "px-6 py-3 text-sm tab-inactive transition-colors"; }
+        else { document.getElementById('view-request').classList.add('hidden'); document.getElementById('view-inventory').classList.remove('hidden'); document.getElementById('tab-request').className = "px-6 py-3 text-sm tab-inactive transition-colors"; document.getElementById('tab-inventory').className = "px-6 py-3 text-sm tab-active transition-colors"; 
+        if(['HRGA', 'Administrator', 'PlantHead'].includes(currentUser.role)) { document.getElementById('hrga-inv-control').classList.remove('hidden'); loadDeptListForHRGA(); } else { document.getElementById('hrga-inv-control').classList.add('hidden'); }
+        if(isBulkEditMode) { isBulkEditMode = false; toggleBulkUI(); }
+        loadInventoryStock(); }
     }
 
     function loadInventoryMaster() { fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'inventory' }) }).then(r => r.json()).then(items => { atkInventory = items; }); }
-    
-    // Fetch user's department stock for Modal
-    function fetchMyDeptStock() {
-        return fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'getDeptStock', department: currentUser.department, role: currentUser.role }) })
-        .then(r => r.json()).then(data => { myDeptStock = data; });
+    function fetchMyDeptStock() { return fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'getDeptStock', department: currentUser.department, role: currentUser.role }) }).then(r => r.json()).then(data => { myDeptStock = data; }); }
+    function openImportModal() { document.getElementById('import-area').value = ''; openModal('modal-import'); }
+    function submitImport() {
+        const raw = document.getElementById('import-area').value; if(!raw.trim()) { showAlert("Error", "Empty data"); return; }
+        const rows = raw.split('\n'); let data = []; rows.forEach(r => { const cols = r.split('\t'); if(cols.length >= 2) data.push({name: cols[0].trim(), unit: cols[1].trim()}); });
+        if(data.length === 0) { showAlert("Error", "Invalid format."); return; }
+        const btn = document.getElementById('btn-do-import'); btn.disabled = true; btn.innerText = "Importing...";
+        fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'importMasterItems', role: currentUser.role, data: data }) }).then(r => r.json()).then(res => { closeModal('modal-import'); btn.disabled = false; btn.innerText = i18n[currentLang].btn_process; showAlert(res.success ? "Success" : "Error", res.message); if(res.success) loadInventoryMaster(); });
     }
+    function loadDeptListForHRGA() { const sel = document.getElementById('inv-dept-select'); if(sel.options.length > 1) return; fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'getStockDepts' }) }).then(r => r.json()).then(depts => { depts.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.innerText = d; sel.appendChild(opt); }); }); }
 
-    // --- INVENTORY VIEW LOGIC ---
-    function loadDeptListForHRGA() {
-        const sel = document.getElementById('inv-dept-select');
-        if(sel.options.length > 1) return; 
-        fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'getStockDepts' }) }).then(r => r.json()).then(depts => {
-            depts.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.innerText = d; sel.appendChild(opt); });
-        });
-    }
-
+    // --- INVENTORY LOGIC (BULK EDIT - STRICT ADMIN) ---
     function loadInventoryStock() {
-        const tbody = document.getElementById('inventory-table-body'), thDept = document.getElementById('th-dept');
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-slate-400"><span class="loader-spin mr-2"></span> Fetching stock data...</td></tr>';
+        document.getElementById('inventory-table-body').innerHTML = '<tr><td colspan="6" class="text-center py-10 text-slate-400"><span class="loader-spin mr-2"></span> Fetching stock...</td></tr>';
         let targetDept = currentUser.department;
-        if(['HRGA', 'Administrator'].includes(currentUser.role)) targetDept = document.getElementById('inv-dept-select').value;
-        if(['HRGA', 'Administrator'].includes(currentUser.role) && targetDept === 'All') thDept.classList.remove('hidden'); else thDept.classList.add('hidden');
+        if(['HRGA', 'Administrator', 'PlantHead'].includes(currentUser.role)) targetDept = document.getElementById('inv-dept-select').value;
+        const thDept = document.getElementById('th-dept'); const thAct = document.getElementById('th-inv-action');
+        
+        // VISIBILITY: Only show Dept Column if view is All. Show Action/Bulk only if Admin
+        if(['HRGA', 'Administrator', 'PlantHead'].includes(currentUser.role) && targetDept === 'All') thDept.classList.remove('hidden'); else thDept.classList.add('hidden');
+        if(currentUser.role === 'Administrator') { thAct.classList.remove('hidden'); document.getElementById('btn-bulk-edit').classList.remove('hidden'); }
+        else { thAct.classList.add('hidden'); document.getElementById('btn-bulk-edit').classList.add('hidden'); }
 
-        fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'getDeptStock', role: currentUser.role, department: currentUser.department, targetDept: targetDept }) }).then(r => r.json()).then(data => {
-            tbody.innerHTML = '';
-            if(!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-slate-400 italic">No inventory data available.</td></tr>'; return; }
-            data.forEach((r, idx) => {
-                let deptCol = !thDept.classList.contains('hidden') ? `<td class="px-6 py-4 text-xs font-bold text-amber-600">${r.department}</td>` : '';
-                tbody.innerHTML += `<tr class="hover:bg-slate-50 border-b border-slate-50 transition"><td class="px-6 py-4 font-bold text-slate-400 w-10">${idx+1}</td>${deptCol}<td class="px-6 py-4 font-bold text-slate-700">${r.item_name}</td><td class="px-6 py-4 text-center"><span class="bg-blue-50 text-blue-700 py-1 px-3 rounded-full text-xs font-bold border border-blue-200">${r.qty} ${r.unit}</span></td><td class="px-6 py-4 text-xs text-slate-500">${r.last_updated}</td></tr>`;
-            });
+        fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'getDeptStock', role: currentUser.role, department: currentUser.department, targetDept: targetDept }) }).then(r => r.json()).then(data => { fullInventoryData = data; renderInventoryTable(fullInventoryData); });
+    }
+
+    function renderInventoryTable(data) {
+        const tbody = document.getElementById('inventory-table-body'); const thDept = document.getElementById('th-dept'); const thAct = document.getElementById('th-inv-action');
+        tbody.innerHTML = ''; if(!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-slate-400 italic">No inventory data available.</td></tr>'; return; }
+        
+        data.forEach((r, idx) => {
+            let deptCol = !thDept.classList.contains('hidden') ? `<td class="px-6 py-4 text-xs font-bold text-amber-600">${r.department}</td>` : '';
+            let actCol = (!thAct.classList.contains('hidden') && !isBulkEditMode) ? `<td class="px-6 py-4 text-center"><button onclick="openEditStockModal('${r.department}', '${r.item_name}', '${r.qty}', '${r.unit}')" class="text-blue-600 hover:text-blue-800"><i class="fas fa-edit"></i></button></td>` : '';
+            if(isBulkEditMode && !thAct.classList.contains('hidden')) actCol = `<td class="px-6 py-4 text-center text-xs text-slate-300"><i class="fas fa-lock"></i></td>`;
+
+            const qty = parseInt(r.qty); const rowClass = qty === 0 ? "text-slate-400 bg-slate-50" : "text-slate-700 hover:bg-slate-50";
+            let qtyCell = `<span class="bg-blue-50 text-blue-700 py-1 px-3 rounded-full text-xs font-bold border border-blue-200">${r.qty} ${r.unit}</span>`;
+            
+            if (isBulkEditMode) {
+                if (r.department !== '-') {
+                    qtyCell = `<div class="flex items-center gap-1 justify-center"><input type="number" class="w-20 border border-slate-300 rounded p-1 text-center text-sm font-bold focus:ring-2 focus:ring-blue-500 inp-bulk-qty bg-white" value="${r.qty}" data-dept="${r.department}" data-item="${r.item_name}" data-unit="${r.unit}"><span class="text-xs text-slate-400">${r.unit}</span></div>`;
+                } else { qtyCell = `<span class="text-xs text-red-300 italic">Select dept</span>`; }
+            }
+
+            tbody.innerHTML += `<tr class="border-b border-slate-50 transition ${rowClass}"><td class="px-6 py-4 font-bold text-xs opacity-50 w-10">${idx+1}</td>${deptCol}<td class="px-6 py-4 font-bold">${r.item_name}</td><td class="px-6 py-4 text-center">${qtyCell}</td><td class="px-6 py-4 text-xs opacity-70">${r.last_updated}</td>${actCol}</tr>`;
         });
     }
 
-    // --- REQUEST TABLE LOGIC ---
-    function loadData() { 
-        document.getElementById('data-table-body').innerHTML = '<tr><td colspan="5" class="text-center py-10 text-slate-400"><span class="loader-spin mr-2"></span> Loading...</td></tr>'; 
-        fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'getData', role: currentUser.role, department: currentUser.department, username: currentUser.username }) }).then(r => r.json()).then(data => { currentData = data; renderData(currentData); renderStats(data); }); 
+    function toggleBulkEdit() { if (!['Administrator'].includes(currentUser.role)) return; isBulkEditMode = !isBulkEditMode; toggleBulkUI(); renderInventoryTable(fullInventoryData); }
+    function toggleBulkUI() {
+        const btnEdit = document.getElementById('btn-bulk-edit'); const btnSave = document.getElementById('btn-bulk-save');
+        if (isBulkEditMode) { btnEdit.innerHTML = '<i class="fas fa-times"></i> Cancel Edit'; btnEdit.className = "bg-slate-500 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-600 transition items-center gap-2"; btnSave.classList.remove('hidden'); } 
+        else { btnEdit.innerHTML = '<i class="fas fa-pencil-alt"></i> Bulk Edit'; btnEdit.className = "bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition items-center gap-2"; btnSave.classList.add('hidden'); }
     }
+    function saveBulkStock() {
+        const inputs = document.querySelectorAll('.inp-bulk-qty'); let updateData = [];
+        inputs.forEach(inp => { const val = parseInt(inp.value); updateData.push({ department: inp.dataset.dept, item_name: inp.dataset.item, qty: val, unit: inp.dataset.unit }); });
+        const btnSave = document.getElementById('btn-bulk-save'); btnSave.disabled = true; btnSave.innerText = "Saving...";
+        fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'updateStockBulk', role: currentUser.role, data: updateData }) }).then(r => r.json()).then(res => {
+            btnSave.disabled = false; btnSave.innerHTML = '<i class="fas fa-save"></i> Save All';
+            if(res.success) { isBulkEditMode = false; toggleBulkUI(); loadInventoryStock(); showAlert("Success", "Bulk stock updated successfully."); } else { showAlert("Error", res.message); }
+        });
+    }
+    function sortInventory(key) { let sortDir = 'asc'; const sorted = [...fullInventoryData].sort((a, b) => { let valA = a[key], valB = b[key]; if(key === 'qty') { valA = parseInt(valA); valB = parseInt(valB); } else { valA = valA.toLowerCase(); valB = valB.toLowerCase(); } if (valA < valB) return sortDir === 'asc' ? -1 : 1; if (valA > valB) return sortDir === 'asc' ? 1 : -1; return 0; }); renderInventoryTable(sorted); }
     
+    function openEditStockModal(dept, item, qty, unit) { if(dept==='-'){showAlert("Info","Please select specific department first."); return;} document.getElementById('edit-stock-dept').value = dept; document.getElementById('edit-stock-item').value = item; document.getElementById('disp-edit-dept').innerText = dept; document.getElementById('disp-edit-item').innerText = item; document.getElementById('edit-stock-qty').value = qty; document.getElementById('edit-stock-unit').value = unit; openModal('modal-edit-stock'); }
+    function submitStockUpdate() { const dept = document.getElementById('edit-stock-dept').value; const item = document.getElementById('edit-stock-item').value; const qty = document.getElementById('edit-stock-qty').value; const unit = document.getElementById('edit-stock-unit').value; fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'updateStock', role: currentUser.role, department: dept, item_name: item, qty: qty, unit: unit }) }).then(r => r.json()).then(res => { closeModal('modal-edit-stock'); if(res.success) { loadInventoryStock(); showAlert("Success", "Stock Updated"); } else showAlert("Error", res.message); }); }
+
+    // --- REQUEST TABLE & COMMON ---
+    function loadData() { document.getElementById('data-table-body').innerHTML = '<tr><td colspan="6" class="text-center py-10 text-slate-400"><span class="loader-spin mr-2"></span> Loading...</td></tr>'; fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'getData', role: currentUser.role, department: currentUser.department, username: currentUser.username }) }).then(r => r.json()).then(data => { currentData = data; renderData(currentData); renderStats(data); }); }
     function renderStats(data) { if(!data) return; document.getElementById('stat-total').innerText = data.length; document.getElementById('stat-pending').innerText = data.filter(r => r.status.includes('Pending')).length; document.getElementById('stat-approved').innerText = data.filter(r => r.status.includes('Approved') || r.status === 'Auto-Approved').length; document.getElementById('stat-completed').innerText = data.filter(r => r.status === 'Completed').length; }
     function filterTable(filterType) { document.getElementById('current-filter-label').innerText = filterType + " Data"; if(filterType === 'All') { renderData(currentData); } else if (filterType === 'Pending') { renderData(currentData.filter(r => r.status.includes('Pending'))); } else if (filterType === 'Approved') { renderData(currentData.filter(r => r.status.includes('Approved'))); } else if (filterType === 'Completed') { renderData(currentData.filter(r => r.status === 'Completed')); } }
-    
-    function renderData(data){const t=document.getElementById('data-table-body'),c=document.getElementById('data-card-container');t.innerHTML='';c.innerHTML='';if(data.length===0){t.innerHTML='<tr><td colspan="5" class="text-center italic text-slate-400 py-10">No data found.</td></tr>';c.innerHTML='<div class="text-center italic text-slate-400 py-10">No data found.</div>';return;}data.forEach(r=>{let sb="bg-gray-100 text-gray-600";if(r.status==='Completed')sb="bg-blue-100 text-blue-800 border-blue-200 border";else if(r.status.includes('Approved'))sb="bg-green-100 text-green-800 border-green-200 border";else if(r.status.includes('Pending'))sb="bg-amber-100 text-amber-800 border-amber-200 border";else if(r.status==='Rejected')sb="bg-red-100 text-red-800 border-red-200 border";else if(r.status==='Canceled')sb="bg-slate-200 text-slate-500 border-slate-300 border";let itemStr="";if(r.items){r.items.forEach(i=>{const used=i.last_usage||0;itemStr+=`<div class="flex justify-between text-xs border-b border-slate-100 py-1 last:border-0"><span class="font-medium">${i.name}</span><div class="text-right"><span class="font-bold text-slate-700">Req: ${i.qty} ${i.unit}</span><div class="text-[9px] text-slate-400">Used: ${used}</div></div></div>`;});}let btn="";if(currentUser.role==='HRGA'&&r.status==='Pending HRGA'){btn=`<div class="flex gap-2"><button onclick="updateStatus('${r.id}','approve')" class="flex-1 bg-emerald-600 text-white py-1 px-2 rounded text-xs font-bold hover:bg-emerald-700 transition">Approve</button><button onclick="updateStatus('${r.id}','reject')" class="flex-1 bg-red-600 text-white py-1 px-2 rounded text-xs font-bold hover:bg-red-700 transition">Reject</button></div>`;}else if(['SectionHead','PlantHead','TeamLeader'].includes(currentUser.role)&&r.status==='Pending Head'){btn=`<div class="flex gap-2"><button onclick="updateStatus('${r.id}','approve')" class="flex-1 bg-emerald-600 text-white py-1 px-2 rounded text-xs font-bold hover:bg-emerald-700 transition">Approve</button><button onclick="updateStatus('${r.id}','reject')" class="flex-1 bg-red-600 text-white py-1 px-2 rounded text-xs font-bold hover:bg-red-700 transition">Reject</button></div>`;}else if(r.username===currentUser.username){if(r.status==='Pending Head')btn=`<button onclick="cancelRequest('${r.id}')" class="w-full bg-slate-300 hover:bg-slate-400 text-slate-700 py-1 rounded text-xs font-bold">Cancel</button>`;if(r.status==='Approved')btn=`<button onclick="confirmReceive('${r.id}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded text-xs font-bold shadow-md animate-pulse"><i class="fas fa-box-open mr-1"></i> Confirm Received</button>`;}const periodBadge=r.period?`<span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold border border-indigo-100">${r.period}</span>`:'';const row=`<tr class="hover:bg-slate-50 border-b border-slate-50 transition align-top"><td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${r.id}</div><div class="text-[10px] text-slate-400 mb-1">${r.timestamp.split(' ')[0]}</div>${periodBadge}</td><td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${r.username}</div><div class="text-[10px] text-slate-500">${r.department}</div></td><td class="px-6 py-4 max-w-[280px]">${itemStr}</td><td class="px-6 py-4 text-center"><span class="status-badge ${sb}">${r.status}</span></td><td class="px-6 py-4 text-right align-top w-32">${btn}</td></tr>`;t.innerHTML+=row;c.innerHTML+=`<div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 relative mb-3"><div class="flex justify-between items-start mb-2"><div><div class="font-bold text-sm text-slate-800">${r.id}</div>${periodBadge}</div><span class="status-badge ${sb}">${r.status}</span></div><div class="text-xs text-slate-500 mb-2">${r.username} • ${r.timestamp.split(' ')[0]}</div><div class="bg-slate-50 p-2 rounded mb-2 border border-slate-100">${itemStr}</div><div class="flex gap-2 mb-3 items-center text-xs text-slate-400"><i class="fas fa-user-check"></i> ${r.appHead||'-'} / ${r.appHrga||'-'}</div>${btn}</div>`;});}
-
-    // --- CREATE MODAL LOGIC ---
-    function openCreateModal(){
-        document.getElementById('items-container').innerHTML='<div class="text-center py-4 text-xs text-slate-400"><i class="fas fa-spinner fa-spin"></i> Preparing form...</div>';
-        openModal('modal-create');
-        // Fetch stock data fresh before showing inputs
-        fetchMyDeptStock().then(() => {
-            document.getElementById('items-container').innerHTML='';
-            document.getElementById('req-period').value = '';
-            document.getElementById('req-reason').value='';
-            itemCount=0; addItemRow();
+    function formatDateSimple(dateStr) { if(!dateStr) return ''; const d = new Date(dateStr); return d.toLocaleDateString('id-ID', {day: '2-digit', month: 'short'}) + ' ' + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}); }
+    function parseApp(role, txt, actionAt) {
+        let n = "-", s = "Pending", c = "text-slate-400", t_disp = "";
+        if(txt.includes("Approved")) { s = "Approved"; n = txt.replace("Approved by ",""); c = "text-green-600 font-bold"; if(actionAt) t_disp = `<div class="text-[9px] text-slate-400 mt-0.5"><i class="fas fa-check-circle text-[8px] mr-0.5"></i> ${formatDateSimple(actionAt)}</div>`; }
+        else if(txt.includes("Rejected")) { s = "Rejected"; n = txt.replace("Rejected by ",""); c = "text-red-600 font-bold"; if(actionAt) t_disp = `<div class="text-[9px] text-red-300 mt-0.5"><i class="fas fa-times-circle text-[8px] mr-0.5"></i> ${formatDateSimple(actionAt)}</div>`; }
+        else if(txt === "Auto-Approved (Internal)") { s = "Auto"; n = "System"; c = "text-green-600 font-bold"; if(actionAt) t_disp = `<div class="text-[9px] text-slate-400 mt-0.5">${formatDateSimple(actionAt)}</div>`; }
+        else if(txt === "Pending") { s = "Pending"; n = "-"; c = "text-yellow-600 font-bold"; }
+        return `<div class="flex items-start text-xs mb-2 last:mb-0"><span class="w-10 font-bold text-slate-400 text-[10px] uppercase mt-0.5">${role}</span><div class="flex-1 overflow-hidden"><div class="${c} text-[10px] uppercase leading-none">${s}</div><div class="text-[9px] text-slate-600 truncate font-medium" title="${n}">${n}</div>${t_disp}</div></div>`;
+    }
+    function renderData(data){
+        const t=document.getElementById('data-table-body'),c=document.getElementById('data-card-container'); t.innerHTML='';c.innerHTML='';
+        if(data.length===0){t.innerHTML='<tr><td colspan="6" class="text-center italic text-slate-400 py-10">No data found.</td></tr>';c.innerHTML='<div class="text-center italic text-slate-400 py-10">No data found.</div>';return;}
+        data.forEach(r=>{
+            let sb="bg-gray-100 text-gray-600 border-gray-200 border", statusDetail = "", noteHtml = "";
+            if(r.status==='Completed') { sb="bg-blue-100 text-blue-800 border-blue-200 border"; if(r.receivedAt) statusDetail = `<div class="mt-1 text-[9px] text-slate-500 font-medium whitespace-nowrap"><i class="fas fa-check-double text-blue-500 mr-1"></i> ${formatDateSimple(r.receivedAt)}</div>`; }
+            else if(r.status==='Rejected') { sb="bg-red-100 text-red-800 border-red-200 border"; if(r.rejectedAt) statusDetail = `<div class="mt-1 text-[9px] text-red-500 font-medium whitespace-nowrap"><i class="fas fa-times mr-1"></i> ${formatDateSimple(r.rejectedAt)}</div>`; if(r.rejectReason) noteHtml = `<div class="mt-2 text-xs text-red-600 bg-red-50 p-1.5 rounded border border-red-100"><b>Reason:</b> "${r.rejectReason}"</div>`; }
+            else if(r.status==='Canceled') { sb="bg-slate-200 text-slate-500 border-slate-300 border"; if(r.canceledAt) statusDetail = `<div class="mt-1 text-[9px] text-slate-400 font-medium whitespace-nowrap"><i class="fas fa-ban mr-1"></i> ${formatDateSimple(r.canceledAt)}</div>`; if(r.rejectReason) noteHtml = `<div class="mt-2 text-xs text-slate-500 bg-slate-100 p-1.5 rounded border border-slate-200"><b>Note:</b> "${r.rejectReason.replace('User Cancelled: ','')}"</div>`; }
+            else if(r.status.includes('Approved')) sb="bg-green-100 text-green-800 border-green-200 border"; else if(r.status.includes('Pending')) sb="bg-amber-100 text-amber-800 border-amber-200 border";
+            let itemStr=""; if(r.items){r.items.forEach(i=>{itemStr+=`<div class="flex justify-between text-xs border-b border-slate-100 py-1 last:border-0"><span class="font-medium text-slate-700 truncate pr-2 w-32" title="${i.name}">${i.name}</span><div class="text-right whitespace-nowrap"><span class="font-bold text-slate-700">${i.qty} ${i.unit}</span></div></div>`;});}
+            let btn="";
+            if(currentUser.role==='HRGA'&&r.status==='Pending HRGA'){btn=`<div class="flex flex-col gap-1"><button onclick="updateStatus('${r.id}','approve')" class="bg-emerald-600 text-white py-1 px-2 rounded text-xs font-bold hover:bg-emerald-700">Approve</button><button onclick="updateStatus('${r.id}','reject')" class="bg-red-600 text-white py-1 px-2 rounded text-xs font-bold hover:bg-red-700">Reject</button></div>`;}
+            else if(['SectionHead','PlantHead','TeamLeader'].includes(currentUser.role)&&r.status==='Pending Head'){btn=`<div class="flex flex-col gap-1"><button onclick="updateStatus('${r.id}','approve')" class="bg-emerald-600 text-white py-1 px-2 rounded text-xs font-bold hover:bg-emerald-700">Approve</button><button onclick="updateStatus('${r.id}','reject')" class="bg-red-600 text-white py-1 px-2 rounded text-xs font-bold hover:bg-red-700">Reject</button></div>`;}
+            else if(r.username===currentUser.username){ if(r.status==='Pending Head') btn=`<div class="flex flex-col gap-1"><button onclick="openEditModal('${r.id}')" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-1 rounded text-xs font-bold">Edit</button><button onclick="cancelRequest('${r.id}')" class="w-full bg-slate-300 hover:bg-slate-400 text-slate-700 py-1 rounded text-xs font-bold">Cancel</button></div>`; if(r.status==='Approved') btn=`<button onclick="confirmReceive('${r.id}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded text-xs font-bold shadow-md animate-pulse"><i class="fas fa-box-open mr-1"></i> Receive</button>`; }
+            const periodBadge=r.period?`<div class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[9px] font-bold border border-indigo-100 inline-block mt-1">${r.period}</div>`:'';
+            const row=`<tr class="hover:bg-slate-50 border-b border-slate-50 transition align-top"><td class="px-4 py-4"><div class="font-bold text-xs text-slate-700">${r.id}</div><div class="text-[10px] text-slate-400">${r.timestamp.split(' ')[0]}</div>${periodBadge}</td><td class="px-4 py-4"><div class="font-bold text-xs text-slate-700 truncate w-[160px]" title="${r.username}">${r.username}</div><div class="text-[10px] text-slate-500">${r.department}</div></td><td class="px-4 py-4"><div class="max-h-[80px] overflow-y-auto dropdown-scroll pr-1">${itemStr}</div></td><td class="px-4 py-4">${parseApp('HEAD', r.appHead, r.headActionAt)}${parseApp('HRGA', r.appHrga, r.hrgaActionAt)}</td><td class="px-4 py-4 text-center"><span class="status-badge ${sb}">${r.status}</span>${statusDetail}${noteHtml}</td><td class="px-4 py-4 text-right">${btn}</td></tr>`;
+            t.innerHTML+=row; c.innerHTML+=`<div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 relative mb-3"><div class="flex justify-between items-start mb-2"><div><div class="font-bold text-sm text-slate-800">${r.id}</div>${periodBadge}</div><div class="text-right"><span class="status-badge ${sb}">${r.status}</span>${statusDetail}</div></div>${noteHtml}<div class="text-xs text-slate-500 mb-2">${r.username} • ${r.timestamp.split(' ')[0]}</div><div class="bg-slate-50 p-2 rounded mb-2 border border-slate-100">${itemStr}</div><div class="border-t border-slate-100 pt-2 mb-2">${parseApp('HEAD',r.appHead, r.headActionAt)}${parseApp('HRGA',r.appHrga, r.hrgaActionAt)}</div>${btn}</div>`;
         });
     }
 
-    function addItemRow(){
-        if(itemCount>=20){showAlert("Info","Max 20 items.");return;}
-        itemCount++;
-        const d=document.createElement('div');
-        d.className="grid grid-cols-12 gap-2 items-start animate-slide-up item-row bg-slate-50 p-2 rounded-lg border border-slate-100 relative z-0";
-        d.id=`item-row-${itemCount}`;
-        d.innerHTML=`
-        <div class="col-span-12 sm:col-span-4 relative">
-            <div class="relative w-full"><input type="text" class="w-full border border-slate-300 rounded p-2 text-xs bg-white focus:ring-1 focus:ring-amber-500 inp-name outline-none cursor-pointer font-bold" placeholder="Select Item..." onfocus="showDropdown(this)" onkeyup="filterDropdown(this)" autocomplete="off"><i class="fas fa-chevron-down absolute right-3 top-3 text-slate-400 pointer-events-none text-xs"></i><div class="dropdown-list hidden absolute z-50 w-full bg-white border border-slate-200 rounded shadow-xl mt-1 max-h-60 overflow-y-auto dropdown-scroll left-0"></div></div>
-        </div>
-        <div class="col-span-4 sm:col-span-2">
-             <input type="number" placeholder="0" class="w-full border border-slate-200 bg-slate-200 text-slate-500 rounded p-2 text-xs font-mono inp-stock font-bold text-center" readonly tabindex="-1" value="0">
-        </div>
-        <div class="col-span-4 sm:col-span-2">
-             <input type="number" placeholder="0" class="w-full border border-slate-300 rounded p-2 text-xs focus:ring-1 focus:ring-amber-500 inp-usage text-center" required>
-        </div>
-        <div class="col-span-4 sm:col-span-2">
-             <input type="number" placeholder="0" class="w-full border border-slate-300 rounded p-2 text-xs focus:ring-1 focus:ring-amber-500 inp-qty text-center" required>
-        </div>
-        <div class="col-span-3 sm:col-span-1">
-             <input type="text" placeholder="Unit" class="w-full border-none bg-transparent p-2 text-xs text-slate-500 inp-unit font-bold text-center" readonly tabindex="-1">
-        </div>
-        <div class="col-span-1 sm:col-span-1 flex items-center justify-center pt-1">
-            <button type="button" onclick="document.getElementById('item-row-${itemCount}').remove()" class="text-red-400 hover:text-red-600"><i class="fas fa-times-circle"></i></button>
-        </div>`;
-        document.getElementById('items-container').appendChild(d);
-        renderInventoryDropdown(d.querySelector('.dropdown-list'));
-    }
-
-    function renderInventoryDropdown(c){
-        if(!atkInventory||atkInventory.length===0){c.innerHTML='<div class="p-2 text-xs text-slate-400 italic">Loading items...</div>';return;}
-        let h=''; 
-        atkInventory.forEach(i=>{h+=`<div class="p-2 hover:bg-amber-50 cursor-pointer text-xs border-b border-slate-50 last:border-0 transition-colors" onclick="selectOption(this, '${i.name}', '${i.uom}')"><div class="font-medium text-slate-700">${i.name}</div></div>`;});
-        c.innerHTML=h;
-    }
-    
-    function selectOption(e,n,u){
-        const row = e.closest('.item-row');
-        row.querySelector('.inp-name').value=n;
-        row.querySelector('.inp-unit').value=u;
-        
-        // AUTO FILL STOCK from myDeptStock
-        const found = myDeptStock.find(s => s.item_name === n);
-        const currentStock = found ? parseInt(found.qty) : 0;
-        row.querySelector('.inp-stock').value = currentStock;
-        
-        e.closest('.dropdown-list').classList.add('hidden');
-    }
-    
+    function openCreateModal(){ document.getElementById('modal-create-title').innerText=i18n[currentLang].modal_req_title; document.getElementById('edit-req-id').value=""; document.getElementById('btn-submit-req').innerText=i18n[currentLang].btn_submit_req; document.getElementById('items-container').innerHTML='<div class="text-center py-4 text-xs text-slate-400"><i class="fas fa-spinner fa-spin"></i> Preparing form...</div>'; openModal('modal-create'); fetchMyDeptStock().then(() => { document.getElementById('items-container').innerHTML=''; document.getElementById('req-period').value = ''; document.getElementById('req-reason').value=''; itemCount=0; addItemRow(); }); }
+    function openEditModal(id) { const row = currentData.find(r => r.id === id); if(!row) return; document.getElementById('modal-create-title').innerText="Edit Request: " + id; document.getElementById('edit-req-id').value = id; document.getElementById('btn-submit-req').innerText="Update Request"; document.getElementById('items-container').innerHTML='<div class="text-center py-4 text-xs text-slate-400"><i class="fas fa-spinner fa-spin"></i> Loading...</div>'; openModal('modal-create'); fetchMyDeptStock().then(() => { document.getElementById('items-container').innerHTML=''; document.getElementById('req-period').value = row.period; document.getElementById('req-reason').value = row.reason; itemCount = 0; if(row.items && row.items.length > 0) { row.items.forEach(it => { addItemRow(it.name, it.qty, it.unit, it.last_usage, it.current_stock); }); } else { addItemRow(); } }); }
+    function addItemRow(n='', q='', u='', usage='', stock=''){ if(itemCount>=20){showAlert("Info","Max 20 items.");return;} itemCount++; let displayStock = stock !== '' ? stock : 0; const d=document.createElement('div'); d.className="grid grid-cols-12 gap-2 items-start animate-slide-up item-row bg-slate-50 p-2 rounded-lg border border-slate-100 relative z-0"; d.id=`item-row-${itemCount}`; d.innerHTML=`<div class="col-span-12 sm:col-span-4 relative"><div class="relative w-full"><input type="text" class="w-full border border-slate-300 rounded p-2 text-xs bg-white focus:ring-1 focus:ring-amber-500 inp-name outline-none cursor-pointer font-bold" placeholder="Select Item..." value="${n}" onfocus="showDropdown(this)" onkeyup="filterDropdown(this)" autocomplete="off"><i class="fas fa-chevron-down absolute right-3 top-3 text-slate-400 pointer-events-none text-xs"></i><div class="dropdown-list hidden absolute z-50 w-full bg-white border border-slate-200 rounded shadow-xl mt-1 max-h-60 overflow-y-auto dropdown-scroll left-0"></div></div></div><div class="col-span-4 sm:col-span-2"><input type="number" placeholder="0" class="w-full border border-slate-200 bg-slate-200 text-slate-500 rounded p-2 text-xs font-mono inp-stock font-bold text-center" readonly tabindex="-1" value="${displayStock}"></div><div class="col-span-4 sm:col-span-2"><input type="number" placeholder="0" class="w-full border border-slate-300 rounded p-2 text-xs focus:ring-1 focus:ring-amber-500 inp-usage text-center" value="${usage}" required></div><div class="col-span-4 sm:col-span-2"><input type="number" placeholder="0" class="w-full border border-slate-300 rounded p-2 text-xs focus:ring-1 focus:ring-amber-500 inp-qty text-center" value="${q}" required></div><div class="col-span-3 sm:col-span-1"><input type="text" placeholder="Unit" class="w-full border-none bg-transparent p-2 text-xs text-slate-500 inp-unit font-bold text-center" value="${u}" readonly tabindex="-1"></div><div class="col-span-1 sm:col-span-1 flex items-center justify-center pt-1"><button type="button" onclick="document.getElementById('item-row-${itemCount}').remove()" class="text-red-400 hover:text-red-600"><i class="fas fa-times-circle"></i></button></div>`; document.getElementById('items-container').appendChild(d); renderInventoryDropdown(d.querySelector('.dropdown-list')); }
+    function renderInventoryDropdown(c){ if(!atkInventory||atkInventory.length===0){c.innerHTML='<div class="p-2 text-xs text-slate-400 italic">Loading items...</div>';return;} let h=''; atkInventory.forEach(i=>{h+=`<div class="p-2 hover:bg-amber-50 cursor-pointer text-xs border-b border-slate-50 last:border-0 transition-colors" onclick="selectOption(this, '${i.name}', '${i.uom}')"><div class="font-medium text-slate-700">${i.name}</div></div>`;}); c.innerHTML=h; }
+    function selectOption(e,n,u){ const row = e.closest('.item-row'); row.querySelector('.inp-name').value=n; row.querySelector('.inp-unit').value=u; const found = myDeptStock.find(s => s.item_name === n); const currentStock = found ? parseInt(found.qty) : 0; row.querySelector('.inp-stock').value = currentStock; e.closest('.dropdown-list').classList.add('hidden'); }
     function showDropdown(i){document.querySelectorAll('.dropdown-list').forEach(e=>e.classList.add('hidden'));i.nextElementSibling.nextElementSibling.classList.remove('hidden');}
     function closeAllDropdowns(e){if(!e.target.closest('.dropdown-list')&&!e.target.closest('.inp-name')){document.querySelectorAll('.dropdown-list').forEach(e=>e.classList.add('hidden'));}}
     function filterDropdown(i){const f=i.value.toUpperCase(),l=i.nextElementSibling.nextElementSibling,d=l.getElementsByTagName("div");for(let j=0;j<d.length;j++){const t=d[j].innerText;if(t.toUpperCase().indexOf(f)>-1)d[j].style.display="";else d[j].style.display="none";}}
-
-    function submitRequest(){
-        const rs=document.querySelectorAll('.item-row');
-        if(rs.length===0){showAlert("Error","Min 1 item.");return;}
-        const period = document.getElementById('req-period').value;
-        if(!period){showAlert("Error", "Please select Period Month."); return;}
-        
-        let its=[], err="";
-        rs.forEach(r=>{
-            const n=r.querySelector('.inp-name').value;
-            const stk=parseInt(r.querySelector('.inp-stock').value)||0;
-            const usg=parseInt(r.querySelector('.inp-usage').value)||0;
-            const req=parseInt(r.querySelector('.inp-qty').value)||0;
-            const u=r.querySelector('.inp-unit').value;
-            
-            if(!n) err = "Please select Item Name.";
-            if(usg > stk) err = `Usage for ${n} (${usg}) cannot exceed Stock (${stk}).`;
-            if(req <= 0) err = `Request Qty for ${n} must be > 0.`;
-            
-            its.push({name:n, current_stock:stk, last_usage:usg, qty:req, unit:u});
-        });
-        
-        if(err){showAlert("Validation Error", err); return;}
-
-        const b=document.getElementById('btn-submit-req'); b.disabled=true; b.innerText="Processing...";
-        const p={action:'submit', username:currentUser.username, fullname:currentUser.fullname, department:currentUser.department, period:period, items:its, reason:document.getElementById('req-reason').value};
-        
-        fetch('api/atk.php',{method:'POST',body:JSON.stringify(p)}).then(r=>r.json()).then(res=>{
-            closeModal('modal-create'); loadData(); b.disabled=false; b.innerText="Submit Request";
-            if(res.success) showAlert("Success", res.message); else showAlert("Error", res.message);
-        }).catch(()=>{b.disabled=false;showAlert("Error","Connection failed");});
-    }
-
-    function updateStatus(id,act){
-        if(act==='approve'){showConfirm('Approve','Sure?',()=>{fetch('api/atk.php',{method:'POST',body:JSON.stringify({action:'updateStatus',id:id,act:'approve',role:currentUser.role,fullname:currentUser.fullname})}).then(()=>loadData());});}
-        else if(act==='reject'){ fetch('api/atk.php',{method:'POST',body:JSON.stringify({action:'updateStatus',id:id,act:'reject',role:currentUser.role,fullname:currentUser.fullname,reason:'Rejected'})}).then(()=>loadData()); }
-    }
-    
-    function cancelRequest(id){showConfirm('Cancel','Sure?',()=>{fetch('api/atk.php',{method:'POST',body:JSON.stringify({action:'updateStatus',id:id,act:'cancel',username:currentUser.username})}).then(()=>loadData());});}
-
-    function confirmReceive(id) {
-        showConfirm('Confirm Receipt', 'Items received? This will add stock to your inventory.', () => {
-            fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: 'confirmReceive', username: currentUser.username, fullname: currentUser.fullname }) })
-            .then(r => r.json()).then(res => { 
-                if(res.success) { loadData(); if(!document.getElementById('view-inventory').classList.contains('hidden')) loadInventoryStock(); showAlert("Success", res.message); } 
-                else showAlert("Error", res.message); 
-            });
-        });
-    }
-
+    function submitRequest(){ const rs=document.querySelectorAll('.item-row'); if(rs.length===0){showAlert("Error","Min 1 item.");return;} const period = document.getElementById('req-period').value; if(!period){showAlert("Error", "Please select Period Month."); return;} let its=[], err=""; rs.forEach(r=>{ const n=r.querySelector('.inp-name').value; const stk=parseInt(r.querySelector('.inp-stock').value)||0; const usg=parseInt(r.querySelector('.inp-usage').value)||0; const req=parseInt(r.querySelector('.inp-qty').value)||0; const u=r.querySelector('.inp-unit').value; if(!n) err = "Please select Item Name."; if(usg > stk) err = `Usage for ${n} (${usg}) cannot exceed Stock (${stk}).`; if(req <= 0) err = `Request Qty for ${n} must be > 0.`; its.push({name:n, current_stock:stk, last_usage:usg, qty:req, unit:u}); }); if(err){showAlert("Validation Error", err); return;} const b=document.getElementById('btn-submit-req'); b.disabled=true; b.innerText="Processing..."; const reqId = document.getElementById('edit-req-id').value; const action = reqId ? 'edit' : 'submit'; const p={action:action, id:reqId, username:currentUser.username, fullname:currentUser.fullname, department:currentUser.department, period:period, items:its, reason:document.getElementById('req-reason').value}; fetch('api/atk.php',{method:'POST',body:JSON.stringify(p)}).then(r=>r.json()).then(res=>{ closeModal('modal-create'); loadData(); b.disabled=false; if(res.success) showAlert("Success", res.message); else showAlert("Error", res.message); }).catch(()=>{b.disabled=false;showAlert("Error","Connection failed");}); }
+    function updateStatus(id,act){ if(act==='approve'){showConfirm('Approve','Sure?',()=>{fetch('api/atk.php',{method:'POST',body:JSON.stringify({action:'updateStatus',id:id,act:'approve',role:currentUser.role,fullname:currentUser.fullname})}).then(()=>loadData());});} else if(act==='reject'){ showConfirmReason("Reject Request", "Please enter rejection reason:", (reason) => { fetch('api/atk.php',{method:'POST',body:JSON.stringify({action:'updateStatus',id:id,act:'reject',role:currentUser.role,fullname:currentUser.fullname,reason:reason})}).then(()=>loadData()); }); } }
+    function cancelRequest(id){ showConfirmReason("Cancel Request", "Reason for cancellation:", (reason) => { fetch('api/atk.php',{method:'POST',body:JSON.stringify({action:'updateStatus',id:id,act:'cancel',username:currentUser.username,reason:reason})}).then(()=>loadData()); }); }
+    function confirmReceive(id) { showConfirm('Confirm Receipt', 'Items received? This will add stock to your inventory.', () => { fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: 'confirmReceive', username: currentUser.username, fullname: currentUser.fullname }) }).then(r => r.json()).then(res => { if(res.success) { loadData(); if(!document.getElementById('view-inventory').classList.contains('hidden')) loadInventoryStock(); showAlert("Success", res.message); } else showAlert("Error", res.message); }); }); }
     function openExportModal() { openModal('modal-export'); }
-    function doExport(type, isAllTime) {
-       const start = document.getElementById('exp-start').value;
-       const end = document.getElementById('exp-end').value;
-       document.getElementById('exp-loading').classList.remove('hidden');
-       fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'exportData', role: currentUser.role, department: currentUser.department, startDate: start, endDate: end }) })
-       .then(r => r.json()).then(data => {
-           document.getElementById('exp-loading').classList.add('hidden');
-           if(!data || data.length === 0) { showAlert("Info", "No data."); return; }
-           if(type === 'excel') exportExcel(data);
-           if(type === 'pdf') exportPdf(data);
-           closeModal('modal-export');
-       });
-    }
-    function exportExcel(data) { const wb = XLSX.utils.book_new(); const ws = XLSX.utils.json_to_sheet(data.map(r=>({ID:r.id, Date:r.timestamp, User:r.username, Status:r.status}))); XLSX.utils.book_append_sheet(wb, ws, "ATK"); XLSX.writeFile(wb, "ATK_Report.xlsx"); }
-    function exportPdf(data) { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text("ATK Report",10,10); doc.autoTable({head:[['ID','User','Status']],body:data.map(r=>[r.id,r.username,r.status])}); doc.save("ATK_Report.pdf"); }
+    function doExport(type, isAllTime) { const start = document.getElementById('exp-start').value; const end = document.getElementById('exp-end').value; document.getElementById('exp-loading').classList.remove('hidden'); fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'exportData', role: currentUser.role, department: currentUser.department, startDate: start, endDate: end }) }).then(r => r.json()).then(data => { document.getElementById('exp-loading').classList.add('hidden'); if(!data || data.length === 0) { showAlert("Info", "No data."); return; } if(type === 'excel') exportExcel(data); if(type === 'pdf') exportPdf(data); closeModal('modal-export'); }); }
+    function exportExcel(data) { const wb = XLSX.utils.book_new(); const ws = XLSX.utils.json_to_sheet(data.map(r=>({ID:r.id, Date:r.timestamp, User:r.username, Status:r.status, Received:r.receivedAt}))); XLSX.utils.book_append_sheet(wb, ws, "ATK"); XLSX.writeFile(wb, "ATK_Report.xlsx"); }
+    function exportPdf(data) { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text("ATK Report",10,10); doc.autoTable({head:[['ID','User','Status','Received']],body:data.map(r=>[r.id,r.username,r.status,r.receivedAt])}); doc.save("ATK_Report.pdf"); }
   </script>
 </body>
 </html>
