@@ -101,10 +101,12 @@
 
   <div id="modal-settings" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up">
-        <div class="bg-slate-900 px-6 py-4 border-b border-slate-800 flex justify-between items-center text-white"><h3 class="font-bold">Admin Settings</h3><button onclick="closeModal('modal-settings')" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button></div>
-        <form onsubmit="event.preventDefault(); saveSettings();" class="p-6">
-            <div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fuel Price (IDR / Liter)</label><input type="number" id="set-fuel-price" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 font-bold text-slate-700" required></div>
-            <button type="submit" class="w-full bg-slate-900 text-white py-3 rounded-lg text-sm font-bold shadow-sm hover:bg-black transition">Save Configuration</button>
+        <div class="bg-slate-900 px-6 py-4 border-b border-slate-800 flex justify-between items-center text-white"><h3 class="font-bold">Fuel Price Settings</h3><button onclick="closeModal('modal-settings')" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button></div>
+        <form onsubmit="event.preventDefault(); saveSettings();" class="p-6 space-y-4">
+            <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pertamax Turbo (Rp)</label><input type="number" id="set-price-turbo" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm font-bold" required></div>
+            <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pertamax (Rp)</label><input type="number" id="set-price-pertamax" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm font-bold" required></div>
+            <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pertalite (Rp)</label><input type="number" id="set-price-pertalite" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm font-bold" required></div>
+            <button type="submit" class="w-full bg-slate-900 text-white py-3 rounded-lg text-sm font-bold shadow-sm hover:bg-black transition mt-2">Save Configuration</button>
         </form>
     </div>
   </div>
@@ -128,16 +130,21 @@
                                 </label>
                                 <div id="div-fuel-inputs" class="hidden space-y-3 pl-1">
                                     <div>
+                                        <label class="block text-[10px] font-bold text-orange-400 uppercase mb-1">Fuel Type</label>
+                                        <select id="input-fuel-type" class="w-full border border-orange-200 rounded-lg p-2.5 text-sm font-bold text-slate-700" onchange="calcFuelLiters()">
+                                            </select>
+                                    </div>
+                                    <div>
                                         <label class="block text-[10px] font-bold text-orange-400 uppercase mb-1">Total Cost (IDR)</label>
                                         <input type="number" id="input-fuel-cost" class="w-full border border-orange-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-orange-500" placeholder="e.g. 100000" onkeyup="calcFuelLiters()">
                                     </div>
                                     <div class="flex gap-3">
                                         <div class="flex-1">
-                                            <label class="block text-[10px] font-bold text-orange-400 uppercase mb-1">Price / Liter (Read Only)</label>
-                                            <input type="text" id="disp-fuel-price" class="w-full bg-orange-100 border-none rounded-lg p-2.5 text-sm text-slate-500 font-bold" readonly value="10000">
+                                            <label class="block text-[10px] font-bold text-orange-400 uppercase mb-1">Price / Liter</label>
+                                            <input type="text" id="disp-fuel-price" class="w-full bg-orange-100 border-none rounded-lg p-2.5 text-sm text-slate-500 font-bold" readonly value="0">
                                         </div>
                                         <div class="flex-1">
-                                            <label class="block text-[10px] font-bold text-orange-400 uppercase mb-1">Calculated Liters</label>
+                                            <label class="block text-[10px] font-bold text-orange-400 uppercase mb-1">Calc Liters</label>
                                             <input type="text" id="input-fuel-liters" class="w-full bg-white border border-orange-200 rounded-lg p-2.5 text-sm font-bold text-slate-800" readonly value="0">
                                         </div>
                                     </div>
@@ -154,22 +161,7 @@
       </div>
   </div>
 
-  <div id="modal-export" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up">
-        <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center"><h3 class="font-bold text-slate-700">Export Report</h3><button onclick="closeModal('modal-export')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button></div>
-        <div class="p-6">
-            <div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Start Date</label><input type="date" id="exp-start" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div>
-            <div class="mb-6"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">End Date</label><input type="date" id="exp-end" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div>
-            <button onclick="doExport('excel', true)" class="w-full mb-3 bg-blue-50 text-blue-700 border border-blue-200 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-100 flex items-center justify-center gap-2"><i class="fas fa-database"></i> Export All Time (Excel)</button>
-            <div class="grid grid-cols-2 gap-3">
-                <button onclick="doExport('excel', false)" class="bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-700 flex items-center justify-center gap-2"><i class="fas fa-file-excel"></i> Excel</button>
-                <button onclick="doExport('pdf', false)" class="bg-red-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-red-700 flex items-center justify-center gap-2"><i class="fas fa-file-pdf"></i> PDF</button>
-            </div>
-            <div id="exp-loading" class="hidden text-center mt-3 text-xs text-slate-500"><i class="fas fa-spinner fa-spin mr-1"></i> Generating Report...</div>
-        </div>
-    </div>
-  </div>
-
+  <div id="modal-export" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up"><div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center"><h3 class="font-bold text-slate-700">Export Report</h3><button onclick="closeModal('modal-export')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button></div><div class="p-6"><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Start Date</label><input type="date" id="exp-start" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div><div class="mb-6"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">End Date</label><input type="date" id="exp-end" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div><button onclick="doExport('excel', true)" class="w-full mb-3 bg-blue-50 text-blue-700 border border-blue-200 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-100 flex items-center justify-center gap-2"><i class="fas fa-database"></i> Export All Time (Excel)</button><div class="grid grid-cols-2 gap-3"><button onclick="doExport('excel', false)" class="bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-700 flex items-center justify-center gap-2"><i class="fas fa-file-excel"></i> Excel</button><button onclick="doExport('pdf', false)" class="bg-red-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-red-700 flex items-center justify-center gap-2"><i class="fas fa-file-pdf"></i> PDF</button></div><div id="exp-loading" class="hidden text-center mt-3 text-xs text-slate-500"><i class="fas fa-spinner fa-spin mr-1"></i> Generating Report...</div></div></div></div>
   <div id="modal-confirm" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden"><div class="p-6 text-center"><div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 shadow-sm"><i class="fas fa-question text-xl"></i></div><h3 class="text-lg font-bold text-slate-700 mb-2" id="conf-title">Confirm</h3><p class="text-sm text-slate-500 mb-4" id="conf-msg">Are you sure?</p><div class="mb-4 text-left"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Comment (Optional / Reason)</label><textarea id="conf-comment" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500" rows="2" placeholder="Write a note here..."></textarea></div><div class="flex gap-3"><button onclick="closeModal('modal-confirm')" class="flex-1 py-2.5 border border-slate-300 rounded-lg text-slate-600 font-bold text-sm hover:bg-slate-50 transition" data-i18n="cancel">Cancel</button><button onclick="execConfirm()" id="btn-conf-yes" class="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 shadow-sm transition" data-i18n="yes">Yes, Proceed</button></div></div></div></div>
   <div id="modal-alert" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden"><div class="p-6 text-center"><div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 shadow-sm"><i class="fas fa-info text-xl"></i></div><h3 class="text-lg font-bold text-slate-700 mb-2" id="alert-title">Information</h3><p class="text-sm text-slate-500 mb-6" id="alert-msg">System Message.</p><button onclick="closeModal('modal-alert')" class="w-full py-2.5 bg-slate-800 text-white rounded-lg font-bold text-sm hover:bg-slate-900 shadow-sm transition">OK</button></div></div></div>
   <div id="modal-cancel" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl relative animate-slide-up"><button onclick="closeModal('modal-cancel')" class="absolute top-4 right-4 text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button><h3 class="text-lg font-bold mb-4 text-slate-800">Cancel Booking</h3><form onsubmit="event.preventDefault(); submitCancel();"><input type="hidden" id="cancel-id"><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Reason / Note</label><textarea id="cancel-note" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500" rows="3"></textarea></div><div class="flex justify-end gap-3"><button type="button" onclick="closeModal('modal-cancel')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold" data-i18n="cancel">Back</button><button type="submit" id="btn-cancel-submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-bold shadow-sm btn-action">Yes, Cancel</button></div></form></div></div>
@@ -178,7 +170,9 @@
     document.addEventListener('keydown', function(event) { if (event.key === "Escape") { const modals = ['modal-create', 'modal-export', 'modal-trip', 'modal-confirm', 'modal-alert', 'modal-cancel', 'modal-settings']; modals.forEach(id => closeModal(id)); } });
     let currentUser = null, availableVehicles = [], allBookingsData = [], confirmCallback = null, videoStream = null, capturedImageBase64 = null, activePhotoSource = 'file';
     let currentLang = localStorage.getItem('portal_lang') || 'en';
-    let currentFuelPrice = 10000; // Default fallback
+    
+    // --- UPDATED FUEL PRICES & LOGIC ---
+    let fuelPrices = { "Pertamax Turbo": 13250, "Pertamax": 12400, "Pertalite": 10000 };
 
     const i18n = { en: { fleet_avail: "Fleet Availability", trip_history: "Trip History", click_filter: "Click statistics above to filter.", new_booking: "New Booking", th_id: "ID & Date", th_user: "User Info", th_unit: "Unit & Purpose", th_approval: "Approval Status", th_status: "Status & Time", th_trip: "Trip Info & Ratio", th_action: "Action", modal_book_title: "Vehicle Booking", select_unit: "Select Unit (Available)", purpose: "Purpose", cancel: "Cancel", submit_req: "Submit Request", yes: "Yes, Proceed" }, id: { fleet_avail: "Ketersediaan Armada", trip_history: "Riwayat Perjalanan", click_filter: "Klik statistik di atas untuk filter.", new_booking: "Pesan Baru", th_id: "ID & Tanggal", th_user: "Info Pengguna", th_unit: "Unit & Tujuan", th_approval: "Status Persetujuan", th_status: "Status & Waktu", th_trip: "Info Perjalanan & Ratio", th_action: "Aksi", modal_book_title: "Pemesanan Kendaraan", select_unit: "Pilih Unit (Tersedia)", purpose: "Tujuan", cancel: "Batal", submit_req: "Kirim Permintaan", yes: "Ya, Lanjutkan" } };
     const rawUser = localStorage.getItem('portal_user');
@@ -204,17 +198,25 @@
        loadData();
     };
 
-    // --- FUEL SETTINGS ---
+    // --- SETTINGS (UPDATED) ---
     function openSettingsModal() { 
         fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'getSettings' }) })
         .then(r=>r.json()).then(res=>{
-             if(res.success) document.getElementById('set-fuel-price').value = res.fuelPrice;
+             if(res.success && res.fuelPrices) {
+                 document.getElementById('set-price-turbo').value = res.fuelPrices["Pertamax Turbo"];
+                 document.getElementById('set-price-pertamax').value = res.fuelPrices["Pertamax"];
+                 document.getElementById('set-price-pertalite').value = res.fuelPrices["Pertalite"];
+             }
              openModal('modal-settings');
         });
     }
     function saveSettings() {
-        const p = document.getElementById('set-fuel-price').value;
-        fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'saveSettings', role: currentUser.role, fuelPrice: p }) })
+        const prices = {
+            "Pertamax Turbo": parseInt(document.getElementById('set-price-turbo').value),
+            "Pertamax": parseInt(document.getElementById('set-price-pertamax').value),
+            "Pertalite": parseInt(document.getElementById('set-price-pertalite').value)
+        };
+        fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'saveSettings', role: currentUser.role, fuelPrices: prices }) })
         .then(r=>r.json()).then(res=>{
              if(res.success) { closeModal('modal-settings'); showAlert("Success", "Settings Saved"); loadData(); }
              else showAlert("Error", res.message);
@@ -222,16 +224,22 @@
     }
 
     // --- MAIN LOGIC ---
-    function loadData() { document.getElementById('data-table-body').innerHTML = '<tr><td colspan="8" class="text-center py-10 text-slate-400"><span class="loader-spin mr-2"></span> Fetching data...</td></tr>'; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'getData', role: currentUser.role, username: currentUser.username, department: currentUser.department }) }).then(r => r.json()).then(res => { if(res.success) { availableVehicles = res.vehicles || []; allBookingsData = res.bookings || []; currentFuelPrice = parseFloat(res.fuelPrice) || 10000; renderFleetStatus(availableVehicles); renderStats(); renderTable(allBookingsData); populateVehicleSelect(); } else { document.getElementById('data-table-body').innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">Error: ${res.message}</td></tr>`; } }).catch(err => { document.getElementById('data-table-body').innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">Connection Error</td></tr>`; }); }
+    function loadData() { document.getElementById('data-table-body').innerHTML = '<tr><td colspan="8" class="text-center py-10 text-slate-400"><span class="loader-spin mr-2"></span> Fetching data...</td></tr>'; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'getData', role: currentUser.role, username: currentUser.username, department: currentUser.department }) }).then(r => r.json()).then(res => { if(res.success) { availableVehicles = res.vehicles || []; allBookingsData = res.bookings || []; fuelPrices = res.fuelPrices || fuelPrices; renderFleetStatus(availableVehicles); renderStats(); renderTable(allBookingsData); populateVehicleSelect(); populateFuelDropdown(); } else { document.getElementById('data-table-body').innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">Error: ${res.message}</td></tr>`; } }).catch(err => { document.getElementById('data-table-body').innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">Connection Error</td></tr>`; }); }
     
-    // --- FUEL CALCULATOR ---
+    // --- FUEL CALCULATOR UI ---
+    function populateFuelDropdown() {
+        const sel = document.getElementById('input-fuel-type');
+        sel.innerHTML = '';
+        for (const [type, price] of Object.entries(fuelPrices)) {
+            sel.innerHTML += `<option value="${type}">${type}</option>`;
+        }
+    }
     function toggleRefuelInputs() {
         const isRefuel = document.getElementById('chk-is-refuel').checked;
         const divInputs = document.getElementById('div-fuel-inputs');
         if(isRefuel) {
             divInputs.classList.remove('hidden');
             document.getElementById('input-fuel-cost').required = true;
-            document.getElementById('disp-fuel-price').value = "IDR " + currentFuelPrice.toLocaleString();
             calcFuelLiters();
         } else {
             divInputs.classList.add('hidden');
@@ -241,12 +249,21 @@
         }
     }
     function calcFuelLiters() {
+        const type = document.getElementById('input-fuel-type').value;
+        const price = fuelPrices[type] || 0;
         const nominal = parseFloat(document.getElementById('input-fuel-cost').value) || 0;
-        const liters = nominal / currentFuelPrice;
-        document.getElementById('input-fuel-liters').value = liters.toFixed(2) + " Liters";
+        
+        document.getElementById('disp-fuel-price').value = "IDR " + price.toLocaleString();
+        
+        if (price > 0 && nominal > 0) {
+            const liters = nominal / price;
+            document.getElementById('input-fuel-liters').value = liters.toFixed(2) + " Liters";
+        } else {
+            document.getElementById('input-fuel-liters').value = "0 Liters";
+        }
     }
 
-    // --- TABLE RENDER ---
+    // --- RENDER TABLE ---
     function renderTable(d){
         const tb=document.getElementById('data-table-body'),cc=document.getElementById('data-card-container');
         tb.innerHTML='';cc.innerHTML='';
@@ -263,15 +280,18 @@
             let timeDisplay = '';
             if(['Approved', 'Rejected', 'Cancelled', 'Done'].includes(s) && r.updatedAt) timeDisplay = `<span class="text-[10px] text-slate-400 mt-1 font-mono">${fmtDate(r.updatedAt)}</span>`;
 
-            // Ratio Logic
+            // Ratio Logic (Updated to use stored fuelRatio from backend)
             let ratioInfo = '';
-            if(r.isRefuel == 1 && r.fuelLiters > 0 && r.endKm > 0) {
-                const dist = r.endKm - r.startKm;
-                const ratio = dist / parseFloat(r.fuelLiters);
-                ratioInfo = `<div class="mt-1 flex items-center gap-1 justify-center bg-orange-50 text-orange-700 px-2 py-1 rounded border border-orange-100"><i class="fas fa-gas-pump text-[10px]"></i> <span class="text-[10px] font-bold">${ratio.toFixed(1)} KM/L</span></div>`;
+            if(r.isRefuel == 1) {
+                const rVal = parseFloat(r.fuelRatio);
+                const rStr = rVal > 0 ? rVal.toFixed(1) + " KM/L" : "Calc...";
+                ratioInfo = `<div class="mt-1 flex flex-col items-center justify-center bg-orange-50 text-orange-700 px-2 py-1 rounded border border-orange-100">
+                    <div class="flex items-center gap-1"><i class="fas fa-gas-pump text-[10px]"></i> <span class="text-[10px] font-bold">${r.fuelType || 'BBM'}</span></div>
+                    <span class="text-[9px] font-mono">${rStr}</span>
+                </div>`;
             }
 
-            // ... (Approval Buttons Code same as before) ...
+            // ... (Approval Buttons Code same) ...
             let ab='',abm='';
             const rAB=(t)=>{ return { pc: `<div class="flex items-center gap-2 w-full mt-1"><button onclick="approve('${r.id}','${t}')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 transition"><i class="fas fa-check"></i> OK</button><button onclick="reject('${r.id}','${t}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 transition"><i class="fas fa-times"></i> NO</button></div>`, mob: `<div class="flex flex-col gap-2 mt-2"><button onclick="approve('${r.id}','${t}')" class="w-full bg-emerald-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm"><i class="fas fa-check"></i> Approve</button><button onclick="reject('${r.id}','${t}')" class="w-full bg-red-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm"><i class="fas fa-times"></i> Reject</button></div>` }; };
             if (s === 'Pending Dept Head') { if (r.department === currentUser.department && (currentUser.role === 'SectionHead' || currentUser.role === 'TeamLeader')) { const x = rAB('L1'); ab=x.pc; abm=x.mob; } }
@@ -302,6 +322,7 @@
     function reject(id, role) { showConfirm("Confirm Rejection", "Please provide a REASON for rejection:", (comment) => { if(!comment) return showAlert("Error", "Reason is required for rejection"); callUpdate(id, 'reject', comment); }); }
     function confirmTrip(id) { showConfirm("Verify Trip", "Verify that this trip is completed and data is correct?", (c) => callUpdate(id, 'verifyTrip', c)); } 
     function requestCorrection(id) { showConfirm("Request Correction", "Reason for correction (sent to user):", (c) => { if(!c) return showAlert("Error", "Reason required"); callUpdate(id, 'requestCorrection', c); }); }
+    
     function openTripModal(id, act, startKmVal) { 
         document.getElementById('trip-id').value = id; document.getElementById('trip-action').value = act; 
         const titleMap = { 'startTrip': 'Departure Update', 'endTrip': 'Arrival Update', 'submitCorrection': 'Correct Trip Data' }; 
@@ -328,16 +349,17 @@
     async function submitTripUpdate() { try { const id = document.getElementById('trip-id').value; const act = document.getElementById('trip-action').value; const km = document.getElementById('input-km').value; const routeVal = document.getElementById('input-route-update').value; 
         // Fuel Data
         const isRefuel = document.getElementById('chk-is-refuel').checked;
+        const fuelType = isRefuel ? document.getElementById('input-fuel-type').value : null;
         const fuelCost = isRefuel ? document.getElementById('input-fuel-cost').value : 0;
         
         const btn = document.getElementById('btn-trip-submit'); if(!km) return showAlert("Error", "KM Required"); btn.disabled = true; btn.innerText = "Processing Image..."; let base64Data = null; if (activePhotoSource === 'camera') { if (!capturedImageBase64) { btn.disabled=false; btn.innerText="Save Update"; return showAlert("Error", "Please capture a photo."); } base64Data = capturedImageBase64; } else { const fileInput = document.getElementById('input-photo'); if (fileInput.files.length === 0) { btn.disabled=false; btn.innerText="Save Update"; return showAlert("Error", "Please upload a photo."); } const file = fileInput.files[0]; base64Data = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (e) => resolve(e.target.result); reader.onerror = reject; reader.readAsDataURL(file); }); } const compressedBase64 = await compressImage(base64Data); const cleanBase64 = compressedBase64.split(',')[1]; 
         
-        sendTripData(id, act, km, cleanBase64, routeVal, isRefuel, fuelCost); 
+        sendTripData(id, act, km, cleanBase64, routeVal, isRefuel, fuelType, fuelCost); 
     } catch (err) { console.error(err); showAlert("Error", "Image processing failed."); document.getElementById('btn-trip-submit').disabled = false; document.getElementById('btn-trip-submit').innerText = "Save Update"; } }
     
-    function sendTripData(id, act, km, photoBase64, route, isRefuel, fuelCost) { 
+    function sendTripData(id, act, km, photoBase64, route, isRefuel, fuelType, fuelCost) { 
         const btn = document.getElementById('btn-trip-submit'); btn.innerText = "Sending Data..."; 
-        fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: { km: km, photoBase64: photoBase64, route: route, isRefuel: isRefuel, fuelCost: fuelCost } }) })
+        fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: { km: km, photoBase64: photoBase64, route: route, isRefuel: isRefuel, fuelType: fuelType, fuelCost: fuelCost } }) })
         .then(r => r.json()).then(res => { btn.disabled = false; btn.innerText = "Save Update"; if(res.success) { closeModal('modal-trip'); loadData(); } else { showAlert("Error", res.message); } })
         .catch(err => { btn.disabled = false; btn.innerText = "Save Update"; showAlert("Error", "Connection Failed"); }); 
     }
@@ -352,27 +374,23 @@
     function openCancelModal(id) { document.getElementById('cancel-id').value = id; document.getElementById('cancel-note').value = ''; openModal('modal-cancel'); }
     function submitCancel() { const id = document.getElementById('cancel-id').value, note = document.getElementById('cancel-note').value, btn = document.getElementById('btn-cancel-submit'); btn.disabled = true; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: 'cancel', userRole: currentUser.role, extraData: {comment: note} }) }).then(() => { closeModal('modal-cancel'); loadData(); }); }
     
-    // Update Export Logic for Fuel
+    // EXPORT
     function doExport(type, isAllTime) {
-        // ... (Logic same, update body mapper)
         const start = document.getElementById('exp-start').value; const end = document.getElementById('exp-end').value; const loader = document.getElementById('exp-loading'); if(!isAllTime && (!start || !end)) { showAlert("Error", "Please select dates."); return; } loader.classList.remove('hidden');
         fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'exportData', role: currentUser.role, department: currentUser.department, startDate: start, endDate: end }) }).then(r => r.json()).then(res => {
             loader.classList.add('hidden'); if(!res.success || !res.bookings.length) { showAlert("Info", "No data available."); return; }
-            
-            // Excel Mapper
             if(type === 'excel') {
                  const wb = XLSX.utils.book_new(); let rows = []; rows.push(["VEHICLE MANAGEMENT REPORT"]); rows.push(["Generated: " + new Date().toLocaleString()]); rows.push([]);
-                 rows.push(["ID", "Date", "Requester", "Vehicle", "Purpose", "Start KM", "End KM", "Dist (KM)", "Fuel Cost", "Fuel Liters", "Ratio (KM/L)", "Status"]);
+                 rows.push(["ID", "Date", "Requester", "Vehicle", "Purpose", "Start KM", "End KM", "Dist (KM)", "Fuel Type", "Fuel Cost", "Liters", "Ratio (KM/L)", "Status"]);
                  res.bookings.forEach(r => {
                      const dist = (r.endKm > r.startKm) ? (r.endKm - r.startKm) : 0;
-                     const ratio = (r.isRefuel == 1 && r.fuelLiters > 0) ? (dist / r.fuelLiters).toFixed(2) : '-';
-                     rows.push([r.id, r.timestamp, r.fullname, r.vehicle, r.purpose, r.startKm, r.endKm, dist, r.fuelCost, r.fuelLiters, ratio, r.status]);
+                     const ratio = (r.isRefuel == 1 && r.fuelRatio > 0) ? r.fuelRatio.toFixed(2) : '-';
+                     rows.push([r.id, r.timestamp, r.fullname, r.vehicle, r.purpose, r.startKm, r.endKm, dist, r.fuelType || '-', r.fuelCost, r.fuelLiters, ratio, r.status]);
                  });
                  const ws = XLSX.utils.aoa_to_sheet(rows); XLSX.utils.book_append_sheet(wb, ws, "VMS Data"); XLSX.writeFile(wb, "VMS_Report.xlsx");
             } else {
-                 // PDF (Simplification)
                  const { jsPDF } = window.jspdf; const doc = new jsPDF('l', 'mm', 'a3'); 
-                 const body = res.bookings.map(r => [r.id, r.timestamp, r.fullname, r.vehicle, r.purpose, r.status, (r.isRefuel==1?r.fuelLiters+' L':'-')]);
+                 const body = res.bookings.map(r => [r.id, r.timestamp, r.fullname, r.vehicle, r.purpose, r.status, (r.isRefuel==1?(r.fuelLiters+' L ('+r.fuelType+')'):'-')]);
                  doc.autoTable({ head: [['ID', 'Date', 'User', 'Vehicle', 'Purpose', 'Status', 'Fuel']], body: body });
                  doc.save("VMS_Report.pdf");
             }
