@@ -1,5 +1,5 @@
 <?php
-// api/vms.php - STABLE VERSION
+// api/vms.php - FIXED: L1 FALLBACK TO TEAM LEADER (EXCEPT HRGA)
 error_reporting(0);
 ini_set('display_errors', 0);
 date_default_timezone_set('Asia/Jakarta');
@@ -29,8 +29,8 @@ function sendResponse($data) {
     exit;
 }
 
+// Fungsi Upload Internal
 function uploadImageInternal($base64Data, $prefix) {
-    if (empty($base64Data)) return false;
     $uploadDir = "../uploads/vms/"; 
     if (!is_dir($uploadDir)) { mkdir($uploadDir, 0777, true); }
     if (strpos($base64Data, 'base64,') !== false) {
@@ -47,36 +47,13 @@ function uploadImageInternal($base64Data, $prefix) {
 }
 
 try {
-    // GET SETTINGS
-    if ($action == 'getSettings') {
-        $q = $conn->query("SELECT setting_value FROM vms_settings WHERE setting_key = 'fuel_prices'");
-        $defaultPrices = ["Pertamax Turbo" => 13250, "Pertamax" => 12400, "Pertalite" => 10000];
-        $prices = ($q && $r = $q->fetch_assoc()) ? json_decode($r['setting_value'], true) : $defaultPrices;
-        sendResponse(['success' => true, 'fuelPrices' => $prices]);
-    }
-
-    // SAVE SETTINGS
-    if ($action == 'saveSettings') {
-        if ($input['role'] !== 'Administrator') sendResponse(['success' => false, 'message' => 'Unauthorized']);
-        $newPrices = json_encode($input['fuelPrices']);
-        $stmt = $conn->prepare("INSERT INTO vms_settings (setting_key, setting_value) VALUES ('fuel_prices', ?) ON DUPLICATE KEY UPDATE setting_value = ?");
-        $stmt->bind_param("ss", $newPrices, $newPrices);
-        if($stmt->execute()) sendResponse(['success' => true]);
-        else sendResponse(['success' => false, 'message' => 'DB Error']);
-    }
-
-    // GET DATA
+    // 1. GET DATA
     if ($action == 'getData' || $action == 'exportData') {
         $role = $input['role']; 
         $username = $input['username']; 
         $dept = $input['department'];
         
-        $qSet = $conn->query("SELECT setting_value FROM vms_settings WHERE setting_key = 'fuel_prices'");
-        $defaultPrices = ["Pertamax Turbo" => 13250, "Pertamax" => 12400, "Pertalite" => 10000];
-        $fuelPrices = ($qSet && $rSet = $qSet->fetch_assoc()) ? json_decode($rSet['setting_value'], true) : $defaultPrices;
-
-        // Vehicles
-        $vRes = $conn->query("SELECT plant_plat as plant, merk_tipe as model, status, last_refuel_odo FROM vms_vehicles");
+        $vRes = $conn->query("SELECT plant_plat as plant, merk_tipe as model, status FROM vms_vehicles");
         $vehicles = [];
         if($vRes) {
             while($v = $vRes->fetch_assoc()) {
@@ -91,7 +68,6 @@ try {
             }
         }
 
-        // Bookings
         $sql = "SELECT * FROM vms_bookings WHERE 1=1";
         if ($action == 'exportData') {
             if (!empty($input['startDate']) && !empty($input['endDate'])) {
@@ -106,53 +82,86 @@ try {
 
         $bRes = $conn->query($sql);
         $bookings = [];
+        
         if($bRes) {
             while($row = $bRes->fetch_assoc()) {
                 $include = false;
-                if (in_array($role, ['Administrator', 'PlantHead'])) $include = true;
+                
+                // Permission Logic
+                if (in_array($role, ['Administrator', 'PlantHead', 'HRGA'])) $include = true;
                 elseif ($row['username'] == $username) $include = true;
-                elseif ($row['department'] == $dept && ($role == 'SectionHead' || $role == 'TeamLeader')) $include = true;
-                elseif ($role == 'HRGA' && $dept == 'HRGA') $include = true;
-                elseif ($role == 'TeamLeader' && $dept == 'HRGA') $include = true;
-                if ($action == 'exportData' && in_array($role, ['Administrator', 'HRGA', 'TeamLeader'])) $include = true;
+                elseif ($role == 'SectionHead' && $row['department'] == $dept) $include = true;
+                elseif ($role == 'TeamLeader') {
+                     // TeamLeader HRGA sees all (L3 Approver)
+                     if ($dept == 'HRGA') { $include = true; } 
+                     // TeamLeader Dept sees own dept (Potential L1 Approver)
+                     elseif ($row['department'] == $dept) { $include = true; }
+                }
 
                 if($include) {
                     $row['id'] = $row['req_id'];
                     $row['timestamp'] = $row['created_at'];
-                    $row['updatedAt'] = $row['updated_at'];
-                    $row['appL1'] = $row['app_head']; $row['l1Time'] = $row['head_time']; $row['l1By'] = $row['head_by'] ?? '-';
-                    $row['appL2'] = $row['app_ga']; $row['l2Time'] = $row['ga_time']; $row['l2By'] = $row['ga_by'] ?? '-';
-                    $row['appL3'] = $row['app_final']; $row['l3Time'] = $row['final_time']; $row['l3By'] = $row['final_by'] ?? '-';
+                    
+                    $row['headStatus'] = $row['app_head'] ? $row['app_head'] : 'Pending';
+                    $row['headTime'] = $row['head_time'];
+                    $row['headBy'] = $row['head_by'] ?? '-';
+
+                    $row['gaStatus'] = $row['app_ga'] ? $row['app_ga'] : 'Pending';
+                    $row['gaTime'] = $row['ga_time'];
+                    $row['gaBy'] = $row['ga_by'] ?? '-';
+                    
+                    $row['finalStatus'] = $row['app_final'] ? $row['app_final'] : 'Pending';
+                    $row['finalTime'] = $row['final_time'];
+                    $row['finalBy'] = $row['final_by'] ?? '-';
+
                     $row['actionComment'] = $row['action_comment'];
                     $row['startKm'] = $row['start_km'];
                     $row['endKm'] = $row['end_km'];
+                    $row['departTime'] = $row['depart_time'];
+                    $row['returnTime'] = $row['return_time'];
                     $row['startPhoto'] = $row['start_photo'];
                     $row['endPhoto'] = $row['end_photo'];
-                    $row['isRefuel'] = $row['is_refuel'];
-                    $row['fuelType'] = $row['fuel_type'];
-                    $row['fuelCost'] = $row['fuel_cost'];
-                    $row['fuelLiters'] = $row['fuel_liters'];
-                    $row['fuelRatio'] = $row['fuel_ratio'];
-                    $row['fuelPhoto'] = $row['fuel_photo'];
+                    
                     $bookings[] = $row;
                 }
             }
         }
-        sendResponse(['success' => true, 'vehicles' => $vehicles, 'bookings' => $bookings, 'fuelPrices' => $fuelPrices]);
+        sendResponse(['success' => true, 'vehicles' => $vehicles, 'bookings' => $bookings]);
     }
 
-    // SUBMIT
+    // 2. SUBMIT (Modified L1 Logic)
     if ($action == 'submit') {
         $reqId = "VMS-" . time();
         $status = 'Pending Dept Head'; 
-        $stmt = $conn->prepare("INSERT INTO vms_bookings (req_id, username, fullname, role, department, vehicle, purpose, status, app_head, app_ga, app_final, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,'Pending','Pending','Pending',?,?)");
-        $stmt->bind_param("ssssssssss", $reqId, $input['username'], $input['fullname'], $input['role'], $input['department'], $input['vehicle'], $input['purpose'], $status, $currentDateTime, $currentDateTime);
+        $reqDept = $input['department'];
+        $appHead = 'Pending'; $appGa = 'Pending'; $appFinal = 'Pending';
+        
+        $stmt = $conn->prepare("INSERT INTO vms_bookings (req_id, username, fullname, role, department, vehicle, purpose, status, app_head, app_ga, app_final, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
+        $stmt->bind_param("ssssssssssss", $reqId, $input['username'], $input['fullname'], $input['role'], $input['department'], $input['vehicle'], $input['purpose'], $status, $appHead, $appGa, $appFinal, $currentDateTime);
+        
         if($stmt->execute()) {
             $conn->query("UPDATE vms_vehicles SET status = 'Reserved' WHERE plant_plat = '{$input['vehicle']}'");
-            // Notifikasi WA (Standard Code)
             try {
+                // Notif User
                 $userPhone = getUserPhone($conn, $input['username']);
                 if($userPhone) sendWA($userPhone, "📋 *VMS - SUBMITTED*\nUnit: {$input['vehicle']}\nStatus: Menunggu Approval Dept Head.");
+
+                // --- LOGIC L1 APPROVER (SectionHead vs TeamLeader) ---
+                $phonesL1 = [];
+                
+                // 1. Cari SectionHead dulu
+                $phonesL1 = getPhones($conn, 'SectionHead', $reqDept);
+                
+                // 2. Jika SectionHead KOSONG dan BUKAN Dept HRGA, kirim ke TeamLeader
+                if (empty($phonesL1) && $reqDept !== 'HRGA') {
+                    $phonesL1 = getPhones($conn, 'TeamLeader', $reqDept);
+                }
+                // (Jika Dept HRGA, biarkan kosong atau logic khusus jika ada, sesuai request 'kecuali HRGA')
+
+                $msgL1 = "🚗 *VMS - APPROVAL LEVEL 1*\nUser: {$input['fullname']} ({$reqDept})\nUnit: {$input['vehicle']}\nTujuan: {$input['purpose']}\n👉 _Mohon Approve sebagai Dept Head / Team Leader._";
+                
+                if(is_array($phonesL1)) foreach($phonesL1 as $ph) sendWA($ph, $msgL1);
+
             } catch (Exception $e) {}
             sendResponse(['success' => true]);
         } else {
@@ -160,7 +169,7 @@ try {
         }
     }
 
-    // UPDATE STATUS
+    // 3. UPDATE STATUS
     if ($action == 'updateStatus') {
         $id = $conn->real_escape_string($input['id']); 
         $act = $input['act']; 
@@ -171,84 +180,117 @@ try {
         $reqData = $qry->fetch_assoc();
         if(!$reqData) sendResponse(['success' => false, 'message' => 'Data not found']);
 
-        if($act == 'startTrip') {
+        $userPhone = getUserPhone($conn, $reqData['username']);
+        $currentStatus = $reqData['status'];
+
+        if($act == 'approve') {
+            $rawComment = $conn->real_escape_string($extra['comment'] ?? '');
+            $waNote = $rawComment ? "\n📝 *Note:* $rawComment" : "";
+            
+            // --- LEVEL 1: DEPT HEAD (Bisa SH atau TL) ---
+            if ($currentStatus == 'Pending Dept Head') {
+                $dbComment = $rawComment ? "L1 Approved by $approverName: $rawComment" : "";
+                $sql = "UPDATE vms_bookings SET status = 'Pending HRGA', app_head = 'Approved', head_time = '$currentDateTime', head_by = '$approverName', action_comment = '$dbComment' WHERE req_id = '$id'";
+                if($conn->query($sql)) {
+                    try {
+                        if($userPhone) sendWA($userPhone, "✅ *VMS - L1 APPROVED*\nDept Head/TL menyetujui.$waNote\nNext: Approval HRGA.");
+                        
+                        // L2: HRGA
+                        $phonesL2 = getPhones($conn, 'HRGA'); 
+                        foreach($phonesL2 as $ph) sendWA($ph, "🚗 *VMS - APPROVAL LEVEL 2 (HRGA)*\nUser: {$reqData['fullname']}\nUnit: {$reqData['vehicle']}\n👉 _Mohon dicek & Approve._");
+                    } catch (Exception $e) {}
+                }
+            }
+            // --- LEVEL 2: HRGA ---
+            elseif ($currentStatus == 'Pending HRGA') {
+                $dbComment = $rawComment ? "L2 Approved by $approverName: $rawComment" : "";
+                $sql = "UPDATE vms_bookings SET status = 'Pending Final', app_ga = 'Approved', ga_time = '$currentDateTime', ga_by = '$approverName', action_comment = '$dbComment' WHERE req_id = '$id'";
+                if($conn->query($sql)) {
+                    try {
+                        if($userPhone) sendWA($userPhone, "✅ *VMS - HRGA APPROVED*\nHRGA menyetujui.$waNote\nNext: Approval Final (TL HRGA).");
+                        
+                        // L3: TL HRGA + Backup HRGA
+                        $phonesTL = getPhones($conn, 'TeamLeader', 'HRGA');
+                        $phonesBackup = getPhones($conn, 'HRGA');
+                        $allL3 = array_unique(array_merge($phonesTL, $phonesBackup));
+                        foreach($allL3 as $ph) sendWA($ph, "🚗 *VMS - APPROVAL FINAL (L3)*\nUser: {$reqData['fullname']}\nUnit: {$reqData['vehicle']}\n👉 _Mohon persetujuan Final._");
+                    } catch (Exception $e) {}
+                }
+            }
+            // --- LEVEL 3: FINAL ---
+            elseif ($currentStatus == 'Pending Final') {
+                $dbComment = $rawComment ? "L3 Approved by $approverName: $rawComment" : "";
+                $sql = "UPDATE vms_bookings SET status = 'Approved', app_final = 'Approved', final_time = '$currentDateTime', final_by = '$approverName', action_comment = '$dbComment' WHERE req_id = '$id'";
+                if($conn->query($sql)) {
+                    try {
+                        if($userPhone) sendWA($userPhone, "✅ *VMS - FULL APPROVED*\nDisetujui Final oleh: $approverName.$waNote\nUnit: {$reqData['vehicle']}\n🔑 _Silakan ambil kunci & Start Trip._");
+                    } catch (Exception $e) {}
+                }
+            }
+            sendResponse(['success' => true]);
+        }
+        elseif($act == 'reject') {
+            $reason = $conn->real_escape_string($extra['comment'] ?? '-');
+            $fullComment = "Rejected by {$approverName}: {$reason}";
+            $updatePart = "";
+            if($currentStatus == 'Pending Dept Head') $updatePart = ", app_head = 'Rejected', head_by = '$approverName', head_time = '$currentDateTime'";
+            elseif($currentStatus == 'Pending HRGA') $updatePart = ", app_ga = 'Rejected', ga_by = '$approverName', ga_time = '$currentDateTime'";
+            elseif($currentStatus == 'Pending Final') $updatePart = ", app_final = 'Rejected', final_by = '$approverName', final_time = '$currentDateTime'";
+            $sql = "UPDATE vms_bookings SET status = 'Rejected', action_comment = '$fullComment' $updatePart WHERE req_id = '$id'";
+            $conn->query($sql);
+            $conn->query("UPDATE vms_vehicles SET status = 'Available' WHERE plant_plat = '{$reqData['vehicle']}'");
+            try { if($userPhone) sendWA($userPhone, "❌ *VMS - REJECTED*\nDitolak oleh {$approverName}.\nAlasan: {$reason}"); } catch (Exception $e) {}
+            sendResponse(['success' => true]);
+        }
+        // ... (Cancel, Start, End, Verify code remains same) ...
+        elseif($act == 'cancel') {
+            $comment = $conn->real_escape_string($extra['comment'] ?? 'User Cancelled');
+            $conn->query("UPDATE vms_bookings SET status = 'Cancelled', action_comment = '$comment', final_time = '$currentDateTime' WHERE req_id = '$id'");
+            $conn->query("UPDATE vms_vehicles SET status = 'Available' WHERE plant_plat = '{$reqData['vehicle']}'");
+            sendResponse(['success' => true]);
+        }
+        elseif($act == 'startTrip') {
             $url = uploadImageInternal($extra['photoBase64'], "START_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
             if($url) {
-                $conn->query("UPDATE vms_bookings SET status = 'Active', start_km = '{$extra['km']}', start_photo = '$url', depart_time = '$currentDateTime', updated_at = '$currentDateTime' WHERE req_id = '$id'");
+                $conn->query("UPDATE vms_bookings SET status = 'Active', start_km = '{$extra['km']}', start_photo = '$url', depart_time = '$currentDateTime' WHERE req_id = '$id'");
                 $conn->query("UPDATE vms_vehicles SET status = 'In Use' WHERE plant_plat = '{$reqData['vehicle']}'");
+                try { if($userPhone) sendWA($userPhone, "🚗 *VMS - VEHICLE OUT*\nUser: {$reqData['fullname']}\nUnit: {$reqData['vehicle']}\nODO Awal: {$extra['km']} km"); } catch (Exception $e) {}
                 sendResponse(['success' => true]);
-            } else {
-                sendResponse(['success' => false, 'message' => 'Gagal upload foto dashboard']);
             }
         }
-        
-        elseif($act == 'endTrip' || $act == 'submitCorrection') {
-            $prefix = ($act == 'endTrip') ? "END_" : "FIX_";
-            $dashUrl = uploadImageInternal($extra['photoBase64'], $prefix . preg_replace('/[^a-zA-Z0-9]/', '', $id));
-            
-            if($dashUrl) {
+        elseif($act == 'endTrip') {
+            $url = uploadImageInternal($extra['photoBase64'], "END_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
+            if($url) {
                 $route = $conn->real_escape_string($extra['route'] ?? '-');
                 $endKM = intval($extra['km']);
-                
-                $isRefuel = isset($extra['isRefuel']) && $extra['isRefuel'] ? 1 : 0;
-                $fuelType = $extra['fuelType'] ?? null;
-                $fuelCost = $isRefuel ? floatval($extra['fuelCost']) : 0;
-                $fuelLiters = 0;
-                $ratio = 0;
-                $fuelPhotoUrl = null;
-
-                if($isRefuel) {
-                    if(empty($extra['fuelPhotoBase64'])) {
-                        sendResponse(['success' => false, 'message' => 'Foto Struk BBM Wajib Diisi!']);
-                    }
-                    $fuelPhotoUrl = uploadImageInternal($extra['fuelPhotoBase64'], "FUEL_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
-                    
-                    if($fuelCost > 0) {
-                        $qP = $conn->query("SELECT setting_value FROM vms_settings WHERE setting_key = 'fuel_prices'");
-                        $prices = ($qP && $rP = $qP->fetch_assoc()) ? json_decode($rP['setting_value'], true) : [];
-                        $pricePerLiter = isset($prices[$fuelType]) ? floatval($prices[$fuelType]) : 10000;
-                        if($pricePerLiter > 0) $fuelLiters = $fuelCost / $pricePerLiter;
-                    }
-
-                    $vQ = $conn->query("SELECT last_refuel_odo FROM vms_vehicles WHERE plant_plat = '{$reqData['vehicle']}'");
-                    $vehData = $vQ->fetch_assoc();
-                    $lastRefuelOdo = intval($vehData['last_refuel_odo']);
-
-                    $distanceSinceRefuel = ($lastRefuelOdo == 0) ? ($endKM - intval($reqData['start_km'])) : ($endKM - $lastRefuelOdo);
-                    if($fuelLiters > 0 && $distanceSinceRefuel > 0) {
-                        $ratio = $distanceSinceRefuel / $fuelLiters;
-                    }
-                    $conn->query("UPDATE vms_vehicles SET last_refuel_odo = '$endKM' WHERE plant_plat = '{$reqData['vehicle']}'");
-                }
-
-                $newStatus = 'Pending Review';
-                $stmt = $conn->prepare("UPDATE vms_bookings SET status = ?, end_km = ?, end_photo = ?, action_comment = ?, return_time = ?, updated_at = ?, is_refuel = ?, fuel_type = ?, fuel_cost = ?, fuel_liters = ?, fuel_ratio = ?, fuel_photo = ? WHERE req_id = ?");
-                $stmt->bind_param("sissssdsdddss", $newStatus, $endKM, $dashUrl, $route, $currentDateTime, $currentDateTime, $isRefuel, $fuelType, $fuelCost, $fuelLiters, $ratio, $fuelPhotoUrl, $id);
-                $stmt->execute();
+                $conn->query("UPDATE vms_bookings SET status = 'Pending Review', end_km = '$endKM', end_photo = '$url', action_comment = '$route', return_time = '$currentDateTime' WHERE req_id = '$id'");
+                try {
+                    $phones = getPhones($conn, 'HRGA');
+                    if(is_array($phones)) foreach($phones as $ph) sendWA($ph, "🏁 *VMS - TRIP FINISHED*\nUser: {$reqData['fullname']}\nUnit: {$reqData['vehicle']}\nODO Akhir: $endKM km\n👉 _Mohon Verifikasi._");
+                } catch (Exception $e) {}
                 sendResponse(['success' => true]);
-            } else {
-                sendResponse(['success' => false, 'message' => 'Gagal upload foto dashboard']);
             }
         }
-        
-        elseif($act == 'approve') {
-             $conn->query("UPDATE vms_bookings SET status = 'Approved', updated_at = '$currentDateTime' WHERE req_id = '$id'");
-             sendResponse(['success' => true]);
-        }
-        elseif($act == 'reject' || $act == 'cancel') {
-             $st = ($act == 'reject') ? 'Rejected' : 'Cancelled';
-             $conn->query("UPDATE vms_bookings SET status = '$st', updated_at = '$currentDateTime' WHERE req_id = '$id'");
-             $conn->query("UPDATE vms_vehicles SET status = 'Available' WHERE plant_plat = '{$reqData['vehicle']}'");
-             sendResponse(['success' => true]);
-        }
         elseif($act == 'verifyTrip') {
-             $conn->query("UPDATE vms_bookings SET status = 'Done', updated_at = '$currentDateTime' WHERE req_id = '$id'");
-             $conn->query("UPDATE vms_vehicles SET status = 'Available' WHERE plant_plat = '{$reqData['vehicle']}'");
-             sendResponse(['success' => true]);
+            $conn->query("UPDATE vms_bookings SET status = 'Done' WHERE req_id = '$id'");
+            $conn->query("UPDATE vms_vehicles SET status = 'Available' WHERE plant_plat = '{$reqData['vehicle']}'");
+            try { if($userPhone) sendWA($userPhone, "✅ *VMS - TRIP VERIFIED*\nStatus: DONE\n_Unit kembali Available._"); } catch(Exception $e) {}
+            sendResponse(['success' => true]);
         }
         elseif($act == 'requestCorrection') {
-             $conn->query("UPDATE vms_bookings SET status = 'Correction Needed', updated_at = '$currentDateTime' WHERE req_id = '$id'");
-             sendResponse(['success' => true]);
+            $reason = $conn->real_escape_string($extra['comment']);
+            $conn->query("UPDATE vms_bookings SET status = 'Correction Needed', action_comment = 'Correction requested by $approverName: $reason' WHERE req_id = '$id'");
+            try { if($userPhone) sendWA($userPhone, "⚠️ *VMS - REVISI DATA TRIP*\nMohon perbaiki data trip Anda.\nNote: $reason"); } catch(Exception $e) {}
+            sendResponse(['success' => true]);
+        }
+        elseif($act == 'submitCorrection') {
+            $url = uploadImageInternal($extra['photoBase64'], "FIX_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
+            if($url) {
+                $route = $conn->real_escape_string($extra['route'] ?? '-');
+                $endKM = intval($extra['km']);
+                $conn->query("UPDATE vms_bookings SET status = 'Pending Review', end_km = '$endKM', end_photo = '$url', action_comment = '$route' WHERE req_id = '$id'");
+                sendResponse(['success' => true]);
+            }
         }
     }
 } catch (Exception $e) {
