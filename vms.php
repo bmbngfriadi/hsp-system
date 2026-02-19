@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vehicle Management System</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -19,10 +19,8 @@
     @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .btn-action { transition: all 0.2s; }
     .btn-action:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-    .stats-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
-    .stats-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-    .stats-active { ring: 2px solid #2563eb; background-color: #eff6ff; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    
     /* Stepper Styles */
     .step-container { display: flex; align-items: center; justify-content: space-between; width: 100%; position: relative; margin-bottom: 2px; }
     .step-item { position: relative; display: flex; flex-direction: column; align-items: center; z-index: 10; width: 33.33%; }
@@ -34,6 +32,83 @@
     .step-pending .step-circle { border-color: #f59e0b; background-color: #fffbeb; color: #d97706; }
     .step-waiting .step-circle { border-color: #e2e8f0; background-color: #f8fafc; color: #94a3b8; }
     .step-label { font-size: 8px; font-weight: 700; text-transform: uppercase; color: #64748b; margin-top: 4px; }
+
+    /* =========================================
+       ANIMATIONS FOR FLEET AVAILABILITY
+       ========================================= */
+    @keyframes drive {
+      0% { transform: translateX(0px) translateY(0px); }
+      25% { transform: translateX(3px) translateY(-1px); }
+      50% { transform: translateX(5px) translateY(0px); }
+      75% { transform: translateX(3px) translateY(1px); }
+      100% { transform: translateX(0px) translateY(0px); }
+    }
+    .anim-drive { animation: drive 1.2s infinite ease-in-out; }
+
+    @keyframes softPulse {
+      0% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.8; }
+    }
+    .anim-pulse-soft { animation: softPulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1); }
+
+    @keyframes swing {
+      0% { transform: rotate(0deg); }
+      25% { transform: rotate(-10deg); }
+      50% { transform: rotate(0deg); }
+      75% { transform: rotate(10deg); }
+      100% { transform: rotate(0deg); }
+    }
+    .anim-swing { animation: swing 2s infinite ease-in-out; }
+
+    /* =========================================
+       NEW: ANIMATIONS FOR STATS CARDS
+       ========================================= */
+    .stats-card {
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy hover effect */
+        border-bottom: 3px solid transparent; 
+        cursor: pointer;
+    }
+    .stats-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    .stats-active { 
+        ring: 2px solid #2563eb; background-color: #eff6ff; 
+        transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Dynamic bottom borders on hover */
+    .stats-card.card-total:hover { border-bottom-color: #3b82f6; } 
+    .stats-card.card-pending:hover { border-bottom-color: #f59e0b; } 
+    .stats-card.card-active:hover { border-bottom-color: #6366f1; } 
+    .stats-card.card-done:hover { border-bottom-color: #10b981; } 
+    .stats-card.card-failed:hover { border-bottom-color: #ef4444; } 
+
+    /* Icon Specific Keyframes */
+    @keyframes wiggle {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-12deg); }
+        75% { transform: rotate(12deg); }
+    }
+    @keyframes heartbeat {
+        0%, 100% { transform: scale(1); }
+        25% { transform: scale(1.15); }
+        50% { transform: scale(1); }
+        75% { transform: scale(1.15); }
+    }
+    @keyframes shakeFast {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
+    /* Trigger icon animations ONLY when the card is hovered */
+    .group:hover .icon-anim-total { animation: wiggle 0.6s ease-in-out infinite; }
+    .group:hover .icon-anim-pending { animation: spin 4s linear infinite; } /* Slower spin */
+    .group:hover .icon-anim-active { animation: drive 0.8s infinite linear; }
+    .group:hover .icon-anim-done { animation: heartbeat 1.2s ease-in-out infinite; }
+    .group:hover .icon-anim-failed { animation: shakeFast 0.4s ease-in-out infinite; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
@@ -59,7 +134,9 @@
             <h2 class="text-lg font-bold text-slate-700 flex items-center mb-4"><i class="fas fa-car mr-2 text-blue-600"></i> <span data-i18n="fleet_avail">Fleet Availability</span></h2>
             <div id="fleet-status-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"><div class="bg-white p-4 rounded-xl shadow-sm text-center text-xs text-slate-400 py-6 border border-slate-200 italic">Checking status...</div></div>
         </div>
+        
         <div id="stats-container" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6"></div>
+        
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
            <div><h2 class="text-xl font-bold text-slate-700" data-i18n="trip_history">Trip History</h2><p class="text-xs text-slate-500" data-i18n="click_filter">Click statistics above to filter.</p></div>
            <div class="flex gap-2 w-full sm:w-auto items-center">
@@ -178,9 +255,100 @@
         }); 
     }
 
-    function renderStats(){const t=allBookingsData.length,p=allBookingsData.filter(r=>r.status.includes('Pending')||r.status==='Pending Review'||r.status==='Correction Needed').length,a=allBookingsData.filter(r=>r.status==='Active').length,d=allBookingsData.filter(r=>r.status==='Done').length,f=allBookingsData.filter(r=>r.status==='Rejected'||r.status==='Cancelled').length;const mc=(t,c,i,cl,ft)=>`<div onclick="filterTableByStatus('${ft}')" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 stats-card relative overflow-hidden group"><div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition"><i class="fas ${i} text-4xl text-${cl}-500"></i></div><div class="text-slate-500 text-xs font-bold uppercase mb-1">${t}</div><div class="text-2xl font-bold text-slate-800">${c}</div></div>`;document.getElementById('stats-container').innerHTML=mc('Total Requests',t,'fa-list','blue','All')+mc('Pending',p,'fa-clock','yellow','Pending')+mc('Active Trip',a,'fa-road','blue','Active')+mc('Completed',d,'fa-check-circle','emerald','Done')+mc('Cancelled/Reject',f,'fa-times-circle','red','Failed');}
+    // ==========================================
+    // UPDATED FUNCTION: RENDER STATS (WITH ANIMATION CLASSES)
+    // ==========================================
+    function renderStats() {
+        const t = allBookingsData.length;
+        const p = allBookingsData.filter(r => r.status.includes('Pending') || r.status === 'Pending Review' || r.status === 'Correction Needed').length;
+        const a = allBookingsData.filter(r => r.status === 'Active').length;
+        const d = allBookingsData.filter(r => r.status === 'Done').length;
+        const f = allBookingsData.filter(r => r.status === 'Rejected' || r.status === 'Cancelled').length;
+
+        // Function generator untuk kartu dengan struktur yang lebih dinamis
+        const buildCard = (title, count, iconClass, colorName, filterType, specificClass, animIconClass) => {
+            return `
+            <div onclick="filterTableByStatus('${filterType}')" class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 stats-card card-${specificClass} relative overflow-hidden group">
+                <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-${colorName}-50 opacity-50 group-hover:scale-[2.5] transition-transform duration-500 ease-out z-0"></div>
+                
+                <div class="relative z-10 flex justify-between items-start">
+                    <div>
+                        <div class="text-slate-500 text-[10px] font-black tracking-wider uppercase mb-1 drop-shadow-sm">${title}</div>
+                        <div class="text-3xl font-black text-slate-800 tracking-tight">${count}</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-${colorName}-50 text-${colorName}-500 shadow-sm group-hover:bg-white group-hover:shadow-md transition-all duration-300">
+                        <i class="fas ${iconClass} text-xl icon-anim-${specificClass}"></i>
+                    </div>
+                </div>
+            </div>`;
+        };
+
+        document.getElementById('stats-container').innerHTML = 
+            buildCard('Total Requests', t, 'fa-list-ul', 'blue', 'All', 'total') +
+            buildCard('Pending', p, 'fa-clock', 'amber', 'Pending', 'pending') +
+            buildCard('Active Trip', a, 'fa-road', 'indigo', 'Active', 'active') +
+            buildCard('Completed', d, 'fa-check-circle', 'emerald', 'Done', 'done') +
+            buildCard('Cancelled/Reject', f, 'fa-times-circle', 'red', 'Failed', 'failed');
+    }
+
     function filterTableByStatus(f){const cards=document.querySelectorAll('.stats-card');cards.forEach(c=>c.classList.remove('stats-active'));let filtered=[];if(f==='All')filtered=allBookingsData;else if(f==='Pending')filtered=allBookingsData.filter(r=>r.status.includes('Pending')||r.status==='Correction Needed'||r.status==='Pending Review');else if(f==='Failed')filtered=allBookingsData.filter(r=>r.status==='Rejected'||r.status==='Cancelled');else filtered=allBookingsData.filter(r=>r.status===f);renderTable(filtered);}
-    function renderFleetStatus(v){const c=document.getElementById('fleet-status-container');c.innerHTML='';if(v.length===0){c.innerHTML='<div class="text-slate-500 text-sm italic">No fleet available.</div>';return;}v.forEach(x=>{let cl='bg-white border-slate-200 text-slate-600',ic='fa-car',st='Unknown',ei='';if(x.status==='Available'){cl='bg-green-50 border-green-200 text-green-700';ic='fa-check-circle';st='Available';}else if(x.status==='In Use'){cl='bg-blue-50 border-blue-200 text-blue-700';ic='fa-road';st='In Use';if(x.holder_name)ei=`<div class="mt-2 pt-2 border-t border-blue-200 text-[10px] text-blue-800"><div class="font-bold truncate">${x.holder_name}</div><div class="opacity-75 truncate">${x.holder_dept}</div></div>`;}else if(x.status==='Reserved'){cl='bg-yellow-50 border-yellow-200 text-yellow-700';ic='fa-clock';st='Reserved';if(x.holder_name)ei=`<div class="mt-2 pt-2 border-t border-yellow-200 text-[10px] text-yellow-800"><div class="font-bold truncate">${x.holder_name}</div><div class="opacity-75 truncate">${x.holder_dept}</div></div>`;}else{cl='bg-red-50 border-red-200 text-red-700';ic='fa-ban';st='Maintenance';}c.innerHTML+=`<div class="${cl} border p-4 rounded-xl shadow-sm h-full flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-default"><div><div class="flex justify-between items-start mb-2"><div><div class="font-bold text-sm text-slate-800">${x.plant}</div><div class="text-[10px] uppercase font-semibold opacity-70 mt-0.5">${x.model}</div></div><i class="fas ${ic} text-lg opacity-50"></i></div><div class="text-right text-xs font-bold mb-1">${st}</div>${ei}</div></div>`;});}
+    
+    function renderFleetStatus(v){
+        const c=document.getElementById('fleet-status-container');
+        c.innerHTML='';
+        if(v.length===0){
+            c.innerHTML='<div class="text-slate-500 text-sm italic">No fleet available.</div>';
+            return;
+        }
+        
+        v.forEach(x => {
+            let cl = 'bg-white border-slate-200 text-slate-600', ic = 'fa-car', st = 'Unknown', ei = '', animClass = '', cardAnimClass = '';
+            
+            if (x.status === 'Available') {
+                cl = 'bg-green-50 border-green-200 text-green-700 hover:border-green-400 hover:shadow-green-100';
+                ic = 'fa-check-circle text-green-500';
+                st = 'Available';
+                animClass = 'anim-pulse-soft'; 
+                cardAnimClass = 'hover:-translate-y-1 hover:shadow-md';
+            } else if (x.status === 'In Use') {
+                cl = 'bg-blue-50 border-blue-200 text-blue-700 hover:border-blue-400 hover:shadow-blue-100';
+                ic = 'fa-car-side text-blue-500'; 
+                st = 'In Use';
+                animClass = 'anim-drive'; 
+                cardAnimClass = 'hover:-translate-y-1 hover:shadow-md';
+                if(x.holder_name) ei = `<div class="mt-3 pt-2 border-t border-blue-200/50 text-[10px] text-blue-800 flex items-center gap-2"><i class="fas fa-user-circle text-blue-400 text-sm"></i><div class="flex-1 overflow-hidden"><div class="font-bold truncate">${x.holder_name}</div><div class="opacity-75 truncate">${x.holder_dept}</div></div></div>`;
+            } else if (x.status === 'Reserved') {
+                cl = 'bg-yellow-50 border-yellow-200 text-yellow-700 hover:border-yellow-400 hover:shadow-yellow-100';
+                ic = 'fa-clock text-yellow-600';
+                st = 'Reserved';
+                animClass = 'anim-swing'; 
+                cardAnimClass = 'hover:-translate-y-1 hover:shadow-md';
+                if(x.holder_name) ei = `<div class="mt-3 pt-2 border-t border-yellow-200/50 text-[10px] text-yellow-800 flex items-center gap-2"><i class="fas fa-user-clock text-yellow-500 text-sm"></i><div class="flex-1 overflow-hidden"><div class="font-bold truncate">${x.holder_name}</div><div class="opacity-75 truncate">${x.holder_dept}</div></div></div>`;
+            } else {
+                cl = 'bg-red-50 border-red-200 text-red-700 hover:border-red-300';
+                ic = 'fa-wrench text-red-400';
+                st = 'Maintenance';
+            }
+
+            c.innerHTML += `
+            <div class="${cl} border p-4 rounded-xl shadow-sm h-full flex flex-col justify-between transition-all duration-300 ${cardAnimClass} cursor-pointer relative overflow-hidden group">
+                <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-40 transition-opacity duration-300 pointer-events-none"></div>
+                <div class="relative z-10">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <div class="font-bold text-sm text-slate-800 drop-shadow-sm">${x.plant}</div>
+                            <div class="text-[10px] uppercase font-bold opacity-70 mt-0.5">${x.model}</div>
+                        </div>
+                        <div class="p-2 rounded-full bg-white/60 shadow-sm flex items-center justify-center w-8 h-8 group-hover:bg-white transition-colors duration-300">
+                            <i class="fas ${ic} text-lg ${animClass}"></i>
+                        </div>
+                    </div>
+                    <div class="text-right text-xs font-black mb-1 tracking-wide uppercase mt-2">${st}</div>
+                    ${ei}
+                </div>
+            </div>`;
+        });
+    }
     
     function renderTable(d){
         const tb=document.getElementById('data-table-body'),cc=document.getElementById('data-card-container');
@@ -253,13 +421,13 @@
 
             const cd=r.actionComment?`<div class="text-[10px] text-slate-600 bg-slate-100 p-2 rounded border border-slate-200 italic max-w-[200px] leading-tight">${r.actionComment}</div>`:'<span class="text-slate-300 text-[10px]">-</span>';
             
-            // --- TRIP INFO CARD (UPDATED WITH DISTANCE) ---
+            // --- TRIP INFO CARD (WITH DISTANCE) ---
             let startK = parseInt(r.startKm) || 0;
             let endK = parseInt(r.endKm) || 0;
             let distInfo = '';
             if (endK > 0 && endK >= startK) {
                 let diff = endK - startK;
-                distInfo = `<div class="mt-1.5"><span class="bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold px-2 py-0.5 rounded-full"><i class="fas fa-route mr-1"></i>${diff} km</span></div>`;
+                distInfo = `<div class="mt-1.5"><span class="bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm"><i class="fas fa-route mr-1 text-indigo-400"></i>${diff} km</span></div>`;
             }
 
             let tripCard = `<div class="bg-white border border-slate-200 rounded-xl p-2 text-center w-full shadow-sm"><div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Odometer</div><div class="font-mono text-xs font-bold text-slate-700 bg-slate-50 border border-slate-100 rounded px-2 py-1 inline-block">${r.startKm||'0'} <span class="text-slate-300 mx-1">→</span> ${r.endKm||'...'}</div>${distInfo}<div class="flex justify-center gap-2 mt-2">${r.startPhoto ? `<button onclick="viewPhoto('${r.startPhoto}')" class="text-blue-500 bg-blue-50 border border-blue-100 hover:bg-blue-100 p-1.5 rounded transition shadow-sm" title="Start Photo"><i class="fas fa-camera text-xs"></i></button>` : `<span class="w-6"></span>`}${r.endPhoto ? `<button onclick="viewPhoto('${r.endPhoto}')" class="text-orange-500 bg-orange-50 border border-orange-100 hover:bg-orange-100 p-1.5 rounded transition shadow-sm" title="End Photo"><i class="fas fa-camera text-xs"></i></button>` : `<span class="w-6"></span>`}</div></div>`;
@@ -275,7 +443,6 @@
         });
     }
 
-    // ... (SISA FUNCTION SAMA: populateVehicleSelect, submitData, dll) ...
     function populateVehicleSelect() { const sel = document.getElementById('input-vehicle'); sel.innerHTML = '<option value="">-- Select Unit (Available) --</option>'; availableVehicles.filter(v => v.status === 'Available').forEach(v => { sel.innerHTML += `<option value="${v.plant}">${v.plant} - ${v.model}</option>`; }); }
     function submitData() { const v = document.getElementById('input-vehicle').value, p = document.getElementById('input-purpose').value, btn = document.getElementById('btn-create-submit'); if(!v || !p) return showAlert("Error", "Please complete all fields."); btn.disabled = true; btn.innerText = "Processing..."; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'submit', username: currentUser.username, fullname: currentUser.fullname, role: currentUser.role, department: currentUser.department, vehicle: v, purpose: p }) }).then(r => r.json()).then(res => { btn.disabled = false; btn.innerText = "Submit Request"; if(res.success) { closeModal('modal-create'); loadData(); showAlert("Success", "Request sent."); } else { showAlert("Error", res.message); } }); }
     function callUpdate(id, act, comment) { fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: {comment: comment} }) }).then(r => r.json()).then(res => { if(res.success) loadData(); else showAlert("Error", res.message || "Failed to update"); }).catch(e => showAlert("Error", "Connection error")); }
@@ -284,7 +451,6 @@
     function confirmTrip(id) { showConfirm("Verify Trip", "Verify that this trip is completed and data is correct?", (c) => callUpdate(id, 'verifyTrip', c)); } 
     function requestCorrection(id) { showConfirm("Request Correction", "Reason for correction (sent to user):", (c) => { if(!c) return showAlert("Error", "Reason required"); callUpdate(id, 'requestCorrection', c); }); }
     
-    // ... (Function Trip Modal, Camera, dll TIDAK BERUBAH) ...
     function openTripModal(id, act, startKmVal, vehiclePlat) { 
         document.getElementById('trip-id').value = id; document.getElementById('trip-action').value = act; 
         document.getElementById('modal-trip-title').innerText = (act === 'startTrip') ? 'Departure Update' : (act === 'endTrip' ? 'Arrival Update' : 'Correct Trip Data');
