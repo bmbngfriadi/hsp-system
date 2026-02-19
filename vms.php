@@ -62,10 +62,10 @@
     .anim-swing { animation: swing 2s infinite ease-in-out; }
 
     /* =========================================
-       NEW: ANIMATIONS FOR STATS CARDS
+       ANIMATIONS FOR STATS CARDS
        ========================================= */
     .stats-card {
-        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy hover effect */
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); 
         border-bottom: 3px solid transparent; 
         cursor: pointer;
     }
@@ -78,14 +78,12 @@
         transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
-    /* Dynamic bottom borders on hover */
     .stats-card.card-total:hover { border-bottom-color: #3b82f6; } 
     .stats-card.card-pending:hover { border-bottom-color: #f59e0b; } 
     .stats-card.card-active:hover { border-bottom-color: #6366f1; } 
     .stats-card.card-done:hover { border-bottom-color: #10b981; } 
     .stats-card.card-failed:hover { border-bottom-color: #ef4444; } 
 
-    /* Icon Specific Keyframes */
     @keyframes wiggle {
         0%, 100% { transform: rotate(0deg); }
         25% { transform: rotate(-12deg); }
@@ -103,9 +101,8 @@
       75% { transform: translateX(4px); }
     }
 
-    /* Trigger icon animations ONLY when the card is hovered */
     .group:hover .icon-anim-total { animation: wiggle 0.6s ease-in-out infinite; }
-    .group:hover .icon-anim-pending { animation: spin 4s linear infinite; } /* Slower spin */
+    .group:hover .icon-anim-pending { animation: spin 4s linear infinite; } 
     .group:hover .icon-anim-active { animation: drive 0.8s infinite linear; }
     .group:hover .icon-anim-done { animation: heartbeat 1.2s ease-in-out infinite; }
     .group:hover .icon-anim-failed { animation: shakeFast 0.4s ease-in-out infinite; }
@@ -174,10 +171,18 @@
   <div id="modal-create" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-xl w-full max-w-md shadow-2xl overflow-hidden animate-slide-up"><div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center"><h3 class="font-bold text-slate-700" data-i18n="modal_book_title">Vehicle Booking</h3><button onclick="closeModal('modal-create')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button></div><form onsubmit="event.preventDefault(); submitData();" class="p-6"><div class="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100 text-xs text-blue-800 flex justify-between items-center"><span><i class="fas fa-building mr-1"></i> Department:</span><span id="display-user-dept" class="font-bold">-</span></div><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1" data-i18n="select_unit">Select Unit (Available)</label><div class="relative"><select id="input-vehicle" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 bg-white" required><option>Loading...</option></select></div></div><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1" data-i18n="purpose">Purpose</label><textarea id="input-purpose" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500" rows="3" required placeholder="Explain trip details"></textarea></div><div class="flex justify-end gap-3 pt-2"><button type="button" onclick="closeModal('modal-create')" class="px-5 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold" data-i18n="cancel">Cancel</button><button type="submit" id="btn-create-submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-bold shadow-sm btn-action" data-i18n="submit_req">Submit Request</button></div></form></div>
   </div>
+  
+  <div id="modal-image" class="hidden fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 cursor-pointer" onclick="closeModal('modal-image')">
+      <div class="relative max-w-5xl w-full flex flex-col items-center animate-slide-up" onclick="event.stopPropagation()">
+          <button onclick="closeModal('modal-image')" class="absolute -top-12 right-0 text-white/70 hover:text-white transition text-4xl font-light hover:scale-110">&times;</button>
+          <img id="viewer-img" src="" alt="View" class="max-h-[85vh] max-w-full rounded-xl shadow-2xl object-contain border-2 border-white/10 bg-black/50">
+      </div>
+  </div>
+
   <div id="modal-settings" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up"><div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center"><h3 class="font-bold text-slate-700">Fuel Prices (Admin)</h3><button onclick="closeModal('modal-settings')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button></div><form onsubmit="event.preventDefault(); saveFuelSettings();" class="p-6"><div class="space-y-4"><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pertamax Turbo (Rp/L)</label><input type="number" id="set-turbo" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pertamax (Rp/L)</label><input type="number" id="set-pertamax" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pertalite (Rp/L)</label><input type="number" id="set-pertalite" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div></div><div class="mt-6 flex justify-end gap-3"><button type="button" onclick="closeModal('modal-settings')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold">Cancel</button><button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-bold shadow-sm">Save Changes</button></div></form></div></div>
   <div id="modal-export" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up"><div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center"><h3 class="font-bold text-slate-700">Export Report</h3><button onclick="closeModal('modal-export')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button></div><div class="p-6"><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Start Date</label><input type="date" id="exp-start" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div><div class="mb-6"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">End Date</label><input type="date" id="exp-end" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div><button onclick="doExport('excel', true)" class="w-full mb-3 bg-blue-50 text-blue-700 border border-blue-200 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-100 flex items-center justify-center gap-2"><i class="fas fa-database"></i> Export All Time (Excel)</button><div class="grid grid-cols-2 gap-3"><button onclick="doExport('excel', false)" class="bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-700 flex items-center justify-center gap-2"><i class="fas fa-file-excel"></i> Excel</button><button onclick="doExport('pdf', false)" class="bg-red-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-red-700 flex items-center justify-center gap-2"><i class="fas fa-file-pdf"></i> PDF</button></div><div id="exp-loading" class="hidden text-center mt-3 text-xs text-slate-500"><i class="fas fa-spinner fa-spin mr-1"></i> Generating Report...</div></div></div></div>
   <div id="modal-trip" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"><div class="bg-white rounded-t-2xl sm:rounded-xl w-full max-w-5xl shadow-2xl flex flex-col max-h-[90vh] animate-slide-up"><div class="flex-none bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center rounded-t-2xl sm:rounded-t-xl"><h3 class="font-bold text-slate-700" id="modal-trip-title">Update KM</h3><button onclick="closeModal('modal-trip')" class="text-slate-400 hover:text-red-500 p-2"><i class="fas fa-times text-lg"></i></button></div><form onsubmit="event.preventDefault(); submitTripUpdate();" class="flex flex-col flex-grow overflow-hidden"><input type="hidden" id="trip-id"><input type="hidden" id="trip-action"><input type="hidden" id="modal-start-km-val" value="0"><div class="flex-grow overflow-y-auto p-6 custom-scrollbar"><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="flex flex-col gap-5"><div id="div-calc-distance" class="hidden p-4 bg-blue-50 rounded-lg border border-blue-100"><div class="flex justify-between items-center text-sm"><span class="text-slate-500 font-medium">Start KM: <b id="disp-start-km" class="text-slate-700">0</b></span><span class="font-bold text-blue-700">Total: <span id="disp-total-km">0</span> KM</span></div></div>
-  <div id="div-last-info" class="hidden bg-orange-50 border border-orange-100 rounded-lg p-3 flex items-start gap-3"><img id="last-photo-img" src="" class="w-16 h-16 object-cover rounded bg-gray-200 cursor-pointer border border-orange-200" onclick="window.open(this.src, '_blank')"><div><div class="text-[10px] font-bold text-orange-500 uppercase mb-1">Previous Trip Info</div><div class="text-xs text-orange-800 font-bold">Last Odometer: <span id="last-km-val">0</span> KM</div><div class="text-[10px] text-orange-600">Please verify with actual dashboard.</div></div></div>
+  <div id="div-last-info" class="hidden bg-orange-50 border border-orange-100 rounded-lg p-3 flex items-start gap-3"><img id="last-photo-img" src="" class="w-16 h-16 object-cover rounded bg-gray-200 cursor-pointer border border-orange-200" onclick="viewPhoto(this.src)"><div><div class="text-[10px] font-bold text-orange-500 uppercase mb-1">Previous Trip Info</div><div class="text-xs text-orange-800 font-bold">Last Odometer: <span id="last-km-val">0</span> KM</div><div class="text-[10px] text-orange-600">Please verify with actual dashboard.</div></div></div>
   <div><label class="block text-xs font-bold text-slate-500 uppercase mb-2" id="lbl-km">Odometer Input (KM)</label><input type="number" id="input-km" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 shadow-sm" required placeholder="Example: 12500" onkeyup="calcTotalDistance()"></div><div id="div-route-update" class="hidden flex-grow"><label class="block text-xs font-bold text-slate-500 uppercase mb-2">Actual Route Details</label><textarea id="input-route-update" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 h-full min-h-[80px]" rows="3"></textarea></div>
   <div id="div-fuel-input" class="hidden border-t border-slate-100 pt-4 mt-2">
       <div class="flex items-center gap-2 mb-3"><input type="checkbox" id="check-fuel" onchange="toggleFuelSection()" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"><label for="check-fuel" class="text-sm font-bold text-slate-700">Isi BBM? (Refuel)</label></div>
@@ -194,7 +199,9 @@
   <div id="modal-cancel" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl relative animate-slide-up"><button onclick="closeModal('modal-cancel')" class="absolute top-4 right-4 text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button><h3 class="text-lg font-bold mb-4 text-slate-800">Cancel Booking</h3><form onsubmit="event.preventDefault(); submitCancel();"><input type="hidden" id="cancel-id"><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Reason / Note</label><textarea id="cancel-note" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500" rows="3"></textarea></div><div class="flex justify-end gap-3"><button type="button" onclick="closeModal('modal-cancel')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold" data-i18n="cancel">Back</button><button type="submit" id="btn-cancel-submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-bold shadow-sm btn-action">Yes, Cancel</button></div></form></div></div>
 
   <script>
-    document.addEventListener('keydown', function(event) { if (event.key === "Escape") { const modals = ['modal-create', 'modal-export', 'modal-trip', 'modal-confirm', 'modal-alert', 'modal-cancel', 'modal-settings']; modals.forEach(id => closeModal(id)); } });
+    // Update daftar modal untuk event listener tombol Escape
+    document.addEventListener('keydown', function(event) { if (event.key === "Escape") { const modals = ['modal-create', 'modal-export', 'modal-trip', 'modal-confirm', 'modal-alert', 'modal-cancel', 'modal-settings', 'modal-image']; modals.forEach(id => closeModal(id)); } });
+    
     let currentUser = null, availableVehicles = [], allBookingsData = [], confirmCallback = null;
     let videoStreamDashboard = null, videoStreamReceipt = null;
     let capturedDashboardBase64 = null, capturedReceiptBase64 = null;
@@ -207,8 +214,16 @@
 
     function toggleLanguage() { currentLang = (currentLang === 'en') ? 'id' : 'en'; localStorage.setItem('portal_lang', currentLang); applyLanguage(); }
     function applyLanguage() { document.getElementById('lang-label').innerText = currentLang.toUpperCase(); document.querySelectorAll('[data-i18n]').forEach(el => { const k = el.getAttribute('data-i18n'); if(i18n[currentLang][k]) el.innerText = i18n[currentLang][k]; }); }
+    
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-    function closeModal(id) { document.getElementById(id).classList.add('hidden'); if(id === 'modal-trip') { stopCamera('dashboard'); stopCamera('receipt'); } }
+    
+    function closeModal(id) { 
+        document.getElementById(id).classList.add('hidden'); 
+        if(id === 'modal-trip') { stopCamera('dashboard'); stopCamera('receipt'); } 
+        // Bersihkan gambar di modal image saat ditutup agar tidak flash/berkedip saat buka gambar lain
+        if(id === 'modal-image') { setTimeout(() => { document.getElementById('viewer-img').src = ''; }, 300); }
+    }
+    
     function goBackToPortal() { window.location.href = "index.php"; }
     function showConfirm(title, message, callback) { document.getElementById('conf-title').innerText = title; document.getElementById('conf-msg').innerText = message; document.getElementById('conf-comment').value = ''; confirmCallback = callback; openModal('modal-confirm'); }
     function execConfirm() { const comment = document.getElementById('conf-comment').value; if (confirmCallback) confirmCallback(comment); closeModal('modal-confirm'); confirmCallback = null; }
@@ -255,9 +270,6 @@
         }); 
     }
 
-    // ==========================================
-    // UPDATED FUNCTION: RENDER STATS (WITH ANIMATION CLASSES)
-    // ==========================================
     function renderStats() {
         const t = allBookingsData.length;
         const p = allBookingsData.filter(r => r.status.includes('Pending') || r.status === 'Pending Review' || r.status === 'Correction Needed').length;
@@ -265,12 +277,10 @@
         const d = allBookingsData.filter(r => r.status === 'Done').length;
         const f = allBookingsData.filter(r => r.status === 'Rejected' || r.status === 'Cancelled').length;
 
-        // Function generator untuk kartu dengan struktur yang lebih dinamis
-        const buildCard = (title, count, iconClass, colorName, filterType, specificClass, animIconClass) => {
+        const buildCard = (title, count, iconClass, colorName, filterType, specificClass) => {
             return `
             <div onclick="filterTableByStatus('${filterType}')" class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 stats-card card-${specificClass} relative overflow-hidden group">
                 <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-${colorName}-50 opacity-50 group-hover:scale-[2.5] transition-transform duration-500 ease-out z-0"></div>
-                
                 <div class="relative z-10 flex justify-between items-start">
                     <div>
                         <div class="text-slate-500 text-[10px] font-black tracking-wider uppercase mb-1 drop-shadow-sm">${title}</div>
@@ -620,7 +630,16 @@
 
     function sendTripData(id, act, extraData) { const btn = document.getElementById('btn-trip-submit'); btn.innerText = "Sending Data..."; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: extraData }) }).then(r => r.json()).then(res => { btn.disabled = false; btn.innerText = "Save Update"; if(res.success) { closeModal('modal-trip'); loadData(); } else { showAlert("Error", res.message); } }).catch(err => { btn.disabled = false; btn.innerText = "Save Update"; console.error(err); showAlert("Error", "Connection Failed: " + err.message); }); }
     function calcTotalDistance() { const start = parseInt(document.getElementById('modal-start-km-val').value) || 0; const end = parseInt(document.getElementById('input-km').value) || 0; const total = end - start; const disp = document.getElementById('disp-total-km'); if (total < 0) { disp.innerText = "Check ODO"; disp.className = "text-red-600 font-bold"; } else { disp.innerText = total; disp.className = ""; } }
-    function viewPhoto(url) { if (!url) return; window.open(url, '_blank'); }
+    
+    // ==========================================
+    // UPDATED FUNCTION: VIEW PHOTO DI DALAM MODAL
+    // ==========================================
+    function viewPhoto(url) { 
+        if (!url) return; 
+        document.getElementById('viewer-img').src = url; // Set source gambar
+        openModal('modal-image'); // Tampilkan modal
+    }
+    
     function openCancelModal(id) { document.getElementById('cancel-id').value = id; document.getElementById('cancel-note').value = ''; openModal('modal-cancel'); }
     function submitCancel() { const id = document.getElementById('cancel-id').value, note = document.getElementById('cancel-note').value, btn = document.getElementById('btn-cancel-submit'); btn.disabled = true; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: 'cancel', userRole: currentUser.role, extraData: {comment: note} }) }).then(() => { closeModal('modal-cancel'); loadData(); }); }
   </script>
