@@ -1,5 +1,5 @@
 <?php
-// api/vms.php - CONDITIONAL LEVEL 1 (PLANT HEAD OR DEPT HEAD) + ROBUST DB
+// api/vms.php - CONDITIONAL LEVEL 1 (PLANT HEAD OR DEPT HEAD) + ROBUST DB + ADVANCED CORRECTION
 error_reporting(E_ALL);
 ini_set('display_errors', 0); 
 date_default_timezone_set('Asia/Jakarta');
@@ -231,17 +231,14 @@ try {
         
         $appHead = 'Pending'; $appPlant = 'Pending'; $appGa = 'Pending'; $appFinal = 'Pending';
         
-        // --- LOGIC PENENTUAN STATUS AWAL ---
         if (in_array($reqRole, ['TeamLeader', 'SectionHead'])) {
-            // Jalur Khusus: Langsung ke Plant Head
             $status = 'Pending Plant Head';
-            $appHead = 'Auto-Skip'; // Bypass Dept Head
+            $appHead = 'Auto-Skip'; 
             $appPlant = 'Pending';
         } else {
-            // Jalur Normal: Dept Head -> HRGA
             $status = 'Pending Dept Head';
             $appHead = 'Pending';
-            $appPlant = 'Auto-Skip'; // Bypass Plant Head
+            $appPlant = 'Auto-Skip'; 
         }
         
         $stmt = $conn->prepare("INSERT INTO vms_bookings (req_id, username, fullname, role, department, vehicle, purpose, status, app_head, app_plant, app_ga, app_final, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)");
@@ -254,18 +251,14 @@ try {
                 $userPhone = getUserPhone($conn, $input['username']);
                 if($userPhone) sendWA($userPhone, "📋 *VMS - SUBMITTED*\nUnit: {$input['vehicle']}\nStatus: Menunggu Approval Level 1.");
                 
-                // --- LOGIC NOTIFIKASI WA ---
                 if ($status == 'Pending Plant Head') {
-                    // Notif ke Plant Head
                     $phonesPH = getPhones($conn, 'PlantHead');
                     foreach($phonesPH as $ph) sendWA($ph, "🚗 *VMS - APPROVAL PLANT HEAD (L1)*\nUser: {$input['fullname']} ({$reqRole})\nUnit: {$input['vehicle']}\nTujuan: {$input['purpose']}\n👉 _Mohon Approve._");
                 } else {
-                    // Notif ke Dept Head (SectionHead/TeamLeader)
                     $phonesL1 = getPhones($conn, 'SectionHead', $reqDept);
                     if (empty($phonesL1) && $reqDept !== 'HRGA') $phonesL1 = getPhones($conn, 'TeamLeader', $reqDept);
                     if(is_array($phonesL1)) foreach($phonesL1 as $ph) sendWA($ph, "🚗 *VMS - APPROVAL DEPT HEAD (L1)*\nUser: {$input['fullname']}\nUnit: {$input['vehicle']}\nTujuan: {$input['purpose']}\n👉 _Mohon Approve._");
                 }
-
             } catch (Exception $e) {}
             sendResponse(['success' => true]);
         } else {
@@ -290,7 +283,6 @@ try {
             $rawComment = $conn->real_escape_string($extra['comment'] ?? '');
             $waNote = $rawComment ? "\n📝 *Note:* $rawComment" : "";
             
-            // 1. APPROVAL LEVEL 1 (Bisa Dept Head ATAU Plant Head)
             if ($currentStatus == 'Pending Dept Head') {
                 $dbComment = $rawComment ? "Dept Head Approved by $approverName: $rawComment" : "";
                 $sql = "UPDATE vms_bookings SET status = 'Pending HRGA', app_head = 'Approved', head_time = '$currentDateTime', head_by = '$approverName', action_comment = '$dbComment' WHERE req_id = '$id'";
@@ -304,7 +296,6 @@ try {
             }
             elseif ($currentStatus == 'Pending Plant Head') {
                 $dbComment = $rawComment ? "Plant Head Approved by $approverName: $rawComment" : "";
-                // Setelah Plant Head, langsung ke HRGA
                 $sql = "UPDATE vms_bookings SET status = 'Pending HRGA', app_plant = 'Approved', plant_time = '$currentDateTime', plant_by = '$approverName', action_comment = '$dbComment' WHERE req_id = '$id'";
                 if($conn->query($sql)) {
                     try {
@@ -314,7 +305,6 @@ try {
                     } catch (Exception $e) {}
                 }
             }
-            // 2. APPROVAL LEVEL 2 (HRGA)
             elseif ($currentStatus == 'Pending HRGA') {
                 $dbComment = $rawComment ? "L2 Approved by $approverName: $rawComment" : "";
                 $sql = "UPDATE vms_bookings SET status = 'Pending Final', app_ga = 'Approved', ga_time = '$currentDateTime', ga_by = '$approverName', action_comment = '$dbComment' WHERE req_id = '$id'";
@@ -328,7 +318,6 @@ try {
                     } catch (Exception $e) {}
                 }
             }
-            // 3. APPROVAL LEVEL 3 (FINAL)
             elseif ($currentStatus == 'Pending Final') {
                 $dbComment = $rawComment ? "L3 Approved by $approverName: $rawComment" : "";
                 $sql = "UPDATE vms_bookings SET status = 'Approved', app_final = 'Approved', final_time = '$currentDateTime', final_by = '$approverName', action_comment = '$dbComment' WHERE req_id = '$id'";
@@ -425,38 +414,74 @@ try {
             $conn->query("UPDATE vms_bookings SET status = 'Correction Needed', action_comment = 'Correction requested by $approverName: $reason' WHERE req_id = '$id'");
             sendResponse(['success' => true]);
         }
+        
+        // ==========================================
+        // ADVANCED LOGIC: SUBMIT CORRECTION
+        // Mengurus Perubahan KM, Revisi BBM, & Foto opsional
+        // ==========================================
         elseif($act == 'submitCorrection') {
-            $url = uploadImageInternal($extra['photoBase64'], "FIX_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
-            if($url) {
-                $route = $conn->real_escape_string($extra['route'] ?? '-');
-                $endKM = intval($extra['km']);
-                $fuelCost = 0; $fuelType = null; $fuelLiters = 0; $fuelRatio = 0; 
-                $receiptUrl = $reqData['fuel_receipt']; 
+            // 1. Tangani Foto Dashboard (Bisa pakai yang lama jika tidak upload baru)
+            $url = $reqData['end_photo']; 
+            if (!empty($extra['photoBase64'])) {
+                $newPhoto = uploadImageInternal($extra['photoBase64'], "FIX_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
+                if ($newPhoto) $url = $newPhoto;
+            }
 
-                if (!empty($extra['fuelCost']) && $extra['fuelCost'] > 0) {
-                    $fuelCost = floatval($extra['fuelCost']);
-                    $fuelType = $conn->real_escape_string($extra['fuelType']);
-                    $settings = getSettings($conn);
-                    $priceKey = 'price_' . strtolower(str_replace(' ', '_', $fuelType)); 
-                    $pricePerLiter = floatval($settings[$priceKey] ?? 10000);
-                    if ($pricePerLiter > 0) {
-                        $fuelLiters = $fuelCost / $pricePerLiter;
-                        if ($fuelLiters > 0) {
-                            $startKM = intval($reqData['start_km']);
-                            $currentTripDist = $endKM - $startKM;
-                            if($currentTripDist < 0) $currentTripDist = 0;
-                            $fuelRatio = $currentTripDist / $fuelLiters; 
-                        }
-                    }
-                    if (!empty($extra['receiptBase64'])) {
-                        $receiptUrl = uploadImageInternal($extra['receiptBase64'], "STRUK_FIX_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
+            $route = $conn->real_escape_string($extra['route'] ?? '-');
+            
+            // 2. Kalkulasi Ulang Jarak & Accumulation Kendaraan
+            $endKM = intval($extra['km']);
+            $startKM = intval($reqData['start_km']);
+            $oldEndKM = intval($reqData['end_km']);
+
+            $newTripDist = $endKM - $startKM;
+            if ($newTripDist < 0) $newTripDist = 0;
+            
+            $oldTripDist = $oldEndKM - $startKM;
+            if ($oldTripDist < 0) $oldTripDist = 0;
+
+            // Selisih untuk membetulkan catatan kendaraan
+            $distDiff = $newTripDist - $oldTripDist;
+            $vehPlat = $reqData['vehicle'];
+            // Update KM akumulasi kendaraan secara otomatis
+            $conn->query("UPDATE vms_vehicles SET accumulated_km = accumulated_km + $distDiff WHERE plant_plat = '$vehPlat'");
+
+            // 3. Tangani Perubahan BBM
+            $fuelCost = 0; $fuelType = null; $fuelLiters = 0; $fuelRatio = 0; 
+            $receiptUrl = $reqData['fuel_receipt']; // Pakai struk lama sebagai default
+
+            if (!empty($extra['fuelCost']) && floatval($extra['fuelCost']) > 0) {
+                $fuelCost = floatval($extra['fuelCost']);
+                $fuelType = $conn->real_escape_string($extra['fuelType']);
+                
+                $settings = getSettings($conn);
+                $priceKey = 'price_' . strtolower(str_replace(' ', '_', $fuelType)); 
+                $pricePerLiter = floatval($settings[$priceKey] ?? 10000);
+                
+                if ($pricePerLiter > 0) {
+                    $fuelLiters = $fuelCost / $pricePerLiter;
+                    if ($fuelLiters > 0) {
+                        // Karena ini koreksi, rasio dihitung spesifik untuk trip ini agar lebih presisi.
+                        $fuelRatio = $newTripDist / $fuelLiters; 
                     }
                 }
-                $stmt = $conn->prepare("UPDATE vms_bookings SET status = 'Pending Review', end_km = ?, end_photo = ?, action_comment = ?, fuel_cost = ?, fuel_type = ?, fuel_liters = ?, fuel_receipt = ?, fuel_ratio = ? WHERE req_id = ?");
-                $stmt->bind_param("isssdsdss", $endKM, $url, $route, $fuelCost, $fuelType, $fuelLiters, $receiptUrl, $fuelRatio, $id);
-                $stmt->execute();
-                sendResponse(['success' => true]);
+                
+                // Jika user upload struk baru, timpa struk lama
+                if (!empty($extra['receiptBase64'])) {
+                    $newReceipt = uploadImageInternal($extra['receiptBase64'], "STRUK_FIX_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
+                    if ($newReceipt) $receiptUrl = $newReceipt;
+                }
+            } else {
+                // Jika user hapus centang BBM, maka reset struk
+                $receiptUrl = null;
             }
+
+            // Update ke database
+            $stmt = $conn->prepare("UPDATE vms_bookings SET status = 'Pending Review', end_km = ?, end_photo = ?, action_comment = ?, fuel_cost = ?, fuel_type = ?, fuel_liters = ?, fuel_receipt = ?, fuel_ratio = ? WHERE req_id = ?");
+            $stmt->bind_param("isssdsdss", $endKM, $url, $route, $fuelCost, $fuelType, $fuelLiters, $receiptUrl, $fuelRatio, $id);
+            $stmt->execute();
+            
+            sendResponse(['success' => true]);
         }
     }
 } catch (Exception $e) {

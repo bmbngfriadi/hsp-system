@@ -21,7 +21,6 @@
     .btn-action:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     
-    /* Stepper Styles */
     .step-container { display: flex; align-items: center; justify-content: space-between; width: 100%; position: relative; margin-bottom: 2px; }
     .step-item { position: relative; display: flex; flex-direction: column; align-items: center; z-index: 10; width: 33.33%; }
     .step-connector { position: absolute; top: 12px; left: 0; width: 100%; height: 2px; background-color: #e2e8f0; z-index: 0; }
@@ -33,73 +32,25 @@
     .step-waiting .step-circle { border-color: #e2e8f0; background-color: #f8fafc; color: #94a3b8; }
     .step-label { font-size: 8px; font-weight: 700; text-transform: uppercase; color: #64748b; margin-top: 4px; }
 
-    /* =========================================
-       ANIMATIONS FOR FLEET AVAILABILITY
-       ========================================= */
-    @keyframes drive {
-      0% { transform: translateX(0px) translateY(0px); }
-      25% { transform: translateX(3px) translateY(-1px); }
-      50% { transform: translateX(5px) translateY(0px); }
-      75% { transform: translateX(3px) translateY(1px); }
-      100% { transform: translateX(0px) translateY(0px); }
-    }
+    @keyframes drive { 0% { transform: translateX(0px) translateY(0px); } 25% { transform: translateX(3px) translateY(-1px); } 50% { transform: translateX(5px) translateY(0px); } 75% { transform: translateX(3px) translateY(1px); } 100% { transform: translateX(0px) translateY(0px); } }
     .anim-drive { animation: drive 1.2s infinite ease-in-out; }
-
-    @keyframes softPulse {
-      0% { transform: scale(1); opacity: 0.8; }
-      50% { transform: scale(1.15); opacity: 1; }
-      100% { transform: scale(1); opacity: 0.8; }
-    }
+    @keyframes softPulse { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
     .anim-pulse-soft { animation: softPulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1); }
-
-    @keyframes swing {
-      0% { transform: rotate(0deg); }
-      25% { transform: rotate(-10deg); }
-      50% { transform: rotate(0deg); }
-      75% { transform: rotate(10deg); }
-      100% { transform: rotate(0deg); }
-    }
+    @keyframes swing { 0% { transform: rotate(0deg); } 25% { transform: rotate(-10deg); } 50% { transform: rotate(0deg); } 75% { transform: rotate(10deg); } 100% { transform: rotate(0deg); } }
     .anim-swing { animation: swing 2s infinite ease-in-out; }
 
-    /* =========================================
-       ANIMATIONS FOR STATS CARDS
-       ========================================= */
-    .stats-card {
-        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); 
-        border-bottom: 3px solid transparent; 
-        cursor: pointer;
-    }
-    .stats-card:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    }
-    .stats-active { 
-        ring: 2px solid #2563eb; background-color: #eff6ff; 
-        transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
+    .stats-card { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); border-bottom: 3px solid transparent; cursor: pointer; }
+    .stats-card:hover { transform: translateY(-6px); box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+    .stats-active { ring: 2px solid #2563eb; background-color: #eff6ff; transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
     .stats-card.card-total:hover { border-bottom-color: #3b82f6; } 
     .stats-card.card-pending:hover { border-bottom-color: #f59e0b; } 
     .stats-card.card-active:hover { border-bottom-color: #6366f1; } 
     .stats-card.card-done:hover { border-bottom-color: #10b981; } 
     .stats-card.card-failed:hover { border-bottom-color: #ef4444; } 
 
-    @keyframes wiggle {
-        0%, 100% { transform: rotate(0deg); }
-        25% { transform: rotate(-12deg); }
-        75% { transform: rotate(12deg); }
-    }
-    @keyframes heartbeat {
-        0%, 100% { transform: scale(1); }
-        25% { transform: scale(1.15); }
-        50% { transform: scale(1); }
-        75% { transform: scale(1.15); }
-    }
-    @keyframes shakeFast {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-4px); }
-      75% { transform: translateX(4px); }
-    }
+    @keyframes wiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } }
+    @keyframes heartbeat { 0%, 100% { transform: scale(1); } 25% { transform: scale(1.15); } 50% { transform: scale(1); } 75% { transform: scale(1.15); } }
+    @keyframes shakeFast { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 
     .group:hover .icon-anim-total { animation: wiggle 0.6s ease-in-out infinite; }
     .group:hover .icon-anim-pending { animation: spin 4s linear infinite; } 
@@ -190,16 +141,15 @@
           <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Fuel Type</label><select id="input-fuel-type" onchange="calcFuel()" class="w-full border border-slate-300 rounded-lg p-2 text-sm"><option value="Pertalite">Pertalite</option><option value="Pertamax">Pertamax</option><option value="Pertamax Turbo">Pertamax Turbo</option></select></div>
           <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Total Cost (Rp)</label><input type="number" id="input-fuel-cost" onkeyup="calcFuel()" class="w-full border border-slate-300 rounded-lg p-2 text-sm" placeholder="e.g. 100000"></div>
           <div class="text-xs text-slate-500">Est. Liters: <span id="disp-liters" class="font-bold text-blue-600">0</span> L</div>
-          <div class="flex flex-col"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Receipt Photo *</label><div class="flex gap-2 mb-2"><button type="button" onclick="togglePhotoSource('file', 'receipt')" id="btn-src-file-receipt" class="flex-1 py-1.5 text-[10px] font-bold rounded bg-blue-600 text-white shadow-sm transition"><i class="fas fa-file-upload mr-1"></i> Upload</button><button type="button" onclick="togglePhotoSource('camera', 'receipt')" id="btn-src-cam-receipt" class="flex-1 py-1.5 text-[10px] font-bold rounded bg-slate-100 text-slate-600 hover:bg-slate-200 transition"><i class="fas fa-camera mr-1"></i> Camera</button></div><div id="source-file-receipt" class="flex items-center gap-2"><button type="button" onclick="document.getElementById('input-receipt').click()" class="bg-slate-100 text-slate-600 px-3 py-2 rounded-lg text-xs font-bold border border-slate-300 hover:bg-slate-200 w-full text-left"><i class="fas fa-file-invoice mr-2"></i> Choose File</button><input type="file" id="input-receipt" class="hidden" accept="image/*" onchange="document.getElementById('receipt-name').innerText = this.files[0]?.name || 'No file'"><span id="receipt-name" class="text-[10px] text-slate-400 truncate max-w-[100px]">No file</span></div><div id="source-camera-receipt" class="hidden border border-slate-200 rounded-lg overflow-hidden bg-black relative h-40 shadow-inner"><video id="camera-stream-receipt" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline></video><canvas id="camera-canvas-receipt" class="hidden"></canvas><img id="camera-preview-receipt" class="hidden w-full h-full object-cover"><div class="absolute bottom-2 left-0 right-0 flex justify-center gap-2 z-20"><button type="button" onclick="takeSnapshot('receipt')" id="btn-capture-receipt" class="bg-white/90 backdrop-blur rounded-full p-2 shadow-lg text-slate-800 hover:text-blue-600 hover:scale-110 transition duration-200"><i class="fas fa-camera text-lg"></i></button><button type="button" onclick="retakePhoto('receipt')" id="btn-retake-receipt" class="hidden bg-white/90 backdrop-blur rounded-full p-2 shadow-lg text-red-600 hover:scale-110 transition duration-200"><i class="fas fa-redo text-lg"></i></button></div></div></div>
+          <div class="flex flex-col"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Receipt Photo (Abaikan jika tidak ingin mengubah foto)</label><div class="flex gap-2 mb-2"><button type="button" onclick="togglePhotoSource('file', 'receipt')" id="btn-src-file-receipt" class="flex-1 py-1.5 text-[10px] font-bold rounded bg-blue-600 text-white shadow-sm transition"><i class="fas fa-file-upload mr-1"></i> Upload</button><button type="button" onclick="togglePhotoSource('camera', 'receipt')" id="btn-src-cam-receipt" class="flex-1 py-1.5 text-[10px] font-bold rounded bg-slate-100 text-slate-600 hover:bg-slate-200 transition"><i class="fas fa-camera mr-1"></i> Camera</button></div><div id="source-file-receipt" class="flex items-center gap-2"><button type="button" onclick="document.getElementById('input-receipt').click()" class="bg-slate-100 text-slate-600 px-3 py-2 rounded-lg text-xs font-bold border border-slate-300 hover:bg-slate-200 w-full text-left"><i class="fas fa-file-invoice mr-2"></i> Choose File</button><input type="file" id="input-receipt" class="hidden" accept="image/*" onchange="document.getElementById('receipt-name').innerText = this.files[0]?.name || 'No file'"><span id="receipt-name" class="text-[10px] text-slate-400 truncate max-w-[100px]">No file</span></div><div id="source-camera-receipt" class="hidden border border-slate-200 rounded-lg overflow-hidden bg-black relative h-40 shadow-inner"><video id="camera-stream-receipt" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline></video><canvas id="camera-canvas-receipt" class="hidden"></canvas><img id="camera-preview-receipt" class="hidden w-full h-full object-cover"><div class="absolute bottom-2 left-0 right-0 flex justify-center gap-2 z-20"><button type="button" onclick="takeSnapshot('receipt')" id="btn-capture-receipt" class="bg-white/90 backdrop-blur rounded-full p-2 shadow-lg text-slate-800 hover:text-blue-600 hover:scale-110 transition duration-200"><i class="fas fa-camera text-lg"></i></button><button type="button" onclick="retakePhoto('receipt')" id="btn-retake-receipt" class="hidden bg-white/90 backdrop-blur rounded-full p-2 shadow-lg text-red-600 hover:scale-110 transition duration-200"><i class="fas fa-redo text-lg"></i></button></div></div></div>
       </div>
   </div>
-  </div><div class="flex flex-col"><label class="block text-xs font-bold text-slate-500 uppercase mb-2">Dashboard Photo</label><div class="flex gap-2 mb-3"><button type="button" onclick="togglePhotoSource('file', 'dashboard')" id="btn-src-file-dashboard" class="flex-1 py-2 text-xs font-bold rounded-lg bg-blue-600 text-white shadow-sm transition"><i class="fas fa-file-upload mr-1"></i> Upload</button><button type="button" onclick="togglePhotoSource('camera', 'dashboard')" id="btn-src-cam-dashboard" class="flex-1 py-2 text-xs font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition"><i class="fas fa-camera mr-1"></i> Camera</button></div><div id="source-file-dashboard" class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:bg-slate-50 transition flex items-center justify-center h-48 bg-slate-50"><div class="space-y-2"><i class="fas fa-cloud-upload-alt text-3xl text-slate-300"></i><input type="file" id="input-photo" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer"></div></div><div id="source-camera-dashboard" class="hidden border border-slate-200 rounded-lg overflow-hidden bg-black relative h-48 sm:h-64 shadow-inner"><video id="camera-stream-dashboard" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline></video><canvas id="camera-canvas-dashboard" class="hidden"></canvas><img id="camera-preview-dashboard" class="hidden w-full h-full object-cover"><div class="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-20"><button type="button" onclick="takeSnapshot('dashboard')" id="btn-capture-dashboard" class="bg-white/90 backdrop-blur rounded-full p-3 shadow-lg text-slate-800 hover:text-blue-600 hover:scale-110 transition duration-200"><i class="fas fa-camera text-xl"></i></button><button type="button" onclick="retakePhoto('dashboard')" id="btn-retake-dashboard" class="hidden bg-white/90 backdrop-blur rounded-full p-3 shadow-lg text-red-600 hover:scale-110 transition duration-200"><i class="fas fa-redo text-xl"></i></button></div></div><div id="cam-status" class="text-[10px] text-center text-slate-400 mt-2 h-4"></div></div></div></div><div class="flex-none p-4 border-t border-slate-100 bg-white flex justify-end gap-3 pb-6 sm:pb-4"><button type="button" onclick="closeModal('modal-trip')" class="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold transition border border-slate-300" data-i18n="cancel">Cancel</button><button type="submit" id="btn-trip-submit" class="px-8 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-bold shadow-md hover:shadow-lg flex items-center gap-2 btn-action transition">Save Update</button></div></form></div></div>
+  </div><div class="flex flex-col"><label class="block text-xs font-bold text-slate-500 uppercase mb-2">Dashboard Photo <span id="photo-note-dashboard" class="lowercase font-normal italic text-slate-400"></span></label><div class="flex gap-2 mb-3"><button type="button" onclick="togglePhotoSource('file', 'dashboard')" id="btn-src-file-dashboard" class="flex-1 py-2 text-xs font-bold rounded-lg bg-blue-600 text-white shadow-sm transition"><i class="fas fa-file-upload mr-1"></i> Upload</button><button type="button" onclick="togglePhotoSource('camera', 'dashboard')" id="btn-src-cam-dashboard" class="flex-1 py-2 text-xs font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition"><i class="fas fa-camera mr-1"></i> Camera</button></div><div id="source-file-dashboard" class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:bg-slate-50 transition flex items-center justify-center h-48 bg-slate-50"><div class="space-y-2"><i class="fas fa-cloud-upload-alt text-3xl text-slate-300"></i><input type="file" id="input-photo" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer"></div></div><div id="source-camera-dashboard" class="hidden border border-slate-200 rounded-lg overflow-hidden bg-black relative h-48 sm:h-64 shadow-inner"><video id="camera-stream-dashboard" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline></video><canvas id="camera-canvas-dashboard" class="hidden"></canvas><img id="camera-preview-dashboard" class="hidden w-full h-full object-cover"><div class="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-20"><button type="button" onclick="takeSnapshot('dashboard')" id="btn-capture-dashboard" class="bg-white/90 backdrop-blur rounded-full p-3 shadow-lg text-slate-800 hover:text-blue-600 hover:scale-110 transition duration-200"><i class="fas fa-camera text-xl"></i></button><button type="button" onclick="retakePhoto('dashboard')" id="btn-retake-dashboard" class="hidden bg-white/90 backdrop-blur rounded-full p-3 shadow-lg text-red-600 hover:scale-110 transition duration-200"><i class="fas fa-redo text-xl"></i></button></div></div><div id="cam-status" class="text-[10px] text-center text-slate-400 mt-2 h-4"></div></div></div></div><div class="flex-none p-4 border-t border-slate-100 bg-white flex justify-end gap-3 pb-6 sm:pb-4"><button type="button" onclick="closeModal('modal-trip')" class="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold transition border border-slate-300" data-i18n="cancel">Cancel</button><button type="submit" id="btn-trip-submit" class="px-8 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-bold shadow-md hover:shadow-lg flex items-center gap-2 btn-action transition">Save Update</button></div></form></div></div>
   <div id="modal-confirm" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden"><div class="p-6 text-center"><div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 shadow-sm"><i class="fas fa-question text-xl"></i></div><h3 class="text-lg font-bold text-slate-700 mb-2" id="conf-title">Confirm</h3><p class="text-sm text-slate-500 mb-4" id="conf-msg">Are you sure?</p><div class="mb-4 text-left"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Comment (Optional / Reason)</label><textarea id="conf-comment" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500" rows="2" placeholder="Write a note here..."></textarea></div><div class="flex gap-3"><button onclick="closeModal('modal-confirm')" class="flex-1 py-2.5 border border-slate-300 rounded-lg text-slate-600 font-bold text-sm hover:bg-slate-50 transition" data-i18n="cancel">Cancel</button><button onclick="execConfirm()" id="btn-conf-yes" class="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 shadow-sm transition" data-i18n="yes">Yes, Proceed</button></div></div></div></div>
   <div id="modal-alert" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden"><div class="p-6 text-center"><div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 shadow-sm"><i class="fas fa-info text-xl"></i></div><h3 class="text-lg font-bold text-slate-700 mb-2" id="alert-title">Information</h3><p class="text-sm text-slate-500 mb-6" id="alert-msg">System Message.</p><button onclick="closeModal('modal-alert')" class="w-full py-2.5 bg-slate-800 text-white rounded-lg font-bold text-sm hover:bg-slate-900 shadow-sm transition">OK</button></div></div></div>
   <div id="modal-cancel" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl relative animate-slide-up"><button onclick="closeModal('modal-cancel')" class="absolute top-4 right-4 text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button><h3 class="text-lg font-bold mb-4 text-slate-800">Cancel Booking</h3><form onsubmit="event.preventDefault(); submitCancel();"><input type="hidden" id="cancel-id"><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Reason / Note</label><textarea id="cancel-note" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500" rows="3"></textarea></div><div class="flex justify-end gap-3"><button type="button" onclick="closeModal('modal-cancel')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold" data-i18n="cancel">Back</button><button type="submit" id="btn-cancel-submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-bold shadow-sm btn-action">Yes, Cancel</button></div></form></div></div>
 
   <script>
-    // Update daftar modal untuk event listener tombol Escape
     document.addEventListener('keydown', function(event) { if (event.key === "Escape") { const modals = ['modal-create', 'modal-export', 'modal-trip', 'modal-confirm', 'modal-alert', 'modal-cancel', 'modal-settings', 'modal-image']; modals.forEach(id => closeModal(id)); } });
     
     let currentUser = null, availableVehicles = [], allBookingsData = [], confirmCallback = null;
@@ -220,7 +170,6 @@
     function closeModal(id) { 
         document.getElementById(id).classList.add('hidden'); 
         if(id === 'modal-trip') { stopCamera('dashboard'); stopCamera('receipt'); } 
-        // Bersihkan gambar di modal image saat ditutup agar tidak flash/berkedip saat buka gambar lain
         if(id === 'modal-image') { setTimeout(() => { document.getElementById('viewer-img').src = ''; }, 300); }
     }
     
@@ -376,7 +325,6 @@
             else if(s.includes('Pending')||s==='Correction Needed'||s==='Pending Review') b='bg-amber-50 text-amber-700 border-amber-200';
             if(s !== 'Cancelled') statusDisplay = `<span class="status-badge ${b} whitespace-nowrap">${s}</span>`;
 
-            // --- LOGIC STEPPER (PLANT HEAD OR DEPT HEAD) ---
             const isPlantPath = (r.plantStatus !== 'Auto-Skip');
             const getStepClass = (st) => { if(st === 'Approved') return 'step-approved'; if(st === 'Rejected') return 'step-rejected'; if(st === 'Pending') return 'step-waiting'; if(st === 'Auto-Skip') return 'step-approved'; return 'step-pending'; };
             
@@ -425,13 +373,18 @@
             if(r.username === currentUser.username){
                 if(s==='Approved'){ ab=`<div class="flex gap-2 justify-end items-center mt-1"><button onclick="openTripModal('${r.id}', 'startTrip', '${r.startKm}', '${r.vehicle}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1"><i class="fas fa-play text-[10px]"></i> Start</button><button onclick="openCancelModal('${r.id}')" class="bg-white border border-slate-300 text-slate-500 hover:text-red-600 hover:border-red-300 px-2 py-1.5 rounded-lg text-xs font-bold btn-action transition"><i class="fas fa-times"></i></button></div>`; abm=`<div class="flex gap-2 mt-2"><button onclick="openTripModal('${r.id}', 'startTrip', '${r.startKm}', '${r.vehicle}')" class="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2"><i class="fas fa-play"></i> Start Trip</button><button onclick="openCancelModal('${r.id}')" class="bg-slate-200 text-slate-600 px-4 py-3 rounded-lg text-sm font-bold shadow-sm"><i class="fas fa-times"></i></button></div>`; }
                 else if(s==='Active'){ ab=`<button onclick="openTripModal('${r.id}', 'endTrip', '${r.startKm}', '${r.vehicle}')" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-flag-checkered text-[10px]"></i> Finish Trip</button>`; abm=`<button onclick="openTripModal('${r.id}', 'endTrip', '${r.startKm}', '${r.vehicle}')" class="w-full bg-orange-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-flag-checkered"></i> Finish Trip</button>`; }
-                else if(s==='Correction Needed'){ ab=`<button onclick="openTripModal('${r.id}', 'submitCorrection', '${r.startKm}', '${r.vehicle}')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-tools text-[10px]"></i> Fix Data</button>`; abm=`<button onclick="openTripModal('${r.id}', 'submitCorrection', '${r.startKm}', '${r.vehicle}')" class="w-full bg-yellow-500 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-tools"></i> Fix Data</button>`; }
+                
+                // --- KOREKSI DATA: Kirim seluruh param bbm lama ---
+                else if(s==='Correction Needed'){ 
+                    ab=`<button onclick="openTripModal('${r.id}', 'submitCorrection', '${r.startKm}', '${r.vehicle}', '${r.endKm}', '${r.fuelCost}', '${r.fuelType}')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-tools text-[10px]"></i> Fix Data</button>`; 
+                    abm=`<button onclick="openTripModal('${r.id}', 'submitCorrection', '${r.startKm}', '${r.vehicle}', '${r.endKm}', '${r.fuelCost}', '${r.fuelType}')" class="w-full bg-yellow-500 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-tools"></i> Fix Data</button>`; 
+                }
+                
                 else if(s.includes('Pending') && s!=='Pending Review'){ ab=`<button onclick="openCancelModal('${r.id}')" class="w-full bg-slate-400 hover:bg-slate-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-2 mt-1"><i class="fas fa-ban"></i> Cancel Request</button>`; abm=`<button onclick="openCancelModal('${r.id}')" class="w-full bg-slate-400 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-ban"></i> Cancel Request</button>`; }
             }
 
             const cd=r.actionComment?`<div class="text-[10px] text-slate-600 bg-slate-100 p-2 rounded border border-slate-200 italic max-w-[200px] leading-tight">${r.actionComment}</div>`:'<span class="text-slate-300 text-[10px]">-</span>';
             
-            // --- TRIP INFO CARD (WITH DISTANCE) ---
             let startK = parseInt(r.startKm) || 0;
             let endK = parseInt(r.endKm) || 0;
             let distInfo = '';
@@ -461,15 +414,32 @@
     function confirmTrip(id) { showConfirm("Verify Trip", "Verify that this trip is completed and data is correct?", (c) => callUpdate(id, 'verifyTrip', c)); } 
     function requestCorrection(id) { showConfirm("Request Correction", "Reason for correction (sent to user):", (c) => { if(!c) return showAlert("Error", "Reason required"); callUpdate(id, 'requestCorrection', c); }); }
     
-    function openTripModal(id, act, startKmVal, vehiclePlat) { 
+    // --- DIUBAH: Fungsi Modal Trip untuk menerima parameter BBM lama ---
+    function openTripModal(id, act, startKmVal, vehiclePlat, existingEndKm = '', existingFuelCost = 0, existingFuelType = '') { 
         document.getElementById('trip-id').value = id; document.getElementById('trip-action').value = act; 
         document.getElementById('modal-trip-title').innerText = (act === 'startTrip') ? 'Departure Update' : (act === 'endTrip' ? 'Arrival Update' : 'Correct Trip Data');
         document.getElementById('lbl-km').innerText = act === 'startTrip' ? 'Current Odometer (KM)' : 'End KM';
+        
         const startVal = parseInt(startKmVal) || 0; 
         document.getElementById('modal-start-km-val').value = startVal; 
         document.getElementById('disp-start-km').innerText = startVal;
-        document.getElementById('input-km').value = ''; document.getElementById('input-route-update').value = ''; document.getElementById('disp-total-km').innerText = '0'; document.getElementById('input-photo').value = '';
-        togglePhotoSource('file', 'dashboard'); togglePhotoSource('file', 'receipt');
+        
+        // Reset Inputs
+        document.getElementById('input-km').value = ''; 
+        document.getElementById('input-route-update').value = ''; 
+        document.getElementById('disp-total-km').innerText = '0'; 
+        document.getElementById('input-photo').value = '';
+        document.getElementById('check-fuel').checked = false; 
+        document.getElementById('fuel-details').classList.add('hidden'); 
+        document.getElementById('input-fuel-cost').value = ''; 
+        document.getElementById('disp-liters').innerText = '0'; 
+        document.getElementById('receipt-name').innerText = 'No file'; 
+        document.getElementById('input-receipt').value = '';
+        
+        togglePhotoSource('file', 'dashboard'); 
+        togglePhotoSource('file', 'receipt');
+        
+        // Logic info last KM jika startTrip
         const lastInfoDiv = document.getElementById('div-last-info');
         if (act === 'startTrip' && vehiclePlat) {
             const vData = availableVehicles.find(v => v.plant === vehiclePlat);
@@ -480,14 +450,43 @@
                 lastInfoDiv.classList.remove('hidden');
             } else { lastInfoDiv.classList.add('hidden'); }
         } else { lastInfoDiv.classList.add('hidden'); }
-        document.getElementById('check-fuel').checked = false; document.getElementById('fuel-details').classList.add('hidden'); document.getElementById('input-fuel-cost').value = ''; document.getElementById('disp-liters').innerText = '0'; 
-        document.getElementById('receipt-name').innerText = 'No file'; document.getElementById('input-receipt').value = '';
+        
+        
         if (act === 'endTrip' || act === 'submitCorrection') { 
-            document.getElementById('div-route-update').classList.remove('hidden'); document.getElementById('input-route-update').required = true; document.getElementById('div-calc-distance').classList.remove('hidden'); 
-            if(act === 'endTrip') document.getElementById('div-fuel-input').classList.remove('hidden'); else document.getElementById('div-fuel-input').classList.add('hidden');
+            document.getElementById('div-route-update').classList.remove('hidden'); 
+            document.getElementById('input-route-update').required = true; 
+            document.getElementById('div-calc-distance').classList.remove('hidden'); 
+            
+            // Selalu tampilkan opsi input BBM untuk endTrip DAN submitCorrection
+            document.getElementById('div-fuel-input').classList.remove('hidden'); 
+
+            // Jika Correction, Load Data Lama ke form jika ada
+            if (act === 'submitCorrection') {
+                document.getElementById('photo-note-dashboard').innerText = "(Abaikan jika tidak ingin mengubah foto)";
+                
+                if (existingEndKm && parseInt(existingEndKm) > 0) {
+                    document.getElementById('input-km').value = existingEndKm;
+                    calcTotalDistance();
+                }
+                
+                if (existingFuelCost && parseFloat(existingFuelCost) > 0) {
+                    document.getElementById('check-fuel').checked = true;
+                    document.getElementById('fuel-details').classList.remove('hidden');
+                    document.getElementById('input-fuel-cost').value = existingFuelCost;
+                    if (existingFuelType) document.getElementById('input-fuel-type').value = existingFuelType;
+                    calcFuel();
+                }
+            } else {
+                 document.getElementById('photo-note-dashboard').innerText = "";
+            }
+            
         } else { 
-            document.getElementById('div-route-update').classList.add('hidden'); document.getElementById('input-route-update').required = false; document.getElementById('div-calc-distance').classList.add('hidden'); 
+            // Jika Start Trip
+            document.getElementById('div-route-update').classList.add('hidden'); 
+            document.getElementById('input-route-update').required = false; 
+            document.getElementById('div-calc-distance').classList.add('hidden'); 
             document.getElementById('div-fuel-input').classList.add('hidden');
+            document.getElementById('photo-note-dashboard').innerText = "";
         } 
         openModal('modal-trip'); 
     }
@@ -568,11 +567,15 @@
         });
     }
     
+    // --- DIUBAH: Upload Foto bersifat opsional saat Koreksi ---
     async function submitTripUpdate() { 
         try { 
-            const id = document.getElementById('trip-id').value; const act = document.getElementById('trip-action').value; 
-            const km = document.getElementById('input-km').value; const routeVal = document.getElementById('input-route-update').value; 
+            const id = document.getElementById('trip-id').value; 
+            const act = document.getElementById('trip-action').value; 
+            const km = document.getElementById('input-km').value; 
+            const routeVal = document.getElementById('input-route-update').value; 
             const btn = document.getElementById('btn-trip-submit'); 
+            
             if(!km) return showAlert("Error", "KM Required"); 
             
             const hasFuel = document.getElementById('check-fuel').checked;
@@ -585,37 +588,49 @@
 
             btn.disabled = true; btn.innerText = "Processing Image..."; 
             
-            // 1. DASHBOARD
+            // 1. DASHBOARD PHOTO (Validation)
             let base64Data = null; 
-            if (activeSourceDashboard === 'camera') { 
-                if (!capturedDashboardBase64) { throw new Error("Please capture Dashboard photo."); } 
+            let cleanBase64 = null;
+            
+            if (activeSourceDashboard === 'camera' && capturedDashboardBase64) { 
                 base64Data = capturedDashboardBase64; 
             } else { 
                 const fileInput = document.getElementById('input-photo'); 
-                if (fileInput.files.length === 0) { throw new Error("Please upload Dashboard photo."); } 
-                const file = fileInput.files[0]; 
-                base64Data = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (e) => resolve(e.target.result); reader.onerror = (e) => reject("Failed to read dashboard file."); reader.readAsDataURL(file); }); 
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0]; 
+                    base64Data = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (e) => resolve(e.target.result); reader.onerror = (e) => reject("Failed"); reader.readAsDataURL(file); }); 
+                }
             } 
-            const compressedBase64 = await compressImage(base64Data); 
-            const cleanBase64 = compressedBase64.split(',')[1]; 
+            
+            if (base64Data) {
+                const compressedBase64 = await compressImage(base64Data); 
+                cleanBase64 = compressedBase64.split(',')[1]; 
+            } else if (act === 'startTrip' || act === 'endTrip') {
+                // Jika bukan koreksi, foto Wajib
+                throw new Error("Please capture/upload Dashboard photo.");
+            }
 
-            // 2. RECEIPT
+            // 2. RECEIPT PHOTO (Validation)
             let receiptBase64 = null;
             if(hasFuel) {
                 let receiptRaw = null;
-                if(activeSourceReceipt === 'camera') {
-                    if(!capturedReceiptBase64) { btn.disabled=false; btn.innerText="Save Update"; return showAlert("Error", "Wajib foto Struk BBM!"); }
+                if(activeSourceReceipt === 'camera' && capturedReceiptBase64) {
                     receiptRaw = capturedReceiptBase64;
                 } else {
                     const recInput = document.getElementById('input-receipt');
-                    if(recInput.files.length === 0) { btn.disabled=false; btn.innerText="Save Update"; return showAlert("Error", "Wajib upload file Struk BBM!"); }
-                    const rFile = recInput.files[0];
-                    receiptRaw = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (e) => resolve(e.target.result); reader.onerror = (e) => reject("Failed to read receipt file."); reader.readAsDataURL(rFile); });
+                    if(recInput.files.length > 0) {
+                        const rFile = recInput.files[0];
+                        receiptRaw = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (e) => resolve(e.target.result); reader.onerror = (e) => reject("Failed"); reader.readAsDataURL(rFile); });
+                    }
                 }
+                
                 if(receiptRaw) {
                     const rComp = await compressImage(receiptRaw);
                     receiptBase64 = rComp.split(',')[1];
-                }
+                } else if (act === 'endTrip') {
+                    throw new Error("Wajib melampirkan foto Struk BBM!");
+                } 
+                // Untuk submitCorrection, receiptBase64 bisa null. Backend akan mempertahankan struk lama jika ada.
             }
 
             const payload = { km: km, photoBase64: cleanBase64, route: routeVal, fuelCost: fuelCost, fuelType: fuelType, receiptBase64: receiptBase64 };
@@ -631,13 +646,10 @@
     function sendTripData(id, act, extraData) { const btn = document.getElementById('btn-trip-submit'); btn.innerText = "Sending Data..."; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: extraData }) }).then(r => r.json()).then(res => { btn.disabled = false; btn.innerText = "Save Update"; if(res.success) { closeModal('modal-trip'); loadData(); } else { showAlert("Error", res.message); } }).catch(err => { btn.disabled = false; btn.innerText = "Save Update"; console.error(err); showAlert("Error", "Connection Failed: " + err.message); }); }
     function calcTotalDistance() { const start = parseInt(document.getElementById('modal-start-km-val').value) || 0; const end = parseInt(document.getElementById('input-km').value) || 0; const total = end - start; const disp = document.getElementById('disp-total-km'); if (total < 0) { disp.innerText = "Check ODO"; disp.className = "text-red-600 font-bold"; } else { disp.innerText = total; disp.className = ""; } }
     
-    // ==========================================
-    // UPDATED FUNCTION: VIEW PHOTO DI DALAM MODAL
-    // ==========================================
     function viewPhoto(url) { 
         if (!url) return; 
-        document.getElementById('viewer-img').src = url; // Set source gambar
-        openModal('modal-image'); // Tampilkan modal
+        document.getElementById('viewer-img').src = url; 
+        openModal('modal-image'); 
     }
     
     function openCancelModal(id) { document.getElementById('cancel-id').value = id; document.getElementById('cancel-note').value = ''; openModal('modal-cancel'); }
