@@ -117,7 +117,6 @@
   <div id="modal-cancel" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl relative animate-slide-up"><button onclick="closeModal('modal-cancel')" class="absolute top-4 right-4 text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button><h3 class="text-lg font-bold mb-4 text-slate-800">Cancel Booking</h3><form onsubmit="event.preventDefault(); submitCancel();"><input type="hidden" id="cancel-id"><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Reason / Note</label><textarea id="cancel-note" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500" rows="3"></textarea></div><div class="flex justify-end gap-3"><button type="button" onclick="closeModal('modal-cancel')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold" data-i18n="cancel">Back</button><button type="submit" id="btn-cancel-submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-bold shadow-sm btn-action">Yes, Cancel</button></div></form></div></div>
 
   <script>
-    // ... (SCRIPT UTAMA SAMA SEPERTI SEBELUMNYA) ...
     document.addEventListener('keydown', function(event) { if (event.key === "Escape") { const modals = ['modal-create', 'modal-export', 'modal-trip', 'modal-confirm', 'modal-alert', 'modal-cancel', 'modal-settings']; modals.forEach(id => closeModal(id)); } });
     let currentUser = null, availableVehicles = [], allBookingsData = [], confirmCallback = null;
     let videoStreamDashboard = null, videoStreamReceipt = null;
@@ -151,7 +150,6 @@
        fetchFuelPrices(); loadData();
     };
 
-    // ... (Function Export, Setting, dll SAMA) ...
     function populateDeptFilter(data) { const sel = document.getElementById('filter-dept'); const depts = [...new Set(data.map(item => item.department).filter(Boolean))].sort(); let html = '<option value="All">All Departments</option>'; depts.forEach(d => { html += `<option value="${d}">${d}</option>`; }); sel.innerHTML = html; }
     let currentStatusFilter = 'All'; 
     function filterTableByStatus(status) { const cards = document.querySelectorAll('.stats-card'); cards.forEach(c => c.classList.remove('stats-active')); currentStatusFilter = status; applyFilters(); }
@@ -200,51 +198,32 @@
             else if(s.includes('Pending')||s==='Correction Needed'||s==='Pending Review') b='bg-amber-50 text-amber-700 border-amber-200';
             if(s !== 'Cancelled') statusDisplay = `<span class="status-badge ${b} whitespace-nowrap">${s}</span>`;
 
-            // --- LOGIC STEPPER 3 LEVEL (DINAMIS) ---
-            // Cek apakah ini jalur TL/SectionHead (menggunakan Plant Head sebagai L1)
-            // Indikatornya: plantStatus bukan 'Auto-Skip' ATAU role requester adalah TL/SectionHead
+            // --- LOGIC STEPPER (PLANT HEAD OR DEPT HEAD) ---
             const isPlantPath = (r.plantStatus !== 'Auto-Skip');
-            
             const getStepClass = (st) => { if(st === 'Approved') return 'step-approved'; if(st === 'Rejected') return 'step-rejected'; if(st === 'Pending') return 'step-waiting'; if(st === 'Auto-Skip') return 'step-approved'; return 'step-pending'; };
             
-            // Level 1: Bisa Dept Head ATAU Plant Head
             let l1Status, l1Label, l1Icon, l1By, l1Time;
-            if (isPlantPath) {
-                l1Status = r.plantStatus; l1Label = 'PLANT'; l1Icon = 'fa-industry'; l1By = r.plantBy; l1Time = r.plantTime;
-            } else {
-                l1Status = r.headStatus; l1Label = 'HEAD'; l1Icon = 'fa-user-tie'; l1By = r.headBy; l1Time = r.headTime;
-            }
+            if (isPlantPath) { l1Status = r.plantStatus; l1Label = 'PLANT'; l1Icon = 'fa-industry'; l1By = r.plantBy; l1Time = r.plantTime; } 
+            else { l1Status = r.headStatus; l1Label = 'HEAD'; l1Icon = 'fa-user-tie'; l1By = r.headBy; l1Time = r.headTime; }
 
-            // Hitung Class
             let l1C = (l1Status==='Pending') ? (s.includes('Pending') && !s.includes('HRGA') && !s.includes('Final') ? 'step-pending' : 'step-waiting') : getStepClass(l1Status);
-            if(s === 'Rejected' && l1Status === 'Pending') l1C = 'step-waiting'; // Jika direject di level atasnya/bawahnya
-            if(s.includes('Pending Plant Head') || s.includes('Pending Dept Head')) l1C = 'step-pending'; // Active step
+            if(s === 'Rejected' && l1Status === 'Pending') l1C = 'step-waiting';
+            if(s.includes('Pending Plant Head') || s.includes('Pending Dept Head')) l1C = 'step-pending'; 
 
             let l2C = (r.gaStatus==='Pending') ? (s==='Pending HRGA' ? 'step-pending' : (l1Status!=='Approved'?'step-waiting':'step-approved')) : getStepClass(r.gaStatus);
             let l3C = (r.finalStatus==='Pending') ? (s==='Pending Final' ? 'step-pending' : (r.gaStatus!=='Approved'?'step-waiting':'step-approved')) : getStepClass(r.finalStatus);
             
-            // Connectors
             let c1Fill = (l1Status==='Approved') ? 'w-full' : 'w-0';
             let c2Fill = (r.gaStatus==='Approved') ? 'w-full' : 'w-0';
             
-            const buildVisualStep = (cls, icon, label) => {
-                let ic = `<i class="fas ${icon}"></i>`; if(cls.includes('step-approved')) ic=`<i class="fas fa-check"></i>`; if(cls.includes('step-rejected')) ic=`<i class="fas fa-times"></i>`;
-                return `<div class="step-item ${cls}"><div class="step-circle">${ic}</div><div class="step-label">${label}</div></div>`;
-            };
+            const buildVisualStep = (cls, icon, label) => `<div class="step-item ${cls}"><div class="step-circle"><i class="fas ${icon}"></i></div><div class="step-label">${label}</div></div>`;
             const buildDetailRow = (role, status, by, time) => {
                 if(status === 'Pending' || status === 'Auto-Skip') return ''; 
                 let colorClass = 'text-slate-500'; if(status === 'Approved') colorClass = 'text-emerald-600'; if(status === 'Rejected') colorClass = 'text-red-600';
                 return `<div class="flex justify-between items-center text-[9px] border-b last:border-0 border-slate-100 py-1"><span class="font-bold text-slate-400 w-10">${role}</span><div class="text-right"><div class="font-bold ${colorClass} truncate max-w-[100px]" title="${by}">${by}</div><div class="text-[8px] text-slate-400 font-mono">${formatDateFriendly(time)}</div></div></div>`;
             };
 
-            const stepperHTML = `
-                <div class="step-connector" style="left: 16%; width: 33%; top: 12px;"><div class="step-connector-fill ${c1Fill}"></div></div>
-                <div class="step-connector" style="left: 50%; width: 33%; top: 12px;"><div class="step-connector-fill ${c2Fill}"></div></div>
-                ${buildVisualStep(l1C, l1Icon, l1Label)}
-                ${buildVisualStep(l2C, 'fa-shield-alt', 'HRGA')}
-                ${buildVisualStep(l3C, 'fa-flag-checkered', 'FINAL')}
-            `;
-
+            const stepperHTML = `<div class="step-connector" style="left: 16%; width: 33%; top: 12px;"><div class="step-connector-fill ${c1Fill}"></div></div><div class="step-connector" style="left: 50%; width: 33%; top: 12px;"><div class="step-connector-fill ${c2Fill}"></div></div>${buildVisualStep(l1C, l1Icon, l1Label)}${buildVisualStep(l2C, 'fa-shield-alt', 'HRGA')}${buildVisualStep(l3C, 'fa-flag-checkered', 'FINAL')}`;
             const chainHTML = `<div class="bg-white border border-slate-200 rounded-xl p-3 shadow-sm relative w-full"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">Workflow</div><div class="step-container mb-2">${stepperHTML}</div><div class="bg-slate-50 rounded border border-slate-100 p-2">${buildDetailRow(l1Label, l1Status, l1By, l1Time) || '<div class="text-[9px] text-slate-400 text-center italic py-1">Waiting L1...</div>'}${buildDetailRow('HRGA', r.gaStatus, r.gaBy, r.gaTime)}${buildDetailRow('FINAL', r.finalStatus, r.finalBy, r.finalTime)}</div></div>`;
 
             let ab='',abm='';
@@ -264,7 +243,6 @@
                 if( (currentUser.role === 'TeamLeader' && currentUser.department === 'HRGA') || (currentUser.role === 'HRGA') ) { const x = rAB('L3 Final'); ab = x.pc; abm = x.mob; } 
             }
             
-            // ... (Tombol Action User & HRGA Verify Trip sama seperti sebelumnya) ...
             if(currentUser.role === 'HRGA' && s === 'Pending Review') { ab=`<div class="flex items-center gap-2 w-full mt-1"><button onclick="confirmTrip('${r.id}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action"><i class="fas fa-check-double mr-1"></i> Verify Done</button><button onclick="requestCorrection('${r.id}')" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action"><i class="fas fa-edit mr-1"></i> Correction</button></div>`; abm=`<div class="flex flex-col gap-2 mt-2"><button onclick="confirmTrip('${r.id}')" class="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm">Verify Done</button><button onclick="requestCorrection('${r.id}')" class="w-full bg-orange-500 text-white py-3 rounded-lg text-sm font-bold shadow-sm">Request Correction</button></div>`; }
             if(r.username === currentUser.username){
                 if(s==='Approved'){ ab=`<div class="flex gap-2 justify-end items-center mt-1"><button onclick="openTripModal('${r.id}', 'startTrip', '${r.startKm}', '${r.vehicle}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1"><i class="fas fa-play text-[10px]"></i> Start</button><button onclick="openCancelModal('${r.id}')" class="bg-white border border-slate-300 text-slate-500 hover:text-red-600 hover:border-red-300 px-2 py-1.5 rounded-lg text-xs font-bold btn-action transition"><i class="fas fa-times"></i></button></div>`; abm=`<div class="flex gap-2 mt-2"><button onclick="openTripModal('${r.id}', 'startTrip', '${r.startKm}', '${r.vehicle}')" class="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2"><i class="fas fa-play"></i> Start Trip</button><button onclick="openCancelModal('${r.id}')" class="bg-slate-200 text-slate-600 px-4 py-3 rounded-lg text-sm font-bold shadow-sm"><i class="fas fa-times"></i></button></div>`; }
@@ -275,8 +253,17 @@
 
             const cd=r.actionComment?`<div class="text-[10px] text-slate-600 bg-slate-100 p-2 rounded border border-slate-200 italic max-w-[200px] leading-tight">${r.actionComment}</div>`:'<span class="text-slate-300 text-[10px]">-</span>';
             
-            // --- TRIP INFO CARD ---
-            let tripCard = `<div class="bg-white border border-slate-200 rounded-xl p-2 text-center w-full shadow-sm"><div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Odometer</div><div class="font-mono text-xs font-bold text-slate-700 bg-slate-50 border border-slate-100 rounded px-2 py-1 inline-block">${r.startKm||'0'} <span class="text-slate-300 mx-1">→</span> ${r.endKm||'...'}</div><div class="flex justify-center gap-2 mt-2">${r.startPhoto ? `<button onclick="viewPhoto('${r.startPhoto}')" class="text-blue-500 bg-blue-50 border border-blue-100 hover:bg-blue-100 p-1.5 rounded transition shadow-sm" title="Start Photo"><i class="fas fa-camera text-xs"></i></button>` : `<span class="w-6"></span>`}${r.endPhoto ? `<button onclick="viewPhoto('${r.endPhoto}')" class="text-orange-500 bg-orange-50 border border-orange-100 hover:bg-orange-100 p-1.5 rounded transition shadow-sm" title="End Photo"><i class="fas fa-camera text-xs"></i></button>` : `<span class="w-6"></span>`}</div></div>`;
+            // --- TRIP INFO CARD (UPDATED WITH DISTANCE) ---
+            let startK = parseInt(r.startKm) || 0;
+            let endK = parseInt(r.endKm) || 0;
+            let distInfo = '';
+            if (endK > 0 && endK >= startK) {
+                let diff = endK - startK;
+                distInfo = `<div class="mt-1.5"><span class="bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold px-2 py-0.5 rounded-full"><i class="fas fa-route mr-1"></i>${diff} km</span></div>`;
+            }
+
+            let tripCard = `<div class="bg-white border border-slate-200 rounded-xl p-2 text-center w-full shadow-sm"><div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Odometer</div><div class="font-mono text-xs font-bold text-slate-700 bg-slate-50 border border-slate-100 rounded px-2 py-1 inline-block">${r.startKm||'0'} <span class="text-slate-300 mx-1">→</span> ${r.endKm||'...'}</div>${distInfo}<div class="flex justify-center gap-2 mt-2">${r.startPhoto ? `<button onclick="viewPhoto('${r.startPhoto}')" class="text-blue-500 bg-blue-50 border border-blue-100 hover:bg-blue-100 p-1.5 rounded transition shadow-sm" title="Start Photo"><i class="fas fa-camera text-xs"></i></button>` : `<span class="w-6"></span>`}${r.endPhoto ? `<button onclick="viewPhoto('${r.endPhoto}')" class="text-orange-500 bg-orange-50 border border-orange-100 hover:bg-orange-100 p-1.5 rounded transition shadow-sm" title="End Photo"><i class="fas fa-camera text-xs"></i></button>` : `<span class="w-6"></span>`}</div></div>`;
+            
             if(r.fuelCost > 0) {
                 const formattedCost = new Intl.NumberFormat('id-ID').format(r.fuelCost);
                 const accumKmDisplay = r.totalAccumulatedKm > 0 ? r.totalAccumulatedKm : Math.round(parseFloat(r.fuelRatio) * parseFloat(r.fuelLiters));

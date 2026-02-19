@@ -1,5 +1,5 @@
 <?php
-// api/vms.php - CONDITIONAL LEVEL 1 (PLANT HEAD OR DEPT HEAD)
+// api/vms.php - CONDITIONAL LEVEL 1 (PLANT HEAD OR DEPT HEAD) + ROBUST DB
 error_reporting(E_ALL);
 ini_set('display_errors', 0); 
 date_default_timezone_set('Asia/Jakarta');
@@ -14,7 +14,7 @@ ob_start();
 require 'db.php'; 
 require 'helper.php';
 
-// --- 1. ROBUST DATABASE AUTO-MIGRATION ---
+// --- ROBUST DATABASE AUTO-MIGRATION ---
 function ensureColumn($conn, $table, $col, $def) {
     try {
         $check = $conn->query("SHOW COLUMNS FROM $table LIKE '$col'");
@@ -47,7 +47,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS vms_vehicles (
 
 $conn->query("CREATE TABLE IF NOT EXISTS vms_settings (key_name VARCHAR(50) PRIMARY KEY, key_value VARCHAR(255))");
 
-// Columns
+// Ensure Columns Exist
 ensureColumn($conn, 'vms_bookings', 'app_head', "VARCHAR(20) DEFAULT 'Pending'");
 ensureColumn($conn, 'vms_bookings', 'head_time', "DATETIME DEFAULT NULL");
 ensureColumn($conn, 'vms_bookings', 'head_by', "VARCHAR(100) DEFAULT NULL");
@@ -241,7 +241,7 @@ try {
             // Jalur Normal: Dept Head -> HRGA
             $status = 'Pending Dept Head';
             $appHead = 'Pending';
-            $appPlant = 'Auto-Skip'; // Bypass Plant Head (kecuali nanti diubah logika lain, tapi sesuai request ini skip)
+            $appPlant = 'Auto-Skip'; // Bypass Plant Head
         }
         
         $stmt = $conn->prepare("INSERT INTO vms_bookings (req_id, username, fullname, role, department, vehicle, purpose, status, app_head, app_plant, app_ga, app_final, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)");
