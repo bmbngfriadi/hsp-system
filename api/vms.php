@@ -177,7 +177,6 @@ try {
         $now = time();
         $updates = 0;
         
-        // 1. Reminder START TRIP (Tiap 3 Menit setelah Full Approve)
         $sqlStart = "SELECT * FROM vms_bookings WHERE status = 'Approved' AND final_time IS NOT NULL";
         $resStart = $conn->query($sqlStart);
         if($resStart) {
@@ -185,7 +184,6 @@ try {
                 $finalTime = strtotime($row['final_time']);
                 $lastRemind = $row['last_reminder_time'] ? strtotime($row['last_reminder_time']) : $finalTime;
                 
-                // Cek apakah sudah 3 menit dari approve terakhir DAN 3 menit dari reminder terakhir
                 if (($now - $finalTime) >= 180 && ($now - $lastRemind) >= 180) {
                     $uPhone = getUserPhone($conn, $row['username']);
                     if ($uPhone) {
@@ -206,7 +204,6 @@ try {
             }
         }
 
-        // 2. Reminder END TRIP (Setelah 3 Jam perjalanan, diulang tiap 10 Menit)
         $sqlEnd = "SELECT * FROM vms_bookings WHERE status = 'Active' AND depart_time IS NOT NULL";
         $resEnd = $conn->query($sqlEnd);
         if($resEnd) {
@@ -218,7 +215,6 @@ try {
                 if (($now - $departTime) >= $threeHours) {
                     $lastRemind = $row['last_reminder_time'] ? strtotime($row['last_reminder_time']) : 0;
                     
-                    // Trigger jika belum pernah di-remind (sejak 3 jam lewat) ATAU sudah lewat 10 menit dari remind terakhir
                     if ($lastRemind == 0 || ($now - $lastRemind) >= $tenMins) {
                         $uPhone = getUserPhone($conn, $row['username']);
                         if ($uPhone) {

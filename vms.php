@@ -57,6 +57,10 @@
     .group:hover .icon-anim-active { animation: drive 0.8s infinite linear; }
     .group:hover .icon-anim-done { animation: heartbeat 1.2s ease-in-out infinite; }
     .group:hover .icon-anim-failed { animation: shakeFast 0.4s ease-in-out infinite; }
+
+    /* New Animation for Advanced Analytics Bars */
+    .anim-fill { width: 0; animation: fillBar 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    @keyframes fillBar { to { width: var(--target-width); } }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
@@ -85,22 +89,19 @@
         
         <div id="stats-container" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6"></div>
         
+        <div id="detailed-stats-section" class="hidden mb-6">
+            <h2 class="text-lg font-bold text-slate-700 flex items-center mb-4">
+                <i class="fas fa-chart-pie mr-2 text-indigo-600"></i> Advanced Analytics
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4" id="detailed-stats-container">
+                </div>
+        </div>
+        
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
            <div><h2 class="text-xl font-bold text-slate-700" data-i18n="trip_history">Trip History</h2><p class="text-xs text-slate-500" data-i18n="click_filter">Click statistics above to filter.</p></div>
            <div class="flex gap-2 w-full sm:w-auto items-center flex-wrap sm:flex-nowrap">
-             
-             <div id="filter-vehicle-container" class="hidden">
-                 <select id="filter-vehicle" onchange="applyFilters()" class="border border-gray-300 rounded-lg text-xs p-2 bg-white text-slate-600 font-bold focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-auto">
-                     <option value="All">All Vehicles</option>
-                 </select>
-             </div>
-             
-             <div id="filter-dept-container" class="hidden">
-                 <select id="filter-dept" onchange="applyFilters()" class="border border-gray-300 rounded-lg text-xs p-2 bg-white text-slate-600 font-bold focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-auto">
-                     <option value="All">All Departments</option>
-                 </select>
-             </div>
-             
+             <div id="filter-vehicle-container" class="hidden"><select id="filter-vehicle" onchange="applyFilters()" class="border border-gray-300 rounded-lg text-xs p-2 bg-white text-slate-600 font-bold focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-auto"><option value="All">All Vehicles</option></select></div>
+             <div id="filter-dept-container" class="hidden"><select id="filter-dept" onchange="applyFilters()" class="border border-gray-300 rounded-lg text-xs p-2 bg-white text-slate-600 font-bold focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-auto"><option value="All">All Departments</option></select></div>
              <div id="export-controls" class="hidden flex gap-2"><button onclick="openExportModal()" class="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-emerald-700 btn-action flex items-center gap-2"><i class="fas fa-file-export"></i> Export Report</button></div>
              <button onclick="loadData()" class="bg-white border border-gray-300 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 btn-action"><i class="fas fa-sync-alt"></i></button>
              <button id="btn-create" onclick="openModal('modal-create')" class="flex-1 sm:flex-none bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition items-center justify-center gap-2 btn-action"><i class="fas fa-plus"></i> <span data-i18n="new_booking">New Booking</span></button>
@@ -191,14 +192,8 @@
     function showAlert(title, message) { document.getElementById('alert-title').innerText = title; document.getElementById('alert-msg').innerText = message; openModal('modal-alert'); }
     function formatDateFriendly(dateStr) { if (!dateStr || dateStr === '0000-00-00 00:00:00') return ''; const date = new Date(dateStr); const day = date.getDate(); const month = date.toLocaleString('default', { month: 'short' }); const hour = String(date.getHours()).padStart(2, '0'); const min = String(date.getMinutes()).padStart(2, '0'); return `${day} ${month} ${hour}:${min}`; }
 
-    // ==========================================
-    // CRON-LIKE REMINDER CHECKER (Runs every 1 min)
-    // ==========================================
     function checkReminders() {
-        fetch('api/vms.php', { 
-            method: 'POST', 
-            body: JSON.stringify({ action: 'checkReminders' }) 
-        }).catch(e => console.log('Silently ignoring reminder check error.'));
+        fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'checkReminders' }) }).catch(e => console.log('Silently ignoring reminder check error.'));
     }
 
     window.onload = function() {
@@ -207,7 +202,6 @@
        document.getElementById('nav-user-dept').innerText = currentUser.department || '-'; 
        document.getElementById('display-user-dept').innerText = currentUser.department || '-'; 
        
-       // NEW LOGIC FOR VEHICLE & DEPT FILTER VISIBILITY
        if(['Administrator', 'PlantHead', 'HRGA'].includes(currentUser.role) || (currentUser.role === 'TeamLeader' && currentUser.department === 'HRGA')) { 
            document.getElementById('filter-dept-container').classList.remove('hidden'); 
            document.getElementById('filter-vehicle-container').classList.remove('hidden'); 
@@ -226,7 +220,6 @@
 
     function populateDeptFilter(data) { const sel = document.getElementById('filter-dept'); const depts = [...new Set(data.map(item => item.department).filter(Boolean))].sort(); let html = '<option value="All">All Departments</option>'; depts.forEach(d => { html += `<option value="${d}">${d}</option>`; }); sel.innerHTML = html; }
     
-    // NEW FUNCTION: POPULATE VEHICLE DROPDOWN
     function populateVehicleFilter(vehicles) { 
         const sel = document.getElementById('filter-vehicle'); 
         let html = '<option value="All">All Vehicles</option>'; 
@@ -237,7 +230,6 @@
     let currentStatusFilter = 'All'; 
     function filterTableByStatus(status) { const cards = document.querySelectorAll('.stats-card'); cards.forEach(c => c.classList.remove('stats-active')); currentStatusFilter = status; applyFilters(); }
     
-    // UPDATED FUNCTION: APPLY FILTERS (DEPT + VEHICLE + STATUS)
     function applyFilters() { 
         const deptVal = document.getElementById('filter-dept').value; 
         const vehicleVal = document.getElementById('filter-vehicle') ? document.getElementById('filter-vehicle').value : 'All';
@@ -274,9 +266,13 @@
                 availableVehicles = res.vehicles || []; 
                 allBookingsData = res.bookings || []; 
                 populateDeptFilter(allBookingsData); 
-                populateVehicleFilter(availableVehicles); // Call the new vehicle filter populator
+                populateVehicleFilter(availableVehicles);
                 renderFleetStatus(availableVehicles); 
                 renderStats(); 
+                
+                // NEW: CALL RENDER DETAILED STATS
+                renderDetailedStats();
+                
                 applyFilters(); 
                 populateVehicleSelect(); 
             } 
@@ -286,6 +282,100 @@
             document.getElementById('data-table-body').innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">System Error: ${err.message}</td></tr>`; 
             console.error(err); 
         }); 
+    }
+
+    // ==========================================
+    // NEW: RENDER ADVANCED DETAILED STATS
+    // ==========================================
+    function renderDetailedStats() {
+        const allowedRoles = ['Administrator', 'PlantHead', 'HRGA'];
+        const isHRGATeamLeader = (currentUser.role === 'TeamLeader' && currentUser.department === 'HRGA');
+        if (!allowedRoles.includes(currentUser.role) && !isHRGATeamLeader) return;
+
+        document.getElementById('detailed-stats-section').classList.remove('hidden');
+
+        let users = {}, depts = {}, vehKM = {}, vehFuel = {};
+
+        allBookingsData.forEach(b => {
+            if (b.status !== 'Cancelled' && b.status !== 'Rejected') {
+                users[b.fullname] = (users[b.fullname] || 0) + 1;
+                depts[b.department] = (depts[b.department] || 0) + 1;
+            }
+
+            if (b.status === 'Done' || b.status === 'Pending Review' || b.status === 'Correction Needed') {
+                let start = parseInt(b.startKm) || 0;
+                let end = parseInt(b.endKm) || 0;
+                let dist = end - start;
+                if (dist > 0) {
+                    vehKM[b.vehicle] = (vehKM[b.vehicle] || 0) + dist;
+                }
+                
+                let lts = parseFloat(b.fuelLiters) || 0;
+                if (lts > 0 && dist > 0) {
+                    if (!vehFuel[b.vehicle]) vehFuel[b.vehicle] = { km: 0, lts: 0 };
+                    vehFuel[b.vehicle].km += dist;
+                    vehFuel[b.vehicle].lts += lts;
+                }
+            }
+        });
+
+        const getTop5 = (obj) => Object.entries(obj).sort((a,b) => b[1] - a[1]).slice(0, 5);
+        let topUsers = getTop5(users);
+        let topDepts = getTop5(depts);
+        let topVehKM = getTop5(vehKM);
+        
+        let effData = Object.entries(vehFuel).map(([veh, data]) => {
+            return [veh, (data.km / data.lts).toFixed(1)];
+        }).sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+        const renderList = (data, title, icon, colorName, unit, isFloat = false) => {
+            let maxVal = data.length > 0 ? parseFloat(data[0][1]) : 1;
+            
+            const colorMap = {
+                'blue': { bgLight: 'bg-blue-50', text: 'text-blue-600', icon: 'text-blue-500', bar: 'bg-blue-500' },
+                'purple': { bgLight: 'bg-purple-50', text: 'text-purple-600', icon: 'text-purple-500', bar: 'bg-purple-500' },
+                'orange': { bgLight: 'bg-orange-50', text: 'text-orange-600', icon: 'text-orange-500', bar: 'bg-orange-500' },
+                'emerald': { bgLight: 'bg-emerald-50', text: 'text-emerald-600', icon: 'text-emerald-500', bar: 'bg-emerald-500' }
+            };
+            let c = colorMap[colorName];
+
+            let html = `
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden group">
+                <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full ${c.bgLight} opacity-50 group-hover:scale-[2.5] transition-transform duration-700 ease-out z-0"></div>
+                <div class="relative z-10">
+                    <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i class="fas ${icon} ${c.icon}"></i> ${title}
+                    </h3>
+                    <div class="space-y-3">
+            `;
+            
+            if(data.length === 0) html += `<div class="text-xs text-slate-400 italic">No data yet.</div>`;
+            
+            data.forEach(([name, val], idx) => {
+                let pct = (parseFloat(val) / maxVal) * 100;
+                let displayVal = isFloat ? val : val;
+                html += `
+                    <div>
+                        <div class="flex justify-between text-[10px] font-bold mb-1">
+                            <span class="text-slate-600 truncate pr-2">${idx+1}. ${name}</span>
+                            <span class="${c.text} whitespace-nowrap">${displayVal} ${unit}</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div class="${c.bar} h-1.5 rounded-full anim-fill shadow-[0_0_5px_rgba(0,0,0,0.1)]" style="--target-width: ${pct}%; animation-delay: ${idx * 0.15}s;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div></div></div>`;
+            return html;
+        };
+
+        const container = document.getElementById('detailed-stats-container');
+        container.innerHTML = 
+            renderList(topUsers, 'Top Users', 'fa-user-ninja', 'blue', 'Trips') +
+            renderList(topDepts, 'Top Departments', 'fa-building', 'purple', 'Trips') +
+            renderList(topVehKM, 'Highest Mileage', 'fa-tachometer-alt', 'orange', 'KM') +
+            renderList(effData, 'Best Efficiency', 'fa-leaf', 'emerald', 'KM/L', true);
     }
 
     function renderStats() {
@@ -509,13 +599,14 @@
         });
     }
 
-    function populateVehicleSelect() { const sel = document.getElementById('input-vehicle'); sel.innerHTML = '<option value="">-- Select Unit (Available) --</option>'; availableVehicles.filter(v => v.status === 'Available').forEach(v => { sel.innerHTML += `<option value="${v.plant}">${v.plant} - ${v.model}</option>`; }); }
     function submitData() { const v = document.getElementById('input-vehicle').value, p = document.getElementById('input-purpose').value, btn = document.getElementById('btn-create-submit'); if(!v || !p) return showAlert("Error", "Please complete all fields."); btn.disabled = true; btn.innerText = "Processing..."; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'submit', username: currentUser.username, fullname: currentUser.fullname, role: currentUser.role, department: currentUser.department, vehicle: v, purpose: p }) }).then(r => r.json()).then(res => { btn.disabled = false; btn.innerText = "Submit Request"; if(res.success) { closeModal('modal-create'); loadData(); showAlert("Success", "Request sent."); } else { showAlert("Error", res.message); } }); }
     function callUpdate(id, act, comment) { fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: {comment: comment} }) }).then(r => r.json()).then(res => { if(res.success) loadData(); else showAlert("Error", res.message || "Failed to update"); }).catch(e => showAlert("Error", "Connection error")); }
     function approve(id, role) { showConfirm("Approve Request", "You can add an optional note below:", (comment) => { callUpdate(id, 'approve', comment); }); }
     function reject(id, role) { showConfirm("Confirm Rejection", "Please provide a REASON for rejection:", (comment) => { if(!comment) return showAlert("Error", "Reason is required for rejection"); callUpdate(id, 'reject', comment); }); }
     function confirmTrip(id) { showConfirm("Verify Trip", "Verify that this trip is completed and data is correct?", (c) => callUpdate(id, 'verifyTrip', c)); } 
     function requestCorrection(id) { showConfirm("Request Correction", "Reason for correction (sent to user):", (c) => { if(!c) return showAlert("Error", "Reason required"); callUpdate(id, 'requestCorrection', c); }); }
+    
+    function populateVehicleSelect() { const sel = document.getElementById('input-vehicle'); sel.innerHTML = '<option value="">-- Select Unit (Available) --</option>'; availableVehicles.filter(v => v.status === 'Available').forEach(v => { sel.innerHTML += `<option value="${v.plant}">${v.plant} - ${v.model}</option>`; }); }
     
     function openTripModal(id, act, startKmVal, vehiclePlat, existingEndKm = '', existingFuelCost = 0, existingFuelType = '') { 
         document.getElementById('trip-id').value = id; document.getElementById('trip-action').value = act; 
