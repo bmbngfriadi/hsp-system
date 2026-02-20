@@ -171,7 +171,7 @@ function getSettings($conn) {
 
 try {
     // ==========================================
-    // NEW: AUTO REMINDERS CRON-LIKE SYSTEM
+    // AUTO REMINDERS CRON-LIKE SYSTEM
     // ==========================================
     if ($action == 'checkReminders') {
         $now = time();
@@ -370,7 +370,6 @@ try {
             try {
                 $userPhone = getUserPhone($conn, $input['username']);
                 
-                // NOTIF SUBMIT TO USER
                 if($userPhone) {
                     $msgU = "📋 *VMS - PENGAJUAN TERKIRIM*\n"
                           . "--------------------------------\n"
@@ -385,7 +384,6 @@ try {
                     sendWA($userPhone, $msgU);
                 }
                 
-                // NOTIF APPROVAL TO L1
                 if ($status == 'Pending Plant Head') {
                     $phonesPH = getPhones($conn, 'PlantHead');
                     $msgL1 = "🚗 *VMS - PERLU APPROVAL (PLANT HEAD)*\n"
@@ -443,7 +441,7 @@ try {
                         if($userPhone) sendWA($userPhone, "✅ *VMS - APPROVED (DEPT HEAD)*\n--------------------------------\nHallo {$reqData['fullname']},\nPengajuan Anda telah *Disetujui* oleh Dept Head ($approverName).$waNote\n⏳ Selanjutnya menunggu persetujuan HRGA.");
                         
                         $phonesL2 = getPhones($conn, 'HRGA'); 
-                        $msgL2 = "🚗 *VMS - PERLU APPROVAL (HRGA)*\n--------------------------------\nPengajuan telah di Approve oleh Section Head User dan butuh persetujuan HRGA.\n\n👤 *Pemohon*: {$reqData['fullname']} ($reqDept)\n🔖 *ID Request*: {$reqData['req_id']}\n🚗 *Kendaraan*: {$reqData['vehicle']}\n📍 *Tujuan*: {$reqData['purpose']}\n\n👉 _Mohon dicek ketersediaan unit & lakukan Approval._";
+                        $msgL2 = "🚗 *VMS - PERLU APPROVAL (HRGA)*\n--------------------------------\nPengajuan telah lolos Level 1 dan butuh persetujuan HRGA.\n\n👤 *Pemohon*: {$reqData['fullname']} ($reqDept)\n🔖 *ID Request*: {$reqData['req_id']}\n🚗 *Kendaraan*: {$reqData['vehicle']}\n📍 *Tujuan*: {$reqData['purpose']}\n\n👉 _Mohon dicek ketersediaan unit & lakukan Approval._";
                         foreach($phonesL2 as $ph) sendWA($ph, $msgL2);
                     } catch (Exception $e) {}
                 }
@@ -478,7 +476,6 @@ try {
             }
             elseif ($currentStatus == 'Pending Final') {
                 $dbComment = $rawComment ? "L3 Approved by $approverName: $rawComment" : "";
-                // Reset last_reminder_time so Start Trip reminder starts counting fresh from 0
                 $sql = "UPDATE vms_bookings SET status = 'Approved', app_final = 'Approved', final_time = '$currentDateTime', final_by = '$approverName', action_comment = '$dbComment', last_reminder_time = NULL WHERE req_id = '$id'";
                 if($conn->query($sql)) {
                     try {
@@ -515,7 +512,6 @@ try {
         elseif($act == 'startTrip') {
             $url = uploadImageInternal($extra['photoBase64'], "START_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
             if($url) {
-                // Reset last_reminder_time for End Trip Reminder
                 $conn->query("UPDATE vms_bookings SET status = 'Active', start_km = '{$extra['km']}', start_photo = '$url', depart_time = '$currentDateTime', last_reminder_time = NULL WHERE req_id = '$id'");
                 $conn->query("UPDATE vms_vehicles SET status = 'In Use' WHERE plant_plat = '{$reqData['vehicle']}'");
                 
@@ -529,6 +525,7 @@ try {
                 sendResponse(['success' => true]);
             } else { sendResponse(['success' => false, 'message' => 'Image upload failed']); }
         }
+        
         elseif($act == 'endTrip') {
             $url = uploadImageInternal($extra['photoBase64'], "END_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
             if($url) {
@@ -575,7 +572,7 @@ try {
                     if($userPhone) sendWA($userPhone, "🏁 *VMS - TRIP SELESAI*\n--------------------------------\nSelamat datang kembali, {$reqData['fullname']}!\nData kepulangan Anda telah dicatat sistem.\n\n📏 *Jarak Ditempuh*: $currentTripDist km ($startKM -> $endKM)\n⛽ *Isi BBM*: " . ($fuelCost > 0 ? "Rp" . number_format($fuelCost,0,',','.') : "Tidak Ada") . "\n\n⏳ _Status saat ini menunggu Verifikasi akhir dari HRGA. Mohon kembalikan kunci ke pos._"); 
                     
                     $phonesHRGA = getPhones($conn, 'HRGA');
-                    foreach($phonesHRGA as $ph) sendWA($ph, "🏁 *VMS INFO - KENDARAAN KEMBALI & BUTUH VERIFIKASI*\n--------------------------------\nUnit *{$reqData['vehicle']}* telah dikembalikan oleh {$reqData['fullname']}.\n\n📏 *Jarak*: $currentTripDist km\n⛽ *BBM*: " . ($fuelCost > 0 ? "Rp" . number_format($fuelCost,0,',','.') : "-") . "\n\n👉 _Mohon verifikasi & lakukan VERIFY DONE di dashboard._");
+                    foreach($phonesHRGA as $ph) sendWA($ph, "🏁 *VMS INFO - KENDARAAN KEMBALI*\n--------------------------------\nUnit *{$reqData['vehicle']}* telah dikembalikan oleh {$reqData['fullname']}.\n\n📏 *Jarak*: $currentTripDist km\n⛽ *BBM*: " . ($fuelCost > 0 ? "Rp" . number_format($fuelCost,0,',','.') : "-") . "\n\n👉 _Mohon periksa fisik kendaraan & lakukan VERIFY DONE di dashboard._");
                 } catch (Exception $e) {}
 
                 sendResponse(['success' => true]);
@@ -585,7 +582,7 @@ try {
             $conn->query("UPDATE vms_bookings SET status = 'Done' WHERE req_id = '$id'");
             $conn->query("UPDATE vms_vehicles SET status = 'Available' WHERE plant_plat = '{$reqData['vehicle']}'");
             try { 
-                if($userPhone) sendWA($userPhone, "✅ *VMS - TRIP SELESAI & DIVERIFIKASI*\n--------------------------------\nHallo {$reqData['fullname']},\nPerjalanan Anda telah selesai sepenuhnya dan sudah di-Verifikasi oleh HRGA.\n\n_Terima kasih telah mematuhi prosedur peminjaman kendaraan VMS._"); 
+                if($userPhone) sendWA($userPhone, "✅ *VMS - TRIP SELESAI & DIVERIFIKASI*\n--------------------------------\nHallo {$reqData['fullname']},\nPerjalanan Anda telah selesai sepenuhnya dan sudah di-Verifikasi oleh Admin.\n\n_Terima kasih telah mematuhi prosedur peminjaman kendaraan VMS._"); 
             } catch (Exception $e) {}
             sendResponse(['success' => true]);
         }
@@ -593,10 +590,11 @@ try {
             $reason = $conn->real_escape_string($extra['comment']);
             $conn->query("UPDATE vms_bookings SET status = 'Correction Needed', action_comment = 'Correction requested by $approverName: $reason', last_reminder_time = NULL WHERE req_id = '$id'");
             try { 
-                if($userPhone) sendWA($userPhone, "⚠️ *VMS - REVISI DATA TRIP DIBUTUHKAN*\n--------------------------------\nMohon perhatian {$reqData['fullname']},\nHRGA meminta Anda untuk merevisi / melengkapi data Trip Anda (Unit: {$reqData['vehicle']}).\n\n📝 *Pesan HRGA*: $reason\n\n👉 _Silakan buka dashboard VMS, cari riwayat Anda yang berwarna Kuning, dan klik tombol 'Fix Data'._"); 
+                if($userPhone) sendWA($userPhone, "⚠️ *VMS - REVISI DATA TRIP DIBUTUHKAN*\n--------------------------------\nMohon perhatian {$reqData['fullname']},\nAdmin HRGA meminta Anda untuk merevisi / melengkapi data Trip Anda (Unit: {$reqData['vehicle']}).\n\n📝 *Pesan Admin*: $reason\n\n👉 _Silakan buka dashboard VMS, cari riwayat Anda yang berwarna Kuning, dan klik tombol 'Fix Data'._"); 
             } catch (Exception $e) {}
             sendResponse(['success' => true]);
         }
+        
         elseif($act == 'submitCorrection') {
             $url = $reqData['end_photo']; 
             if (!empty($extra['photoBase64'])) {

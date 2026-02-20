@@ -87,14 +87,26 @@
         
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
            <div><h2 class="text-xl font-bold text-slate-700" data-i18n="trip_history">Trip History</h2><p class="text-xs text-slate-500" data-i18n="click_filter">Click statistics above to filter.</p></div>
-           <div class="flex gap-2 w-full sm:w-auto items-center">
-             <div id="filter-dept-container" class="hidden"><select id="filter-dept" onchange="applyFilters()" class="border border-gray-300 rounded-lg text-xs p-2 bg-white text-slate-600 font-bold focus:ring-2 focus:ring-blue-500 outline-none"><option value="All">All Departments</option></select></div>
+           <div class="flex gap-2 w-full sm:w-auto items-center flex-wrap sm:flex-nowrap">
+             
+             <div id="filter-vehicle-container" class="hidden">
+                 <select id="filter-vehicle" onchange="applyFilters()" class="border border-gray-300 rounded-lg text-xs p-2 bg-white text-slate-600 font-bold focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-auto">
+                     <option value="All">All Vehicles</option>
+                 </select>
+             </div>
+             
+             <div id="filter-dept-container" class="hidden">
+                 <select id="filter-dept" onchange="applyFilters()" class="border border-gray-300 rounded-lg text-xs p-2 bg-white text-slate-600 font-bold focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-auto">
+                     <option value="All">All Departments</option>
+                 </select>
+             </div>
+             
              <div id="export-controls" class="hidden flex gap-2"><button onclick="openExportModal()" class="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-emerald-700 btn-action flex items-center gap-2"><i class="fas fa-file-export"></i> Export Report</button></div>
              <button onclick="loadData()" class="bg-white border border-gray-300 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 btn-action"><i class="fas fa-sync-alt"></i></button>
              <button id="btn-create" onclick="openModal('modal-create')" class="flex-1 sm:flex-none bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition items-center justify-center gap-2 btn-action"><i class="fas fa-plus"></i> <span data-i18n="new_booking">New Booking</span></button>
            </div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mt-4">
            <div id="data-card-container" class="md:hidden bg-slate-50 p-3 space-y-4"></div>
            <div class="hidden md:block overflow-x-auto">
              <table class="w-full text-left text-sm">
@@ -194,23 +206,55 @@
        document.getElementById('nav-user-name').innerText = currentUser.fullname;
        document.getElementById('nav-user-dept').innerText = currentUser.department || '-'; 
        document.getElementById('display-user-dept').innerText = currentUser.department || '-'; 
+       
+       // NEW LOGIC FOR VEHICLE & DEPT FILTER VISIBILITY
+       if(['Administrator', 'PlantHead', 'HRGA'].includes(currentUser.role) || (currentUser.role === 'TeamLeader' && currentUser.department === 'HRGA')) { 
+           document.getElementById('filter-dept-container').classList.remove('hidden'); 
+           document.getElementById('filter-vehicle-container').classList.remove('hidden'); 
+       }
+       
        if(['User', 'GA', 'SectionHead', 'TeamLeader', 'HRGA'].includes(currentUser.role)) { document.getElementById('btn-create').classList.remove('hidden'); }
        if(['Administrator', 'HRGA'].includes(currentUser.role)) { document.getElementById('export-controls').classList.remove('hidden'); }
        if(currentUser.role === 'Administrator') { document.getElementById('btn-admin-settings').classList.remove('hidden'); }
-       if(['Administrator', 'PlantHead', 'HRGA'].includes(currentUser.role) || (currentUser.role === 'TeamLeader' && currentUser.department === 'HRGA')) { document.getElementById('filter-dept-container').classList.remove('hidden'); }
        
        fetchFuelPrices(); 
        loadData();
 
-       // Initial check for reminders after 5 seconds, then every 1 minute
        setTimeout(checkReminders, 5000);
        setInterval(checkReminders, 60000);
     };
 
     function populateDeptFilter(data) { const sel = document.getElementById('filter-dept'); const depts = [...new Set(data.map(item => item.department).filter(Boolean))].sort(); let html = '<option value="All">All Departments</option>'; depts.forEach(d => { html += `<option value="${d}">${d}</option>`; }); sel.innerHTML = html; }
+    
+    // NEW FUNCTION: POPULATE VEHICLE DROPDOWN
+    function populateVehicleFilter(vehicles) { 
+        const sel = document.getElementById('filter-vehicle'); 
+        let html = '<option value="All">All Vehicles</option>'; 
+        vehicles.forEach(v => { html += `<option value="${v.plant}">${v.plant}</option>`; }); 
+        sel.innerHTML = html; 
+    }
+
     let currentStatusFilter = 'All'; 
     function filterTableByStatus(status) { const cards = document.querySelectorAll('.stats-card'); cards.forEach(c => c.classList.remove('stats-active')); currentStatusFilter = status; applyFilters(); }
-    function applyFilters() { const deptVal = document.getElementById('filter-dept').value; let filtered = allBookingsData; if(currentStatusFilter !== 'All') { if(currentStatusFilter === 'Pending') { filtered = filtered.filter(r => r.status.includes('Pending') || r.status === 'Correction Needed' || r.status === 'Pending Review'); } else if(currentStatusFilter === 'Failed') { filtered = filtered.filter(r => r.status === 'Rejected' || r.status === 'Cancelled'); } else { filtered = filtered.filter(r => r.status === currentStatusFilter); } } if(deptVal !== 'All') { filtered = filtered.filter(r => r.department === deptVal); } renderTable(filtered); }
+    
+    // UPDATED FUNCTION: APPLY FILTERS (DEPT + VEHICLE + STATUS)
+    function applyFilters() { 
+        const deptVal = document.getElementById('filter-dept').value; 
+        const vehicleVal = document.getElementById('filter-vehicle') ? document.getElementById('filter-vehicle').value : 'All';
+        let filtered = allBookingsData; 
+        
+        if(currentStatusFilter !== 'All') { 
+            if(currentStatusFilter === 'Pending') { filtered = filtered.filter(r => r.status.includes('Pending') || r.status === 'Correction Needed' || r.status === 'Pending Review'); } 
+            else if(currentStatusFilter === 'Failed') { filtered = filtered.filter(r => r.status === 'Rejected' || r.status === 'Cancelled'); } 
+            else { filtered = filtered.filter(r => r.status === currentStatusFilter); } 
+        } 
+        
+        if(deptVal !== 'All') { filtered = filtered.filter(r => r.department === deptVal); } 
+        if(vehicleVal !== 'All') { filtered = filtered.filter(r => r.vehicle === vehicleVal); } 
+        
+        renderTable(filtered); 
+    }
+
     function openAdminSettings() { if(!currentFuelPrices.price_pertamax) fetchFuelPrices(); document.getElementById('set-turbo').value = currentFuelPrices.price_pertamax_turbo; document.getElementById('set-pertamax').value = currentFuelPrices.price_pertamax; document.getElementById('set-pertalite').value = currentFuelPrices.price_pertalite; openModal('modal-settings'); }
     function saveFuelSettings() { const prices = { price_pertamax_turbo: document.getElementById('set-turbo').value, price_pertamax: document.getElementById('set-pertamax').value, price_pertalite: document.getElementById('set-pertalite').value }; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'saveFuelPrices', prices: prices }) }).then(r => r.json()).then(res => { if(res.success) { closeModal('modal-settings'); fetchFuelPrices(); showAlert("Success", "Prices updated."); } }); }
     function fetchFuelPrices() { fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'getFuelPrices' }) }).then(r => r.json()).then(res => { if(res.success) currentFuelPrices = res.prices; }); }
@@ -226,7 +270,16 @@
         fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'getData', role: currentUser.role, username: currentUser.username, department: currentUser.department }) })
         .then(async r => { const text = await r.text(); try { return JSON.parse(text); } catch (e) { console.error("Backend Error Raw:", text); throw new Error("Server Error: " + text.substring(0, 100)); } })
         .then(res => { 
-            if(res.success) { availableVehicles = res.vehicles || []; allBookingsData = res.bookings || []; populateDeptFilter(allBookingsData); renderFleetStatus(availableVehicles); renderStats(); applyFilters(); populateVehicleSelect(); } 
+            if(res.success) { 
+                availableVehicles = res.vehicles || []; 
+                allBookingsData = res.bookings || []; 
+                populateDeptFilter(allBookingsData); 
+                populateVehicleFilter(availableVehicles); // Call the new vehicle filter populator
+                renderFleetStatus(availableVehicles); 
+                renderStats(); 
+                applyFilters(); 
+                populateVehicleSelect(); 
+            } 
             else { document.getElementById('data-table-body').innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">Error: ${res.message}</td></tr>`; } 
         })
         .catch(err => { 
@@ -265,8 +318,6 @@
             buildCard('Completed', d, 'fa-check-circle', 'emerald', 'Done', 'done') +
             buildCard('Cancelled/Reject', f, 'fa-times-circle', 'red', 'Failed', 'failed');
     }
-
-    function filterTableByStatus(f){const cards=document.querySelectorAll('.stats-card');cards.forEach(c=>c.classList.remove('stats-active'));let filtered=[];if(f==='All')filtered=allBookingsData;else if(f==='Pending')filtered=allBookingsData.filter(r=>r.status.includes('Pending')||r.status==='Correction Needed'||r.status==='Pending Review');else if(f==='Failed')filtered=allBookingsData.filter(r=>r.status==='Rejected'||r.status==='Cancelled');else filtered=allBookingsData.filter(r=>r.status===f);renderTable(filtered);}
     
     function renderFleetStatus(v){
         const c=document.getElementById('fleet-status-container');
@@ -407,7 +458,6 @@
                 distInfo = `<div class="mt-1.5"><span class="bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm"><i class="fas fa-route mr-1 text-indigo-400"></i>${diff} km</span></div>`;
             }
 
-            // Tampilan Foto Odometer
             let tripCard = `<div class="bg-white border border-slate-200 rounded-xl p-2 text-center w-full shadow-sm"><div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Odometer</div><div class="font-mono text-xs font-bold text-slate-700 bg-slate-50 border border-slate-100 rounded px-2 py-1 inline-block">${r.startKm||'0'} <span class="text-slate-300 mx-1">→</span> ${r.endKm||'...'}</div>${distInfo}<div class="flex justify-center gap-2 mt-2">${r.startPhoto && r.startPhoto !== '0' ? `<button onclick="viewPhoto('${r.startPhoto}')" class="text-blue-500 bg-blue-50 border border-blue-100 hover:bg-blue-100 p-1.5 rounded transition shadow-sm" title="Start Photo"><i class="fas fa-camera text-xs"></i></button>` : `<span class="w-6"></span>`}${r.endPhoto && r.endPhoto !== '0' ? `<button onclick="viewPhoto('${r.endPhoto}')" class="text-orange-500 bg-orange-50 border border-orange-100 hover:bg-orange-100 p-1.5 rounded transition shadow-sm" title="End Photo"><i class="fas fa-camera text-xs"></i></button>` : `<span class="w-6"></span>`}</div></div>`;
             
             if(r.fuelCost > 0) {
@@ -688,9 +738,6 @@
     function sendTripData(id, act, extraData) { const btn = document.getElementById('btn-trip-submit'); btn.innerText = "Sending Data..."; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: extraData }) }).then(r => r.json()).then(res => { btn.disabled = false; btn.innerText = "Save Update"; if(res.success) { closeModal('modal-trip'); loadData(); } else { showAlert("Error", res.message); } }).catch(err => { btn.disabled = false; btn.innerText = "Save Update"; console.error(err); showAlert("Error", "Connection Failed: " + err.message); }); }
     function calcTotalDistance() { const start = parseInt(document.getElementById('modal-start-km-val').value) || 0; const end = parseInt(document.getElementById('input-km').value) || 0; const total = end - start; const disp = document.getElementById('disp-total-km'); if (total < 0) { disp.innerText = "Check ODO"; disp.className = "text-red-600 font-bold"; } else { disp.innerText = total; disp.className = ""; } }
     
-    // ==========================================
-    // UPDATED FUNCTION: VIEW PHOTO
-    // ==========================================
     function viewPhoto(url) { 
         if (!url || url === 'null' || url === 'undefined' || url.trim() === '' || url === '0') {
             showAlert("Informasi", "Gambar tidak tersedia.");
