@@ -126,7 +126,7 @@
   <div id="modal-image" class="hidden fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 cursor-pointer" onclick="closeModal('modal-image')">
       <div class="relative max-w-5xl w-full flex flex-col items-center animate-slide-up" onclick="event.stopPropagation()">
           <button onclick="closeModal('modal-image')" class="absolute -top-12 right-0 text-white/70 hover:text-white transition text-4xl font-light hover:scale-110">&times;</button>
-          <img id="viewer-img" src="" alt="View" class="max-h-[85vh] max-w-full rounded-xl shadow-2xl object-contain border-2 border-white/10 bg-black/50">
+          <img id="viewer-img" src="" alt="View" class="min-w-[300px] min-h-[200px] max-h-[85vh] max-w-full rounded-xl shadow-2xl object-contain border-2 border-white/10 bg-slate-800" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'%3E%3Crect width=\'600\' height=\'400\' fill=\'%231e293b\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' fill=\'%23ffffff\' font-family=\'Arial, sans-serif\' font-size=\'24\' font-weight=\'bold\' text-anchor=\'middle\' alignment-baseline=\'middle\'%3EIMAGE NOT FOUND%3C/text%3E%3Ctext x=\'50%25\' y=\'60%25\' fill=\'%2394a3b8\' font-family=\'Arial, sans-serif\' font-size=\'14\' text-anchor=\'middle\' alignment-baseline=\'middle\'%3EFile tidak tersedia di server atau gagal diunggah.%3C/text%3E%3C/svg%3E';">
       </div>
   </div>
 
@@ -328,9 +328,10 @@
             const isPlantPath = (r.plantStatus !== 'Auto-Skip');
             const getStepClass = (st) => { if(st === 'Approved') return 'step-approved'; if(st === 'Rejected') return 'step-rejected'; if(st === 'Pending') return 'step-waiting'; if(st === 'Auto-Skip') return 'step-approved'; return 'step-pending'; };
             
-            let l1Status, l1Label, l1Icon, l1By, l1Time;
-            if (isPlantPath) { l1Status = r.plantStatus; l1Label = 'PLANT'; l1Icon = 'fa-industry'; l1By = r.plantBy; l1Time = r.plantTime; } 
-            else { l1Status = r.headStatus; l1Label = 'HEAD'; l1Icon = 'fa-user-tie'; l1By = r.headBy; l1Time = r.headTime; }
+            let l1Status, l1Icon, l1By, l1Time;
+            let l1Label = isPlantPath ? 'P.HEAD' : 'D.HEAD';
+            if (isPlantPath) { l1Status = r.plantStatus; l1Icon = 'fa-industry'; l1By = r.plantBy; l1Time = r.plantTime; } 
+            else { l1Status = r.headStatus; l1Icon = 'fa-user-tie'; l1By = r.headBy; l1Time = r.headTime; }
 
             let l1C = (l1Status==='Pending') ? (s.includes('Pending') && !s.includes('HRGA') && !s.includes('Final') ? 'step-pending' : 'step-waiting') : getStepClass(l1Status);
             if(s === 'Rejected' && l1Status === 'Pending') l1C = 'step-waiting';
@@ -390,17 +391,55 @@
                 distInfo = `<div class="mt-1.5"><span class="bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm"><i class="fas fa-route mr-1 text-indigo-400"></i>${diff} km</span></div>`;
             }
 
-            let tripCard = `<div class="bg-white border border-slate-200 rounded-xl p-2 text-center w-full shadow-sm"><div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Odometer</div><div class="font-mono text-xs font-bold text-slate-700 bg-slate-50 border border-slate-100 rounded px-2 py-1 inline-block">${r.startKm||'0'} <span class="text-slate-300 mx-1">→</span> ${r.endKm||'...'}</div>${distInfo}<div class="flex justify-center gap-2 mt-2">${r.startPhoto ? `<button onclick="viewPhoto('${r.startPhoto}')" class="text-blue-500 bg-blue-50 border border-blue-100 hover:bg-blue-100 p-1.5 rounded transition shadow-sm" title="Start Photo"><i class="fas fa-camera text-xs"></i></button>` : `<span class="w-6"></span>`}${r.endPhoto ? `<button onclick="viewPhoto('${r.endPhoto}')" class="text-orange-500 bg-orange-50 border border-orange-100 hover:bg-orange-100 p-1.5 rounded transition shadow-sm" title="End Photo"><i class="fas fa-camera text-xs"></i></button>` : `<span class="w-6"></span>`}</div></div>`;
+            let tripCard = `<div class="bg-white border border-slate-200 rounded-xl p-2 text-center w-full shadow-sm"><div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Odometer</div><div class="font-mono text-xs font-bold text-slate-700 bg-slate-50 border border-slate-100 rounded px-2 py-1 inline-block">${r.startKm||'0'} <span class="text-slate-300 mx-1">→</span> ${r.endKm||'...'}</div>${distInfo}<div class="flex justify-center gap-2 mt-2">${r.startPhoto && r.startPhoto !== '0' ? `<button onclick="viewPhoto('${r.startPhoto}')" class="text-blue-500 bg-blue-50 border border-blue-100 hover:bg-blue-100 p-1.5 rounded transition shadow-sm" title="Start Photo"><i class="fas fa-camera text-xs"></i></button>` : `<span class="w-6"></span>`}${r.endPhoto && r.endPhoto !== '0' ? `<button onclick="viewPhoto('${r.endPhoto}')" class="text-orange-500 bg-orange-50 border border-orange-100 hover:bg-orange-100 p-1.5 rounded transition shadow-sm" title="End Photo"><i class="fas fa-camera text-xs"></i></button>` : `<span class="w-6"></span>`}</div></div>`;
             
             if(r.fuelCost > 0) {
                 const formattedCost = new Intl.NumberFormat('id-ID').format(r.fuelCost);
-                // Gunakan total_accumulated_km yang akurat hasil kalkulasi Backend
                 const accumKmDisplay = r.totalAccumulatedKm > 0 ? r.totalAccumulatedKm : Math.round(parseFloat(r.fuelRatio) * parseFloat(r.fuelLiters));
                 
-                tripCard += `<div class="mt-2 bg-blue-50 border border-blue-100 rounded-xl p-2 relative overflow-hidden shadow-sm"><div class="flex justify-between items-center mb-2"><div class="text-[9px] font-bold text-blue-600 uppercase flex items-center gap-1"><i class="fas fa-gas-pump"></i> ${r.fuelType}</div>${r.fuelReceipt ? `<button onclick="viewPhoto('${r.fuelReceipt}')" class="text-slate-400 hover:text-blue-600 transition" title="Receipt"><i class="fas fa-file-invoice"></i></button>` : ''}</div><div class="grid grid-cols-2 gap-2 text-[9px] mb-2"><div class="bg-white/50 p-1 rounded border border-blue-100"><div class="text-slate-400 text-[8px] uppercase">Volume</div><div class="font-bold text-slate-700">${r.fuelLiters} L</div></div><div class="bg-white/50 p-1 rounded border border-blue-100"><div class="text-slate-400 text-[8px] uppercase">Total Cost</div><div class="font-bold text-slate-700">Rp ${formattedCost}</div></div></div><div class="bg-emerald-50 border border-emerald-100 rounded p-1.5 flex justify-between items-center"><div class="text-[8px] text-emerald-600 font-bold uppercase">Efficiency</div><div class="text-[9px] font-bold text-emerald-700">${accumKmDisplay} km / ${r.fuelLiters} L = <span class="bg-white px-1 rounded ml-1 border border-emerald-200">${parseFloat(r.fuelRatio).toFixed(1)} km/l</span></div></div></div>`;
+                // MENCEGAH TOMBOL STRUK MUNCUL JIKA URL KOSONG ATAU "0"
+                let hasReceipt = false;
+                if (r.fuelReceipt && typeof r.fuelReceipt === 'string') {
+                    let cUrl = r.fuelReceipt.trim();
+                    if (cUrl !== '' && cUrl !== 'null' && cUrl !== 'undefined' && cUrl !== '0') {
+                        hasReceipt = true;
+                    }
+                }
+                
+                // DESAIN TOMBOL LIHAT STRUK LEBIH JELAS & BESAR
+                const receiptBtn = hasReceipt 
+                    ? `<button onclick="viewPhoto('${r.fuelReceipt}')" class="bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white border border-blue-200 px-3 py-1.5 rounded-lg shadow-sm text-[10px] font-bold transition-all flex items-center gap-1.5 cursor-pointer" title="Lihat Struk"><i class="fas fa-file-invoice"></i> Lihat Struk</button>` 
+                    : `<span class="text-[9px] text-slate-400 italic font-medium">No Image</span>`;
+                
+                tripCard += `
+                <div class="mt-2 bg-slate-50 border border-slate-200 rounded-xl p-2.5 relative overflow-hidden shadow-sm">
+                    <div class="flex justify-between items-center mb-2.5 pb-2 border-b border-slate-200">
+                        <div class="text-[11px] font-black text-blue-700 uppercase flex items-center gap-1.5">
+                            <i class="fas fa-gas-pump text-blue-500"></i> ${r.fuelType && r.fuelType !== '0' ? r.fuelType : 'BBM'}
+                        </div>
+                        ${receiptBtn}
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mb-2.5">
+                        <div class="bg-white p-2 rounded-lg border border-slate-100 shadow-sm flex flex-col justify-center text-center">
+                            <span class="text-[8px] text-slate-400 font-bold uppercase tracking-wide mb-1">Volume</span>
+                            <span class="text-[12px] font-black text-slate-700">${parseFloat(r.fuelLiters).toFixed(2)} <span class="font-normal text-slate-500 text-[9px]">L</span></span>
+                        </div>
+                        <div class="bg-white p-2 rounded-lg border border-slate-100 shadow-sm flex flex-col justify-center text-center">
+                            <span class="text-[8px] text-slate-400 font-bold uppercase tracking-wide mb-1">Total Cost</span>
+                            <span class="text-[12px] font-black text-slate-700"><span class="font-normal text-slate-500 text-[9px]">Rp</span> ${formattedCost}</span>
+                        </div>
+                    </div>
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-2 flex flex-col items-center justify-center text-center shadow-sm">
+                        <span class="text-[8px] text-emerald-600 font-bold uppercase tracking-wider mb-1">Efficiency</span>
+                        <div class="text-[14px] font-black text-emerald-700 bg-white px-2.5 py-0.5 rounded border border-emerald-100 shadow-sm inline-block">
+                            ${parseFloat(r.fuelRatio).toFixed(1)} <span class="font-bold text-[10px]">km/l</span>
+                        </div>
+                        <span class="text-[9px] text-emerald-500 mt-1.5 font-medium tracking-tight">(${accumKmDisplay} km / ${parseFloat(r.fuelLiters).toFixed(1)} L)</span>
+                    </div>
+                </div>`;
             }
 
-            tb.innerHTML+=`<tr class="hover:bg-slate-50 transition border-b border-slate-50 align-top"><td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${ts}</div><div class="text-[10px] text-slate-400">#${is}</div></td><td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${r.username}</div><div class="text-[10px] text-slate-500">${r.department}</div></td><td class="px-6 py-4 whitespace-normal w-[150px]"><div class="text-xs font-bold text-blue-700 bg-blue-50 px-1 rounded inline-block mb-1">${r.vehicle}</div><div class="text-xs text-slate-600 italic break-words max-w-[150px]" title="${r.purpose}">${r.purpose}</div></td><td class="px-6 py-4 align-top w-[320px]">${chainHTML}</td><td class="px-6 py-4 align-middle whitespace-normal max-w-[200px]">${cd}</td><td class="px-6 py-4 text-center">${statusDisplay}</td><td class="px-6 py-4 align-top"><div class="flex flex-col gap-1">${tripCard}</div></td><td class="px-6 py-4 text-right align-top min-w-[160px]">${ab}</td></tr>`;
+            tb.innerHTML+=`<tr class="hover:bg-slate-50 transition border-b border-slate-50 align-top"><td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${ts}</div><div class="text-[10px] text-slate-400">#${is}</div></td><td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${r.username}</div><div class="text-[10px] text-slate-500">${r.department}</div></td><td class="px-6 py-4 whitespace-normal w-[150px]"><div class="text-xs font-bold text-blue-700 bg-blue-50 px-1 rounded inline-block mb-1">${r.vehicle}</div><div class="text-xs text-slate-600 italic break-words max-w-[150px]" title="${r.purpose}">${r.purpose}</div></td><td class="px-6 py-4 align-top w-[320px]">${chainHTML}</td><td class="px-6 py-4 align-middle whitespace-normal max-w-[200px]">${cd}</td><td class="px-6 py-4 text-center">${statusDisplay}</td><td class="px-6 py-4 align-top min-w-[220px]"><div class="flex flex-col gap-1">${tripCard}</div></td><td class="px-6 py-4 text-right align-top min-w-[160px]">${ab}</td></tr>`;
             cc.innerHTML+=`<div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 relative"><div class="flex justify-between items-start mb-3"><div><div class="font-bold text-sm text-slate-800">#${is} • ${ts}</div><div class="text-xs text-slate-500">${r.username} (${r.department})</div></div><span class="status-badge ${b}">${s}</span></div><div class="bg-blue-50 p-3 rounded mb-3 border border-blue-100"><div class="text-[10px] font-bold text-blue-400 uppercase">Unit & Purpose</div><div class="font-bold text-blue-800">${r.vehicle}</div><div class="text-xs italic text-blue-600 mt-1">"${r.purpose}"</div></div><div class="mb-4">${chainHTML}</div>${r.actionComment?`<div class="mb-3 text-xs text-slate-600 italic bg-red-50 p-2 rounded border border-red-100"><i class="fas fa-comment text-red-400 mr-1"></i> ${r.actionComment}</div>`:''}<div class="border-t border-slate-100 pt-3">${tripCard}</div>${abm?`<div class="pt-2 border-t border-slate-100 mt-3">${abm}</div>`:''}</div>`;
         });
     }
@@ -465,7 +504,7 @@
                     document.getElementById('check-fuel').checked = true;
                     document.getElementById('fuel-details').classList.remove('hidden');
                     document.getElementById('input-fuel-cost').value = existingFuelCost;
-                    if (existingFuelType) document.getElementById('input-fuel-type').value = existingFuelType;
+                    if (existingFuelType && existingFuelType !== '0') document.getElementById('input-fuel-type').value = existingFuelType;
                     calcFuel();
                 }
             } else {
@@ -578,6 +617,7 @@
 
             btn.disabled = true; btn.innerText = "Processing Image..."; 
             
+            // 1. DASHBOARD PHOTO
             let base64Data = null; 
             let cleanBase64 = null;
             
@@ -598,6 +638,7 @@
                 throw new Error("Please capture/upload Dashboard photo.");
             }
 
+            // 2. RECEIPT PHOTO
             let receiptBase64 = null;
             if(hasFuel) {
                 let receiptRaw = null;
@@ -633,8 +674,16 @@
     function calcTotalDistance() { const start = parseInt(document.getElementById('modal-start-km-val').value) || 0; const end = parseInt(document.getElementById('input-km').value) || 0; const total = end - start; const disp = document.getElementById('disp-total-km'); if (total < 0) { disp.innerText = "Check ODO"; disp.className = "text-red-600 font-bold"; } else { disp.innerText = total; disp.className = ""; } }
     
     function viewPhoto(url) { 
-        if (!url) return; 
-        document.getElementById('viewer-img').src = url; 
+        if (!url || url === 'null' || url === 'undefined' || url.trim() === '' || url === '0') {
+            showAlert("Informasi", "Gambar tidak tersedia.");
+            return;
+        }
+        
+        const viewer = document.getElementById('viewer-img');
+        viewer.src = ''; 
+        
+        viewer.src = url.trim() + '?t=' + new Date().getTime(); 
+        
         openModal('modal-image'); 
     }
     

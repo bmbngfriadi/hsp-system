@@ -1,5 +1,5 @@
 <?php
-// api/vms.php - FULL UPDATED VERSION (SMART ODO RECALCULATION)
+// api/vms.php - FULL UPDATED VERSION (FIXED BIND PARAMS & SMART ODO RECALCULATION)
 error_reporting(E_ALL);
 ini_set('display_errors', 0); 
 date_default_timezone_set('Asia/Jakarta');
@@ -91,7 +91,6 @@ $currentDateTime = date('Y-m-d H:i:s');
 // SMART KM CALCULATION FUNCTIONS
 // ==========================================
 function getAccumulatedKmForTrip($conn, $vehicle, $tripId, $newTripDist, $currTime) {
-    // Cari waktu isi BBM terakhir sebelum trip ini selesai
     $sqlLastFuel = "SELECT return_time FROM vms_bookings 
                     WHERE vehicle = '$vehicle' AND fuel_cost > 0 AND req_id != '$tripId' AND return_time <= '$currTime' AND status NOT IN ('Rejected', 'Cancelled') 
                     ORDER BY return_time DESC LIMIT 1";
@@ -100,13 +99,11 @@ function getAccumulatedKmForTrip($conn, $vehicle, $tripId, $newTripDist, $currTi
     $sumPrev = 0;
     if ($qLastFuel && $qLastFuel->num_rows > 0) {
         $lastFuelTime = $qLastFuel->fetch_assoc()['return_time'];
-        // Jumlahkan jarak semua perjalanan SEJAK isi BBM terakhir sampai SEBELUM trip ini
         $sqlSum = "SELECT SUM(end_km - start_km) as tot FROM vms_bookings 
                    WHERE vehicle = '$vehicle' AND req_id != '$tripId' AND return_time > '$lastFuelTime' AND return_time <= '$currTime' AND status NOT IN ('Rejected', 'Cancelled')";
         $qSum = $conn->query($sqlSum);
         if ($qSum && $rowSum = $qSum->fetch_assoc()) $sumPrev = intval($rowSum['tot']);
     } else {
-        // Jika belum pernah isi bbm, jumlahkan total semua perjalanan sblmnya
         $sqlSum = "SELECT SUM(end_km - start_km) as tot FROM vms_bookings 
                    WHERE vehicle = '$vehicle' AND req_id != '$tripId' AND return_time <= '$currTime' AND status NOT IN ('Rejected', 'Cancelled')";
         $qSum = $conn->query($sqlSum);
@@ -116,7 +113,6 @@ function getAccumulatedKmForTrip($conn, $vehicle, $tripId, $newTripDist, $currTi
 }
 
 function recalcVehicleAccumulatedKm($conn, $vehicle) {
-    // Sinkronisasi ulang data di tabel vms_vehicles berdasarkan histori ter-update
     $sqlLastFuel = "SELECT return_time FROM vms_bookings WHERE vehicle = '$vehicle' AND fuel_cost > 0 AND status NOT IN ('Rejected', 'Cancelled') ORDER BY return_time DESC LIMIT 1";
     $qLastFuel = $conn->query($sqlLastFuel);
     
@@ -135,8 +131,6 @@ function recalcVehicleAccumulatedKm($conn, $vehicle) {
     if ($tot < 0) $tot = 0;
     $conn->query("UPDATE vms_vehicles SET accumulated_km = $tot WHERE plant_plat = '$vehicle'");
 }
-// ==========================================
-
 
 function sendResponse($data) {
     if (ob_get_length()) ob_clean(); 
@@ -423,7 +417,6 @@ try {
                 $currentTripDist = $endKM - $startKM;
                 if ($currentTripDist < 0) $currentTripDist = 0;
 
-                // Hitung Smart Accumulated KM
                 $totalAccumulatedKm = getAccumulatedKmForTrip($conn, $vehPlat, $id, $currentTripDist, $currentDateTime);
 
                 $fuelCost = 0; $fuelType = null; $fuelLiters = 0; $fuelRatio = 0; $receiptUrl = null;
@@ -444,13 +437,15 @@ try {
                     if (!empty($extra['receiptBase64'])) {
                         $receiptUrl = uploadImageInternal($extra['receiptBase64'], "STRUK_" . preg_replace('/[^a-zA-Z0-9]/', '', $id));
                     }
+                    $conn->query("UPDATE vms_vehicles SET accumulated_km = 0 WHERE plant_plat = '$vehPlat'");
+                } else {
+                    $conn->query("UPDATE vms_vehicles SET accumulated_km = accumulated_km + $currentTripDist WHERE plant_plat = '$vehPlat'");
                 }
 
                 $stmt = $conn->prepare("UPDATE vms_bookings SET status = 'Pending Review', end_km = ?, end_photo = ?, action_comment = ?, return_time = ?, fuel_cost = ?, fuel_type = ?, fuel_liters = ?, fuel_receipt = ?, fuel_ratio = ?, total_accumulated_km = ? WHERE req_id = ?");
-                $stmt->bind_param("isssdsdssds", $endKM, $url, $route, $currentDateTime, $fuelCost, $fuelType, $fuelLiters, $receiptUrl, $fuelRatio, $totalAccumulatedKm, $id);
+                $stmt->bind_param("isssdsdsdis", $endKM, $url, $route, $currentDateTime, $fuelCost, $fuelType, $fuelLiters, $receiptUrl, $fuelRatio, $totalAccumulatedKm, $id);
                 $stmt->execute();
                 
-                // REKALKULASI KENDARAAN SECARA GLOBAL (Agar selalu akurat)
                 recalcVehicleAccumulatedKm($conn, $vehPlat);
                 
                 sendResponse(['success' => true]);
@@ -486,7 +481,6 @@ try {
             $newTripDist = $endKM - $startKM;
             if ($newTripDist < 0) $newTripDist = 0;
 
-            // Hitung Smart Accumulated KM menggunakan riwayat sebelum trip ini + jarak revisi terbaru
             $returnTime = $reqData['return_time'] ? $reqData['return_time'] : $currentDateTime;
             $newTotalAccumulatedKm = getAccumulatedKmForTrip($conn, $vehPlat, $id, $newTripDist, $returnTime);
 
@@ -504,7 +498,6 @@ try {
                 if ($pricePerLiter > 0) {
                     $fuelLiters = $fuelCost / $pricePerLiter;
                     if ($fuelLiters > 0) {
-                        // Gunakan nilai Accumulated KM yang sudah disinkronisasi
                         $fuelRatio = $newTotalAccumulatedKm / $fuelLiters; 
                     }
                 }
@@ -517,12 +510,11 @@ try {
                 $receiptUrl = null;
             }
 
-            // SIMPAN DATA KOREKSI
             $stmt = $conn->prepare("UPDATE vms_bookings SET status = 'Pending Review', end_km = ?, end_photo = ?, action_comment = ?, fuel_cost = ?, fuel_type = ?, fuel_liters = ?, fuel_receipt = ?, fuel_ratio = ?, total_accumulated_km = ? WHERE req_id = ?");
-            $stmt->bind_param("isssdsdsds", $endKM, $url, $route, $fuelCost, $fuelType, $fuelLiters, $receiptUrl, $fuelRatio, $newTotalAccumulatedKm, $id);
+            // FIXED: TYPE BINDING
+            $stmt->bind_param("issdsdsdis", $endKM, $url, $route, $fuelCost, $fuelType, $fuelLiters, $receiptUrl, $fuelRatio, $newTotalAccumulatedKm, $id);
             $stmt->execute();
             
-            // REKALKULASI KENDARAAN SECARA GLOBAL SETELAH KOREKSI
             recalcVehicleAccumulatedKm($conn, $vehPlat);
             
             sendResponse(['success' => true]);
