@@ -179,6 +179,16 @@
     function showAlert(title, message) { document.getElementById('alert-title').innerText = title; document.getElementById('alert-msg').innerText = message; openModal('modal-alert'); }
     function formatDateFriendly(dateStr) { if (!dateStr || dateStr === '0000-00-00 00:00:00') return ''; const date = new Date(dateStr); const day = date.getDate(); const month = date.toLocaleString('default', { month: 'short' }); const hour = String(date.getHours()).padStart(2, '0'); const min = String(date.getMinutes()).padStart(2, '0'); return `${day} ${month} ${hour}:${min}`; }
 
+    // ==========================================
+    // CRON-LIKE REMINDER CHECKER (Runs every 1 min)
+    // ==========================================
+    function checkReminders() {
+        fetch('api/vms.php', { 
+            method: 'POST', 
+            body: JSON.stringify({ action: 'checkReminders' }) 
+        }).catch(e => console.log('Silently ignoring reminder check error.'));
+    }
+
     window.onload = function() {
        applyLanguage();
        document.getElementById('nav-user-name').innerText = currentUser.fullname;
@@ -188,7 +198,13 @@
        if(['Administrator', 'HRGA'].includes(currentUser.role)) { document.getElementById('export-controls').classList.remove('hidden'); }
        if(currentUser.role === 'Administrator') { document.getElementById('btn-admin-settings').classList.remove('hidden'); }
        if(['Administrator', 'PlantHead', 'HRGA'].includes(currentUser.role) || (currentUser.role === 'TeamLeader' && currentUser.department === 'HRGA')) { document.getElementById('filter-dept-container').classList.remove('hidden'); }
-       fetchFuelPrices(); loadData();
+       
+       fetchFuelPrices(); 
+       loadData();
+
+       // Initial check for reminders after 5 seconds, then every 1 minute
+       setTimeout(checkReminders, 5000);
+       setInterval(checkReminders, 60000);
     };
 
     function populateDeptFilter(data) { const sel = document.getElementById('filter-dept'); const depts = [...new Set(data.map(item => item.department).filter(Boolean))].sort(); let html = '<option value="All">All Departments</option>'; depts.forEach(d => { html += `<option value="${d}">${d}</option>`; }); sel.innerHTML = html; }
@@ -391,13 +407,13 @@
                 distInfo = `<div class="mt-1.5"><span class="bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm"><i class="fas fa-route mr-1 text-indigo-400"></i>${diff} km</span></div>`;
             }
 
+            // Tampilan Foto Odometer
             let tripCard = `<div class="bg-white border border-slate-200 rounded-xl p-2 text-center w-full shadow-sm"><div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Odometer</div><div class="font-mono text-xs font-bold text-slate-700 bg-slate-50 border border-slate-100 rounded px-2 py-1 inline-block">${r.startKm||'0'} <span class="text-slate-300 mx-1">→</span> ${r.endKm||'...'}</div>${distInfo}<div class="flex justify-center gap-2 mt-2">${r.startPhoto && r.startPhoto !== '0' ? `<button onclick="viewPhoto('${r.startPhoto}')" class="text-blue-500 bg-blue-50 border border-blue-100 hover:bg-blue-100 p-1.5 rounded transition shadow-sm" title="Start Photo"><i class="fas fa-camera text-xs"></i></button>` : `<span class="w-6"></span>`}${r.endPhoto && r.endPhoto !== '0' ? `<button onclick="viewPhoto('${r.endPhoto}')" class="text-orange-500 bg-orange-50 border border-orange-100 hover:bg-orange-100 p-1.5 rounded transition shadow-sm" title="End Photo"><i class="fas fa-camera text-xs"></i></button>` : `<span class="w-6"></span>`}</div></div>`;
             
             if(r.fuelCost > 0) {
                 const formattedCost = new Intl.NumberFormat('id-ID').format(r.fuelCost);
                 const accumKmDisplay = r.totalAccumulatedKm > 0 ? r.totalAccumulatedKm : Math.round(parseFloat(r.fuelRatio) * parseFloat(r.fuelLiters));
                 
-                // MENCEGAH TOMBOL STRUK MUNCUL JIKA URL KOSONG ATAU "0"
                 let hasReceipt = false;
                 if (r.fuelReceipt && typeof r.fuelReceipt === 'string') {
                     let cUrl = r.fuelReceipt.trim();
@@ -406,7 +422,6 @@
                     }
                 }
                 
-                // DESAIN TOMBOL LIHAT STRUK LEBIH JELAS & BESAR
                 const receiptBtn = hasReceipt 
                     ? `<button onclick="viewPhoto('${r.fuelReceipt}')" class="bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white border border-blue-200 px-3 py-1.5 rounded-lg shadow-sm text-[10px] font-bold transition-all flex items-center gap-1.5 cursor-pointer" title="Lihat Struk"><i class="fas fa-file-invoice"></i> Lihat Struk</button>` 
                     : `<span class="text-[9px] text-slate-400 italic font-medium">No Image</span>`;
@@ -673,6 +688,9 @@
     function sendTripData(id, act, extraData) { const btn = document.getElementById('btn-trip-submit'); btn.innerText = "Sending Data..."; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: extraData }) }).then(r => r.json()).then(res => { btn.disabled = false; btn.innerText = "Save Update"; if(res.success) { closeModal('modal-trip'); loadData(); } else { showAlert("Error", res.message); } }).catch(err => { btn.disabled = false; btn.innerText = "Save Update"; console.error(err); showAlert("Error", "Connection Failed: " + err.message); }); }
     function calcTotalDistance() { const start = parseInt(document.getElementById('modal-start-km-val').value) || 0; const end = parseInt(document.getElementById('input-km').value) || 0; const total = end - start; const disp = document.getElementById('disp-total-km'); if (total < 0) { disp.innerText = "Check ODO"; disp.className = "text-red-600 font-bold"; } else { disp.innerText = total; disp.className = ""; } }
     
+    // ==========================================
+    // UPDATED FUNCTION: VIEW PHOTO
+    // ==========================================
     function viewPhoto(url) { 
         if (!url || url === 'null' || url === 'undefined' || url.trim() === '' || url === '0') {
             showAlert("Informasi", "Gambar tidak tersedia.");
