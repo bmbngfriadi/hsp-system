@@ -373,13 +373,10 @@
             if(r.username === currentUser.username){
                 if(s==='Approved'){ ab=`<div class="flex gap-2 justify-end items-center mt-1"><button onclick="openTripModal('${r.id}', 'startTrip', '${r.startKm}', '${r.vehicle}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1"><i class="fas fa-play text-[10px]"></i> Start</button><button onclick="openCancelModal('${r.id}')" class="bg-white border border-slate-300 text-slate-500 hover:text-red-600 hover:border-red-300 px-2 py-1.5 rounded-lg text-xs font-bold btn-action transition"><i class="fas fa-times"></i></button></div>`; abm=`<div class="flex gap-2 mt-2"><button onclick="openTripModal('${r.id}', 'startTrip', '${r.startKm}', '${r.vehicle}')" class="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2"><i class="fas fa-play"></i> Start Trip</button><button onclick="openCancelModal('${r.id}')" class="bg-slate-200 text-slate-600 px-4 py-3 rounded-lg text-sm font-bold shadow-sm"><i class="fas fa-times"></i></button></div>`; }
                 else if(s==='Active'){ ab=`<button onclick="openTripModal('${r.id}', 'endTrip', '${r.startKm}', '${r.vehicle}')" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-flag-checkered text-[10px]"></i> Finish Trip</button>`; abm=`<button onclick="openTripModal('${r.id}', 'endTrip', '${r.startKm}', '${r.vehicle}')" class="w-full bg-orange-600 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-flag-checkered"></i> Finish Trip</button>`; }
-                
-                // --- KOREKSI DATA: Kirim seluruh param bbm lama ---
                 else if(s==='Correction Needed'){ 
                     ab=`<button onclick="openTripModal('${r.id}', 'submitCorrection', '${r.startKm}', '${r.vehicle}', '${r.endKm}', '${r.fuelCost}', '${r.fuelType}')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-1 mt-1"><i class="fas fa-tools text-[10px]"></i> Fix Data</button>`; 
                     abm=`<button onclick="openTripModal('${r.id}', 'submitCorrection', '${r.startKm}', '${r.vehicle}', '${r.endKm}', '${r.fuelCost}', '${r.fuelType}')" class="w-full bg-yellow-500 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-tools"></i> Fix Data</button>`; 
                 }
-                
                 else if(s.includes('Pending') && s!=='Pending Review'){ ab=`<button onclick="openCancelModal('${r.id}')" class="w-full bg-slate-400 hover:bg-slate-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm btn-action flex items-center justify-center gap-2 mt-1"><i class="fas fa-ban"></i> Cancel Request</button>`; abm=`<button onclick="openCancelModal('${r.id}')" class="w-full bg-slate-400 text-white py-3 rounded-lg text-sm font-bold shadow-sm flex items-center justify-center gap-2 mt-2"><i class="fas fa-ban"></i> Cancel Request</button>`; }
             }
 
@@ -397,7 +394,9 @@
             
             if(r.fuelCost > 0) {
                 const formattedCost = new Intl.NumberFormat('id-ID').format(r.fuelCost);
+                // Gunakan total_accumulated_km yang akurat hasil kalkulasi Backend
                 const accumKmDisplay = r.totalAccumulatedKm > 0 ? r.totalAccumulatedKm : Math.round(parseFloat(r.fuelRatio) * parseFloat(r.fuelLiters));
+                
                 tripCard += `<div class="mt-2 bg-blue-50 border border-blue-100 rounded-xl p-2 relative overflow-hidden shadow-sm"><div class="flex justify-between items-center mb-2"><div class="text-[9px] font-bold text-blue-600 uppercase flex items-center gap-1"><i class="fas fa-gas-pump"></i> ${r.fuelType}</div>${r.fuelReceipt ? `<button onclick="viewPhoto('${r.fuelReceipt}')" class="text-slate-400 hover:text-blue-600 transition" title="Receipt"><i class="fas fa-file-invoice"></i></button>` : ''}</div><div class="grid grid-cols-2 gap-2 text-[9px] mb-2"><div class="bg-white/50 p-1 rounded border border-blue-100"><div class="text-slate-400 text-[8px] uppercase">Volume</div><div class="font-bold text-slate-700">${r.fuelLiters} L</div></div><div class="bg-white/50 p-1 rounded border border-blue-100"><div class="text-slate-400 text-[8px] uppercase">Total Cost</div><div class="font-bold text-slate-700">Rp ${formattedCost}</div></div></div><div class="bg-emerald-50 border border-emerald-100 rounded p-1.5 flex justify-between items-center"><div class="text-[8px] text-emerald-600 font-bold uppercase">Efficiency</div><div class="text-[9px] font-bold text-emerald-700">${accumKmDisplay} km / ${r.fuelLiters} L = <span class="bg-white px-1 rounded ml-1 border border-emerald-200">${parseFloat(r.fuelRatio).toFixed(1)} km/l</span></div></div></div>`;
             }
 
@@ -414,7 +413,6 @@
     function confirmTrip(id) { showConfirm("Verify Trip", "Verify that this trip is completed and data is correct?", (c) => callUpdate(id, 'verifyTrip', c)); } 
     function requestCorrection(id) { showConfirm("Request Correction", "Reason for correction (sent to user):", (c) => { if(!c) return showAlert("Error", "Reason required"); callUpdate(id, 'requestCorrection', c); }); }
     
-    // --- DIUBAH: Fungsi Modal Trip untuk menerima parameter BBM lama ---
     function openTripModal(id, act, startKmVal, vehiclePlat, existingEndKm = '', existingFuelCost = 0, existingFuelType = '') { 
         document.getElementById('trip-id').value = id; document.getElementById('trip-action').value = act; 
         document.getElementById('modal-trip-title').innerText = (act === 'startTrip') ? 'Departure Update' : (act === 'endTrip' ? 'Arrival Update' : 'Correct Trip Data');
@@ -424,7 +422,6 @@
         document.getElementById('modal-start-km-val').value = startVal; 
         document.getElementById('disp-start-km').innerText = startVal;
         
-        // Reset Inputs
         document.getElementById('input-km').value = ''; 
         document.getElementById('input-route-update').value = ''; 
         document.getElementById('disp-total-km').innerText = '0'; 
@@ -439,7 +436,6 @@
         togglePhotoSource('file', 'dashboard'); 
         togglePhotoSource('file', 'receipt');
         
-        // Logic info last KM jika startTrip
         const lastInfoDiv = document.getElementById('div-last-info');
         if (act === 'startTrip' && vehiclePlat) {
             const vData = availableVehicles.find(v => v.plant === vehiclePlat);
@@ -451,16 +447,12 @@
             } else { lastInfoDiv.classList.add('hidden'); }
         } else { lastInfoDiv.classList.add('hidden'); }
         
-        
         if (act === 'endTrip' || act === 'submitCorrection') { 
             document.getElementById('div-route-update').classList.remove('hidden'); 
             document.getElementById('input-route-update').required = true; 
             document.getElementById('div-calc-distance').classList.remove('hidden'); 
-            
-            // Selalu tampilkan opsi input BBM untuk endTrip DAN submitCorrection
             document.getElementById('div-fuel-input').classList.remove('hidden'); 
 
-            // Jika Correction, Load Data Lama ke form jika ada
             if (act === 'submitCorrection') {
                 document.getElementById('photo-note-dashboard').innerText = "(Abaikan jika tidak ingin mengubah foto)";
                 
@@ -481,7 +473,6 @@
             }
             
         } else { 
-            // Jika Start Trip
             document.getElementById('div-route-update').classList.add('hidden'); 
             document.getElementById('input-route-update').required = false; 
             document.getElementById('div-calc-distance').classList.add('hidden'); 
@@ -567,7 +558,6 @@
         });
     }
     
-    // --- DIUBAH: Upload Foto bersifat opsional saat Koreksi ---
     async function submitTripUpdate() { 
         try { 
             const id = document.getElementById('trip-id').value; 
@@ -588,7 +578,6 @@
 
             btn.disabled = true; btn.innerText = "Processing Image..."; 
             
-            // 1. DASHBOARD PHOTO (Validation)
             let base64Data = null; 
             let cleanBase64 = null;
             
@@ -606,11 +595,9 @@
                 const compressedBase64 = await compressImage(base64Data); 
                 cleanBase64 = compressedBase64.split(',')[1]; 
             } else if (act === 'startTrip' || act === 'endTrip') {
-                // Jika bukan koreksi, foto Wajib
                 throw new Error("Please capture/upload Dashboard photo.");
             }
 
-            // 2. RECEIPT PHOTO (Validation)
             let receiptBase64 = null;
             if(hasFuel) {
                 let receiptRaw = null;
@@ -630,7 +617,6 @@
                 } else if (act === 'endTrip') {
                     throw new Error("Wajib melampirkan foto Struk BBM!");
                 } 
-                // Untuk submitCorrection, receiptBase64 bisa null. Backend akan mempertahankan struk lama jika ada.
             }
 
             const payload = { km: km, photoBase64: cleanBase64, route: routeVal, fuelCost: fuelCost, fuelType: fuelType, receiptBase64: receiptBase64 };
