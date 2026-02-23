@@ -73,8 +73,6 @@ ensureColumn($conn, 'vms_bookings', 'fuel_liters', 'DECIMAL(10,2) DEFAULT 0');
 ensureColumn($conn, 'vms_bookings', 'fuel_receipt', 'VARCHAR(255) DEFAULT NULL');
 ensureColumn($conn, 'vms_bookings', 'fuel_ratio', 'DECIMAL(10,2) DEFAULT 0');
 ensureColumn($conn, 'vms_bookings', 'total_accumulated_km', 'INT(11) DEFAULT 0');
-
-// NEW COLUMN FOR AUTO-REMINDER
 ensureColumn($conn, 'vms_bookings', 'last_reminder_time', "DATETIME DEFAULT NULL");
 
 $chk = $conn->query("SELECT * FROM vms_settings LIMIT 1");
@@ -447,7 +445,7 @@ try {
                 $sql = "UPDATE vms_bookings SET status = 'Pending HRGA', app_plant = 'Approved', plant_time = '$currentDateTime', plant_by = '$approverName', action_comment = '$dbComment' WHERE req_id = '$id'";
                 if($conn->query($sql)) {
                     try {
-                        if($userPhone) sendWA($userPhone, "✅ *VMS - APPROVED (PLANT HEAD)*\n--------------------------------\nHallo {$reqData['fullname']},\nPengajuan Anda telah *Disetujui* oleh Plant Head ($approverName).$waNote\n⏳ Selanjutnya menunggu persetujuan HRGA.");
+                        if($userPhone) sendWA($userPhone, "✅ *VMS - L1 APPROVED*\n--------------------------------\nHallo {$reqData['fullname']},\nPengajuan Anda telah *Disetujui* oleh Plant Head ($approverName).$waNote\n⏳ Selanjutnya menunggu persetujuan HRGA.");
                         
                         $phonesL2 = getPhones($conn, 'HRGA'); 
                         $msgL2 = "🚗 *VMS - PERLU APPROVAL (HRGA)*\n--------------------------------\nPengajuan dari (TL/SH) telah disetujui Plant Head, butuh persetujuan HRGA.\n\n👤 *Pemohon*: {$reqData['fullname']} ($reqDept)\n🔖 *ID Request*: {$reqData['req_id']}\n🚗 *Kendaraan*: {$reqData['vehicle']}\n📍 *Tujuan*: {$reqData['purpose']}\n\n👉 _Mohon dicek ketersediaan unit & lakukan Approval._";

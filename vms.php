@@ -42,6 +42,7 @@
     .stats-card { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); border-bottom: 3px solid transparent; cursor: pointer; }
     .stats-card:hover { transform: translateY(-6px); box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
     .stats-active { ring: 2px solid #2563eb; background-color: #eff6ff; transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    
     .stats-card.card-total:hover { border-bottom-color: #3b82f6; } 
     .stats-card.card-pending:hover { border-bottom-color: #f59e0b; } 
     .stats-card.card-active:hover { border-bottom-color: #6366f1; } 
@@ -58,9 +59,13 @@
     .group:hover .icon-anim-done { animation: heartbeat 1.2s ease-in-out infinite; }
     .group:hover .icon-anim-failed { animation: shakeFast 0.4s ease-in-out infinite; }
 
-    /* New Animation for Advanced Analytics Bars */
+    /* Advanced Analytics Bars */
     .anim-fill { width: 0; animation: fillBar 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
     @keyframes fillBar { to { width: var(--target-width); } }
+    @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    .bg-live-gradient { background-size: 200% 200%; animation: gradientMove 3s ease infinite; }
+    .analytic-item { transition: all 0.2s ease; }
+    .analytic-item:hover { transform: translateX(5px) scale(1.02); }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
@@ -80,8 +85,10 @@
          </div>
        </div>
     </nav>
+    
     <main class="flex-grow container mx-auto px-4 py-6 overflow-y-auto scroller pb-20 sm:pb-6">
       <div id="view-main" class="animate-fade-in space-y-6">
+        
         <div class="mb-2">
             <h2 class="text-lg font-bold text-slate-700 flex items-center mb-4"><i class="fas fa-car mr-2 text-blue-600"></i> <span data-i18n="fleet_avail">Fleet Availability</span></h2>
             <div id="fleet-status-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"><div class="bg-white p-4 rounded-xl shadow-sm text-center text-xs text-slate-400 py-6 border border-slate-200 italic">Checking status...</div></div>
@@ -93,8 +100,7 @@
             <h2 class="text-lg font-bold text-slate-700 flex items-center mb-4">
                 <i class="fas fa-chart-pie mr-2 text-indigo-600"></i> Advanced Analytics
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4" id="detailed-stats-container">
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4" id="detailed-stats-container"></div>
         </div>
         
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -107,6 +113,7 @@
              <button id="btn-create" onclick="openModal('modal-create')" class="flex-1 sm:flex-none bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition items-center justify-center gap-2 btn-action"><i class="fas fa-plus"></i> <span data-i18n="new_booking">New Booking</span></button>
            </div>
         </div>
+        
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mt-4">
            <div id="data-card-container" class="md:hidden bg-slate-50 p-3 space-y-4"></div>
            <div class="hidden md:block overflow-x-auto">
@@ -127,13 +134,36 @@
              </table>
            </div>
         </div>
+        
       </div>
     </main>
     <footer class="bg-white border-t border-slate-200 text-center py-3 text-[10px] text-slate-400 flex-none">&copy; 2026 PT Cemindo Gemilang Tbk. | Vehicle Management System</footer>
   </div>
 
   <div id="modal-create" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-xl w-full max-w-md shadow-2xl overflow-hidden animate-slide-up"><div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center"><h3 class="font-bold text-slate-700" data-i18n="modal_book_title">Vehicle Booking</h3><button onclick="closeModal('modal-create')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button></div><form onsubmit="event.preventDefault(); submitData();" class="p-6"><div class="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100 text-xs text-blue-800 flex justify-between items-center"><span><i class="fas fa-building mr-1"></i> Department:</span><span id="display-user-dept" class="font-bold">-</span></div><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1" data-i18n="select_unit">Select Unit (Available)</label><div class="relative"><select id="input-vehicle" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 bg-white" required><option>Loading...</option></select></div></div><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1" data-i18n="purpose">Purpose</label><textarea id="input-purpose" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500" rows="3" required placeholder="Explain trip details"></textarea></div><div class="flex justify-end gap-3 pt-2"><button type="button" onclick="closeModal('modal-create')" class="px-5 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold" data-i18n="cancel">Cancel</button><button type="submit" id="btn-create-submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-bold shadow-sm btn-action" data-i18n="submit_req">Submit Request</button></div></form></div>
+      <div class="bg-white rounded-xl w-full max-w-md shadow-2xl overflow-hidden animate-slide-up">
+        <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700" data-i18n="modal_book_title">Vehicle Booking</h3>
+            <button onclick="closeModal('modal-create')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+        </div>
+        <form onsubmit="event.preventDefault(); submitData();" class="p-6">
+            <div class="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100 text-xs text-blue-800 flex justify-between items-center">
+                <span><i class="fas fa-building mr-1"></i> Department:</span><span id="display-user-dept" class="font-bold">-</span>
+            </div>
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" data-i18n="select_unit">Select Unit (Available)</label>
+                <select id="input-vehicle" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 bg-white" required><option>Loading...</option></select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" data-i18n="purpose">Purpose</label>
+                <textarea id="input-purpose" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500" rows="3" required placeholder="Explain trip details"></textarea>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closeModal('modal-create')" class="px-5 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold" data-i18n="cancel">Cancel</button>
+                <button type="submit" id="btn-create-submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-bold shadow-sm btn-action" data-i18n="submit_req">Submit Request</button>
+            </div>
+        </form>
+      </div>
   </div>
   
   <div id="modal-image" class="hidden fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 cursor-pointer" onclick="closeModal('modal-image')">
@@ -143,58 +173,220 @@
       </div>
   </div>
 
-  <div id="modal-settings" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up"><div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center"><h3 class="font-bold text-slate-700">Fuel Prices (Admin)</h3><button onclick="closeModal('modal-settings')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button></div><form onsubmit="event.preventDefault(); saveFuelSettings();" class="p-6"><div class="space-y-4"><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pertamax Turbo (Rp/L)</label><input type="number" id="set-turbo" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pertamax (Rp/L)</label><input type="number" id="set-pertamax" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pertalite (Rp/L)</label><input type="number" id="set-pertalite" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div></div><div class="mt-6 flex justify-end gap-3"><button type="button" onclick="closeModal('modal-settings')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold">Cancel</button><button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-bold shadow-sm">Save Changes</button></div></form></div></div>
-  <div id="modal-export" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up"><div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center"><h3 class="font-bold text-slate-700">Export Report</h3><button onclick="closeModal('modal-export')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button></div><div class="p-6"><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Start Date</label><input type="date" id="exp-start" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div><div class="mb-6"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">End Date</label><input type="date" id="exp-end" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div><button onclick="doExport('excel', true)" class="w-full mb-3 bg-blue-50 text-blue-700 border border-blue-200 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-100 flex items-center justify-center gap-2"><i class="fas fa-database"></i> Export All Time (Excel)</button><div class="grid grid-cols-2 gap-3"><button onclick="doExport('excel', false)" class="bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-700 flex items-center justify-center gap-2"><i class="fas fa-file-excel"></i> Excel</button><button onclick="doExport('pdf', false)" class="bg-red-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-red-700 flex items-center justify-center gap-2"><i class="fas fa-file-pdf"></i> PDF</button></div><div id="exp-loading" class="hidden text-center mt-3 text-xs text-slate-500"><i class="fas fa-spinner fa-spin mr-1"></i> Generating Report...</div></div></div></div>
-  <div id="modal-trip" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"><div class="bg-white rounded-t-2xl sm:rounded-xl w-full max-w-5xl shadow-2xl flex flex-col max-h-[90vh] animate-slide-up"><div class="flex-none bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center rounded-t-2xl sm:rounded-t-xl"><h3 class="font-bold text-slate-700" id="modal-trip-title">Update KM</h3><button onclick="closeModal('modal-trip')" class="text-slate-400 hover:text-red-500 p-2"><i class="fas fa-times text-lg"></i></button></div><form onsubmit="event.preventDefault(); submitTripUpdate();" class="flex flex-col flex-grow overflow-hidden"><input type="hidden" id="trip-id"><input type="hidden" id="trip-action"><input type="hidden" id="modal-start-km-val" value="0"><div class="flex-grow overflow-y-auto p-6 custom-scrollbar"><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="flex flex-col gap-5"><div id="div-calc-distance" class="hidden p-4 bg-blue-50 rounded-lg border border-blue-100"><div class="flex justify-between items-center text-sm"><span class="text-slate-500 font-medium">Start KM: <b id="disp-start-km" class="text-slate-700">0</b></span><span class="font-bold text-blue-700">Total: <span id="disp-total-km">0</span> KM</span></div></div>
-  <div id="div-last-info" class="hidden bg-orange-50 border border-orange-100 rounded-lg p-3 flex items-start gap-3"><img id="last-photo-img" src="" class="w-16 h-16 object-cover rounded bg-gray-200 cursor-pointer border border-orange-200" onclick="viewPhoto(this.src)"><div><div class="text-[10px] font-bold text-orange-500 uppercase mb-1">Previous Trip Info</div><div class="text-xs text-orange-800 font-bold">Last Odometer: <span id="last-km-val">0</span> KM</div><div class="text-[10px] text-orange-600">Please verify with actual dashboard.</div></div></div>
-  <div><label class="block text-xs font-bold text-slate-500 uppercase mb-2" id="lbl-km">Odometer Input (KM)</label><input type="number" id="input-km" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 shadow-sm" required placeholder="Example: 12500" onkeyup="calcTotalDistance()"></div><div id="div-route-update" class="hidden flex-grow"><label class="block text-xs font-bold text-slate-500 uppercase mb-2">Actual Route Details</label><textarea id="input-route-update" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 h-full min-h-[80px]" rows="3"></textarea></div>
-  <div id="div-fuel-input" class="hidden border-t border-slate-100 pt-4 mt-2">
-      <div class="flex items-center gap-2 mb-3"><input type="checkbox" id="check-fuel" onchange="toggleFuelSection()" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"><label for="check-fuel" class="text-sm font-bold text-slate-700">Isi BBM? (Refuel)</label></div>
-      <div id="fuel-details" class="hidden space-y-3 pl-6 border-l-2 border-slate-100">
-          <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Fuel Type</label><select id="input-fuel-type" onchange="calcFuel()" class="w-full border border-slate-300 rounded-lg p-2 text-sm"><option value="Pertalite">Pertalite</option><option value="Pertamax">Pertamax</option><option value="Pertamax Turbo">Pertamax Turbo</option></select></div>
-          <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Total Cost (Rp)</label><input type="number" id="input-fuel-cost" onkeyup="calcFuel()" class="w-full border border-slate-300 rounded-lg p-2 text-sm" placeholder="e.g. 100000"></div>
-          <div class="text-xs text-slate-500">Est. Liters: <span id="disp-liters" class="font-bold text-blue-600">0</span> L</div>
-          <div class="flex flex-col"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Receipt Photo (Abaikan jika tidak ingin mengubah foto)</label><div class="flex gap-2 mb-2"><button type="button" onclick="togglePhotoSource('file', 'receipt')" id="btn-src-file-receipt" class="flex-1 py-1.5 text-[10px] font-bold rounded bg-blue-600 text-white shadow-sm transition"><i class="fas fa-file-upload mr-1"></i> Upload</button><button type="button" onclick="togglePhotoSource('camera', 'receipt')" id="btn-src-cam-receipt" class="flex-1 py-1.5 text-[10px] font-bold rounded bg-slate-100 text-slate-600 hover:bg-slate-200 transition"><i class="fas fa-camera mr-1"></i> Camera</button></div><div id="source-file-receipt" class="flex items-center gap-2"><button type="button" onclick="document.getElementById('input-receipt').click()" class="bg-slate-100 text-slate-600 px-3 py-2 rounded-lg text-xs font-bold border border-slate-300 hover:bg-slate-200 w-full text-left"><i class="fas fa-file-invoice mr-2"></i> Choose File</button><input type="file" id="input-receipt" class="hidden" accept="image/*" onchange="document.getElementById('receipt-name').innerText = this.files[0]?.name || 'No file'"><span id="receipt-name" class="text-[10px] text-slate-400 truncate max-w-[100px]">No file</span></div><div id="source-camera-receipt" class="hidden border border-slate-200 rounded-lg overflow-hidden bg-black relative h-40 shadow-inner"><video id="camera-stream-receipt" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline></video><canvas id="camera-canvas-receipt" class="hidden"></canvas><img id="camera-preview-receipt" class="hidden w-full h-full object-cover"><div class="absolute bottom-2 left-0 right-0 flex justify-center gap-2 z-20"><button type="button" onclick="takeSnapshot('receipt')" id="btn-capture-receipt" class="bg-white/90 backdrop-blur rounded-full p-2 shadow-lg text-slate-800 hover:text-blue-600 hover:scale-110 transition duration-200"><i class="fas fa-camera text-lg"></i></button><button type="button" onclick="retakePhoto('receipt')" id="btn-retake-receipt" class="hidden bg-white/90 backdrop-blur rounded-full p-2 shadow-lg text-red-600 hover:scale-110 transition duration-200"><i class="fas fa-redo text-lg"></i></button></div></div></div>
+  <div id="modal-settings" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up">
+        <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700">Fuel Prices (Admin)</h3>
+            <button onclick="closeModal('modal-settings')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+        </div>
+        <form onsubmit="event.preventDefault(); saveFuelSettings();" class="p-6">
+            <div class="space-y-4">
+                <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pertamax Turbo (Rp/L)</label><input type="number" id="set-turbo" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pertamax (Rp/L)</label><input type="number" id="set-pertamax" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pertalite (Rp/L)</label><input type="number" id="set-pertalite" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button type="button" onclick="closeModal('modal-settings')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-bold shadow-sm">Save Changes</button>
+            </div>
+        </form>
       </div>
   </div>
-  </div><div class="flex flex-col"><label class="block text-xs font-bold text-slate-500 uppercase mb-2">Dashboard Photo <span id="photo-note-dashboard" class="lowercase font-normal italic text-slate-400"></span></label><div class="flex gap-2 mb-3"><button type="button" onclick="togglePhotoSource('file', 'dashboard')" id="btn-src-file-dashboard" class="flex-1 py-2 text-xs font-bold rounded-lg bg-blue-600 text-white shadow-sm transition"><i class="fas fa-file-upload mr-1"></i> Upload</button><button type="button" onclick="togglePhotoSource('camera', 'dashboard')" id="btn-src-cam-dashboard" class="flex-1 py-2 text-xs font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition"><i class="fas fa-camera mr-1"></i> Camera</button></div><div id="source-file-dashboard" class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:bg-slate-50 transition flex items-center justify-center h-48 bg-slate-50"><div class="space-y-2"><i class="fas fa-cloud-upload-alt text-3xl text-slate-300"></i><input type="file" id="input-photo" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer"></div></div><div id="source-camera-dashboard" class="hidden border border-slate-200 rounded-lg overflow-hidden bg-black relative h-48 sm:h-64 shadow-inner"><video id="camera-stream-dashboard" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline></video><canvas id="camera-canvas-dashboard" class="hidden"></canvas><img id="camera-preview-dashboard" class="hidden w-full h-full object-cover"><div class="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-20"><button type="button" onclick="takeSnapshot('dashboard')" id="btn-capture-dashboard" class="bg-white/90 backdrop-blur rounded-full p-3 shadow-lg text-slate-800 hover:text-blue-600 hover:scale-110 transition duration-200"><i class="fas fa-camera text-xl"></i></button><button type="button" onclick="retakePhoto('dashboard')" id="btn-retake-dashboard" class="hidden bg-white/90 backdrop-blur rounded-full p-3 shadow-lg text-red-600 hover:scale-110 transition duration-200"><i class="fas fa-redo text-xl"></i></button></div></div><div id="cam-status" class="text-[10px] text-center text-slate-400 mt-2 h-4"></div></div></div></div><div class="flex-none p-4 border-t border-slate-100 bg-white flex justify-end gap-3 pb-6 sm:pb-4"><button type="button" onclick="closeModal('modal-trip')" class="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold transition border border-slate-300" data-i18n="cancel">Cancel</button><button type="submit" id="btn-trip-submit" class="px-8 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-bold shadow-md hover:shadow-lg flex items-center gap-2 btn-action transition">Save Update</button></div></form></div></div>
-  <div id="modal-confirm" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden"><div class="p-6 text-center"><div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 shadow-sm"><i class="fas fa-question text-xl"></i></div><h3 class="text-lg font-bold text-slate-700 mb-2" id="conf-title">Confirm</h3><p class="text-sm text-slate-500 mb-4" id="conf-msg">Are you sure?</p><div class="mb-4 text-left"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Comment (Optional / Reason)</label><textarea id="conf-comment" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500" rows="2" placeholder="Write a note here..."></textarea></div><div class="flex gap-3"><button onclick="closeModal('modal-confirm')" class="flex-1 py-2.5 border border-slate-300 rounded-lg text-slate-600 font-bold text-sm hover:bg-slate-50 transition" data-i18n="cancel">Cancel</button><button onclick="execConfirm()" id="btn-conf-yes" class="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 shadow-sm transition" data-i18n="yes">Yes, Proceed</button></div></div></div></div>
-  <div id="modal-alert" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden"><div class="p-6 text-center"><div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 shadow-sm"><i class="fas fa-info text-xl"></i></div><h3 class="text-lg font-bold text-slate-700 mb-2" id="alert-title">Information</h3><p class="text-sm text-slate-500 mb-6" id="alert-msg">System Message.</p><button onclick="closeModal('modal-alert')" class="w-full py-2.5 bg-slate-800 text-white rounded-lg font-bold text-sm hover:bg-slate-900 shadow-sm transition">OK</button></div></div></div>
-  <div id="modal-cancel" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"><div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl relative animate-slide-up"><button onclick="closeModal('modal-cancel')" class="absolute top-4 right-4 text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button><h3 class="text-lg font-bold mb-4 text-slate-800">Cancel Booking</h3><form onsubmit="event.preventDefault(); submitCancel();"><input type="hidden" id="cancel-id"><div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Reason / Note</label><textarea id="cancel-note" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500" rows="3"></textarea></div><div class="flex justify-end gap-3"><button type="button" onclick="closeModal('modal-cancel')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold" data-i18n="cancel">Back</button><button type="submit" id="btn-cancel-submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-bold shadow-sm btn-action">Yes, Cancel</button></div></form></div></div>
+  
+  <div id="modal-export" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up">
+        <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700">Export Report</h3>
+            <button onclick="closeModal('modal-export')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-6">
+            <div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Start Date</label><input type="date" id="exp-start" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div>
+            <div class="mb-6"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">End Date</label><input type="date" id="exp-end" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm"></div>
+            <button onclick="doExport('excel', true)" class="w-full mb-3 bg-blue-50 text-blue-700 border border-blue-200 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-100 flex items-center justify-center gap-2 transition"><i class="fas fa-database"></i> Export All Time (Excel)</button>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="doExport('excel', false)" class="bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-700 flex items-center justify-center gap-2 transition"><i class="fas fa-file-excel"></i> Excel</button>
+                <button onclick="doExport('pdf', false)" class="bg-red-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-red-700 flex items-center justify-center gap-2 transition"><i class="fas fa-file-pdf"></i> PDF</button>
+            </div>
+            <div id="exp-loading" class="hidden text-center mt-4 text-xs font-bold text-blue-600"><i class="fas fa-spinner fa-spin mr-2"></i> Generating Report... Please wait.</div>
+        </div>
+      </div>
+  </div>
+  
+  <div id="modal-trip" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div class="bg-white rounded-t-2xl sm:rounded-xl w-full max-w-5xl shadow-2xl flex flex-col max-h-[90vh] animate-slide-up">
+        <div class="flex-none bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center rounded-t-2xl sm:rounded-t-xl">
+            <h3 class="font-bold text-slate-700" id="modal-trip-title">Update KM</h3>
+            <button onclick="closeModal('modal-trip')" class="text-slate-400 hover:text-red-500 p-2"><i class="fas fa-times text-lg"></i></button>
+        </div>
+        <form onsubmit="event.preventDefault(); submitTripUpdate();" class="flex flex-col flex-grow overflow-hidden">
+            <input type="hidden" id="trip-id"><input type="hidden" id="trip-action"><input type="hidden" id="modal-start-km-val" value="0">
+            <div class="flex-grow overflow-y-auto p-6 custom-scrollbar">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="flex flex-col gap-5">
+                        <div id="div-calc-distance" class="hidden p-4 bg-blue-50 rounded-lg border border-blue-100">
+                            <div class="flex justify-between items-center text-sm"><span class="text-slate-500 font-medium">Start KM: <b id="disp-start-km" class="text-slate-700">0</b></span><span class="font-bold text-blue-700">Total: <span id="disp-total-km">0</span> KM</span></div>
+                        </div>
+                        <div id="div-last-info" class="hidden bg-orange-50 border border-orange-100 rounded-lg p-3 flex items-start gap-3">
+                            <img id="last-photo-img" src="" class="w-16 h-16 object-cover rounded bg-gray-200 cursor-pointer border border-orange-200" onclick="viewPhoto(this.src)">
+                            <div><div class="text-[10px] font-bold text-orange-500 uppercase mb-1">Previous Trip Info</div><div class="text-xs text-orange-800 font-bold">Last Odometer: <span id="last-km-val">0</span> KM</div><div class="text-[10px] text-orange-600">Please verify with actual dashboard.</div></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2" id="lbl-km">Odometer Input (KM)</label>
+                            <input type="number" id="input-km" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 shadow-sm" required placeholder="Example: 12500" onkeyup="calcTotalDistance()">
+                        </div>
+                        <div id="div-route-update" class="hidden flex-grow">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Actual Route Details</label>
+                            <textarea id="input-route-update" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 h-full min-h-[80px]" rows="3"></textarea>
+                        </div>
+                        <div id="div-fuel-input" class="hidden border-t border-slate-100 pt-4 mt-2">
+                            <div class="flex items-center gap-2 mb-3">
+                                <input type="checkbox" id="check-fuel" onchange="toggleFuelSection()" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                                <label for="check-fuel" class="text-sm font-bold text-slate-700">Isi BBM? (Refuel)</label>
+                            </div>
+                            <div id="fuel-details" class="hidden space-y-3 pl-6 border-l-2 border-slate-100">
+                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Fuel Type</label><select id="input-fuel-type" onchange="calcFuel()" class="w-full border border-slate-300 rounded-lg p-2 text-sm"><option value="Pertalite">Pertalite</option><option value="Pertamax">Pertamax</option><option value="Pertamax Turbo">Pertamax Turbo</option></select></div>
+                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Total Cost (Rp)</label><input type="number" id="input-fuel-cost" onkeyup="calcFuel()" class="w-full border border-slate-300 rounded-lg p-2 text-sm" placeholder="e.g. 100000"></div>
+                                <div class="text-xs text-slate-500">Est. Liters: <span id="disp-liters" class="font-bold text-blue-600">0</span> L</div>
+                                <div class="flex flex-col">
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Receipt Photo (Abaikan jika tidak ingin mengubah foto)</label>
+                                    <div class="flex gap-2 mb-2">
+                                        <button type="button" onclick="togglePhotoSource('file', 'receipt')" id="btn-src-file-receipt" class="flex-1 py-1.5 text-[10px] font-bold rounded bg-blue-600 text-white shadow-sm transition"><i class="fas fa-file-upload mr-1"></i> Upload</button>
+                                        <button type="button" onclick="togglePhotoSource('camera', 'receipt')" id="btn-src-cam-receipt" class="flex-1 py-1.5 text-[10px] font-bold rounded bg-slate-100 text-slate-600 hover:bg-slate-200 transition"><i class="fas fa-camera mr-1"></i> Camera</button>
+                                    </div>
+                                    <div id="source-file-receipt" class="flex items-center gap-2">
+                                        <button type="button" onclick="document.getElementById('input-receipt').click()" class="bg-slate-100 text-slate-600 px-3 py-2 rounded-lg text-xs font-bold border border-slate-300 hover:bg-slate-200 w-full text-left"><i class="fas fa-file-invoice mr-2"></i> Choose File</button>
+                                        <input type="file" id="input-receipt" class="hidden" accept="image/*" onchange="document.getElementById('receipt-name').innerText = this.files[0]?.name || 'No file'">
+                                        <span id="receipt-name" class="text-[10px] text-slate-400 truncate max-w-[100px]">No file</span>
+                                    </div>
+                                    <div id="source-camera-receipt" class="hidden border border-slate-200 rounded-lg overflow-hidden bg-black relative h-40 shadow-inner">
+                                        <video id="camera-stream-receipt" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline></video>
+                                        <canvas id="camera-canvas-receipt" class="hidden"></canvas><img id="camera-preview-receipt" class="hidden w-full h-full object-cover">
+                                        <div class="absolute bottom-2 left-0 right-0 flex justify-center gap-2 z-20">
+                                            <button type="button" onclick="takeSnapshot('receipt')" id="btn-capture-receipt" class="bg-white/90 backdrop-blur rounded-full p-2 shadow-lg text-slate-800 hover:text-blue-600 hover:scale-110 transition duration-200"><i class="fas fa-camera text-lg"></i></button>
+                                            <button type="button" onclick="retakePhoto('receipt')" id="btn-retake-receipt" class="hidden bg-white/90 backdrop-blur rounded-full p-2 shadow-lg text-red-600 hover:scale-110 transition duration-200"><i class="fas fa-redo text-lg"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Dashboard Photo <span id="photo-note-dashboard" class="lowercase font-normal italic text-slate-400"></span></label>
+                        <div class="flex gap-2 mb-3">
+                            <button type="button" onclick="togglePhotoSource('file', 'dashboard')" id="btn-src-file-dashboard" class="flex-1 py-2 text-xs font-bold rounded-lg bg-blue-600 text-white shadow-sm transition"><i class="fas fa-file-upload mr-1"></i> Upload</button>
+                            <button type="button" onclick="togglePhotoSource('camera', 'dashboard')" id="btn-src-cam-dashboard" class="flex-1 py-2 text-xs font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition"><i class="fas fa-camera mr-1"></i> Camera</button>
+                        </div>
+                        <div id="source-file-dashboard" class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:bg-slate-50 transition flex items-center justify-center h-48 bg-slate-50">
+                            <div class="space-y-2"><i class="fas fa-cloud-upload-alt text-3xl text-slate-300"></i><input type="file" id="input-photo" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer"></div>
+                        </div>
+                        <div id="source-camera-dashboard" class="hidden border border-slate-200 rounded-lg overflow-hidden bg-black relative h-48 sm:h-64 shadow-inner">
+                            <video id="camera-stream-dashboard" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline></video>
+                            <canvas id="camera-canvas-dashboard" class="hidden"></canvas><img id="camera-preview-dashboard" class="hidden w-full h-full object-cover">
+                            <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-20">
+                                <button type="button" onclick="takeSnapshot('dashboard')" id="btn-capture-dashboard" class="bg-white/90 backdrop-blur rounded-full p-3 shadow-lg text-slate-800 hover:text-blue-600 hover:scale-110 transition duration-200"><i class="fas fa-camera text-xl"></i></button>
+                                <button type="button" onclick="retakePhoto('dashboard')" id="btn-retake-dashboard" class="hidden bg-white/90 backdrop-blur rounded-full p-3 shadow-lg text-red-600 hover:scale-110 transition duration-200"><i class="fas fa-redo text-xl"></i></button>
+                            </div>
+                        </div>
+                        <div id="cam-status" class="text-[10px] text-center text-slate-400 mt-2 h-4"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-none p-4 border-t border-slate-100 bg-white flex justify-end gap-3 pb-6 sm:pb-4">
+                <button type="button" onclick="closeModal('modal-trip')" class="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold transition border border-slate-300" data-i18n="cancel">Cancel</button>
+                <button type="submit" id="btn-trip-submit" class="px-8 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-bold shadow-md hover:shadow-lg flex items-center gap-2 btn-action transition">Save Update</button>
+            </div>
+        </form>
+      </div>
+  </div>
+  
+  <div id="modal-confirm" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden">
+        <div class="p-6 text-center">
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 shadow-sm"><i class="fas fa-question text-xl"></i></div>
+            <h3 class="text-lg font-bold text-slate-700 mb-2" id="conf-title">Confirm</h3>
+            <p class="text-sm text-slate-500 mb-4" id="conf-msg">Are you sure?</p>
+            <div class="mb-4 text-left"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Comment (Optional / Reason)</label><textarea id="conf-comment" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500" rows="2" placeholder="Write a note here..."></textarea></div>
+            <div class="flex gap-3">
+                <button onclick="closeModal('modal-confirm')" class="flex-1 py-2.5 border border-slate-300 rounded-lg text-slate-600 font-bold text-sm hover:bg-slate-50 transition" data-i18n="cancel">Cancel</button>
+                <button onclick="execConfirm()" id="btn-conf-yes" class="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 shadow-sm transition" data-i18n="yes">Yes, Proceed</button>
+            </div>
+        </div>
+      </div>
+  </div>
+  
+  <div id="modal-alert" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden">
+        <div class="p-6 text-center">
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 shadow-sm"><i class="fas fa-info text-xl"></i></div>
+            <h3 class="text-lg font-bold text-slate-700 mb-2" id="alert-title">Information</h3>
+            <p class="text-sm text-slate-500 mb-6" id="alert-msg">System Message.</p>
+            <button onclick="closeModal('modal-alert')" class="w-full py-2.5 bg-slate-800 text-white rounded-lg font-bold text-sm hover:bg-slate-900 shadow-sm transition">OK</button>
+        </div>
+      </div>
+  </div>
+  
+  <div id="modal-cancel" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl relative animate-slide-up">
+        <button onclick="closeModal('modal-cancel')" class="absolute top-4 right-4 text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+        <h3 class="text-lg font-bold mb-4 text-slate-800">Cancel Booking</h3>
+        <form onsubmit="event.preventDefault(); submitCancel();">
+            <input type="hidden" id="cancel-id">
+            <div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Reason / Note</label><textarea id="cancel-note" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500" rows="3"></textarea></div>
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="closeModal('modal-cancel')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-bold" data-i18n="cancel">Back</button>
+                <button type="submit" id="btn-cancel-submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-bold shadow-sm btn-action">Yes, Cancel</button>
+            </div>
+        </form>
+      </div>
+  </div>
 
   <script>
-    document.addEventListener('keydown', function(event) { if (event.key === "Escape") { const modals = ['modal-create', 'modal-export', 'modal-trip', 'modal-confirm', 'modal-alert', 'modal-cancel', 'modal-settings', 'modal-image']; modals.forEach(id => closeModal(id)); } });
+    // =========================================================================
+    // 1. INITIALIZATION & CORE VARIABLES
+    // =========================================================================
+    document.addEventListener('keydown', function(event) { 
+        if (event.key === "Escape") { 
+            const modals = ['modal-create', 'modal-export', 'modal-trip', 'modal-confirm', 'modal-alert', 'modal-cancel', 'modal-settings', 'modal-image']; 
+            modals.forEach(id => closeModal(id)); 
+        } 
+    });
     
-    let currentUser = null, availableVehicles = [], allBookingsData = [], confirmCallback = null;
-    let videoStreamDashboard = null, videoStreamReceipt = null;
-    let capturedDashboardBase64 = null, capturedReceiptBase64 = null;
-    let activeSourceDashboard = 'file', activeSourceReceipt = 'file';
+    let currentUser = null;
+    let availableVehicles = [];
+    let allBookingsData = [];
+    let confirmCallback = null;
+    let videoStreamDashboard = null;
+    let videoStreamReceipt = null;
+    let capturedDashboardBase64 = null;
+    let capturedReceiptBase64 = null;
+    let activeSourceDashboard = 'file';
+    let activeSourceReceipt = 'file';
     let currentFuelPrices = {}; 
     let currentLang = localStorage.getItem('portal_lang') || 'en';
-    const i18n = { en: { fleet_avail: "Fleet Availability", trip_history: "Trip History", click_filter: "Click statistics above to filter.", new_booking: "New Booking", th_id: "ID & Date", th_user: "User Info", th_unit: "Unit & Purpose", th_approval: "Approval Chain", th_status: "Status", th_trip: "Trip Info", th_action: "Action", modal_book_title: "Vehicle Booking", select_unit: "Select Unit (Available)", purpose: "Purpose", cancel: "Cancel", submit_req: "Submit Request", yes: "Yes, Proceed" }, id: { fleet_avail: "Ketersediaan Armada", trip_history: "Riwayat Perjalanan", click_filter: "Klik statistik di atas untuk filter.", new_booking: "Pesan Baru", th_id: "ID & Tanggal", th_user: "Info Pengguna", th_unit: "Unit & Tujuan", th_approval: "Status Persetujuan", th_status: "Status", th_trip: "Info Perjalanan", th_action: "Aksi", modal_book_title: "Pemesanan Kendaraan", select_unit: "Pilih Unit (Tersedia)", purpose: "Tujuan", cancel: "Batal", submit_req: "Kirim Permintaan", yes: "Ya, Lanjutkan" } };
+    
+    const i18n = { 
+        en: { fleet_avail: "Fleet Availability", trip_history: "Trip History", click_filter: "Click statistics above to filter.", new_booking: "New Booking", th_id: "ID & Date", th_user: "User Info", th_unit: "Unit & Purpose", th_approval: "Approval Chain", th_status: "Status", th_trip: "Trip Info", th_action: "Action", modal_book_title: "Vehicle Booking", select_unit: "Select Unit (Available)", purpose: "Purpose", cancel: "Cancel", submit_req: "Submit Request", yes: "Yes, Proceed" }, 
+        id: { fleet_avail: "Ketersediaan Armada", trip_history: "Riwayat Perjalanan", click_filter: "Klik statistik di atas untuk filter.", new_booking: "Pesan Baru", th_id: "ID & Tanggal", th_user: "Info Pengguna", th_unit: "Unit & Tujuan", th_approval: "Status Persetujuan", th_status: "Status", th_trip: "Info Perjalanan", th_action: "Aksi", modal_book_title: "Pemesanan Kendaraan", select_unit: "Pilih Unit (Tersedia)", purpose: "Tujuan", cancel: "Batal", submit_req: "Kirim Permintaan", yes: "Ya, Lanjutkan" } 
+    };
+    
     const rawUser = localStorage.getItem('portal_user');
     if(!rawUser) { window.location.href = "index.php"; } else { currentUser = JSON.parse(rawUser); }
 
     function toggleLanguage() { currentLang = (currentLang === 'en') ? 'id' : 'en'; localStorage.setItem('portal_lang', currentLang); applyLanguage(); }
     function applyLanguage() { document.getElementById('lang-label').innerText = currentLang.toUpperCase(); document.querySelectorAll('[data-i18n]').forEach(el => { const k = el.getAttribute('data-i18n'); if(i18n[currentLang][k]) el.innerText = i18n[currentLang][k]; }); }
-    
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-    
     function closeModal(id) { 
         document.getElementById(id).classList.add('hidden'); 
         if(id === 'modal-trip') { stopCamera('dashboard'); stopCamera('receipt'); } 
-        if(id === 'modal-image') { setTimeout(() => { document.getElementById('viewer-img').src = ''; }, 300); }
+        if(id === 'modal-image') { setTimeout(() => { document.getElementById('viewer-img').src = ''; }, 300); } 
     }
-    
     function goBackToPortal() { window.location.href = "index.php"; }
     function showConfirm(title, message, callback) { document.getElementById('conf-title').innerText = title; document.getElementById('conf-msg').innerText = message; document.getElementById('conf-comment').value = ''; confirmCallback = callback; openModal('modal-confirm'); }
     function execConfirm() { const comment = document.getElementById('conf-comment').value; if (confirmCallback) confirmCallback(comment); closeModal('modal-confirm'); confirmCallback = null; }
     function showAlert(title, message) { document.getElementById('alert-title').innerText = title; document.getElementById('alert-msg').innerText = message; openModal('modal-alert'); }
     function formatDateFriendly(dateStr) { if (!dateStr || dateStr === '0000-00-00 00:00:00') return ''; const date = new Date(dateStr); const day = date.getDate(); const month = date.toLocaleString('default', { month: 'short' }); const hour = String(date.getHours()).padStart(2, '0'); const min = String(date.getMinutes()).padStart(2, '0'); return `${day} ${month} ${hour}:${min}`; }
 
-    function checkReminders() {
-        fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'checkReminders' }) }).catch(e => console.log('Silently ignoring reminder check error.'));
-    }
+    function checkReminders() { fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'checkReminders' }) }).catch(e => console.log('Ignore reminder error.')); }
 
     window.onload = function() {
        applyLanguage();
@@ -206,7 +398,6 @@
            document.getElementById('filter-dept-container').classList.remove('hidden'); 
            document.getElementById('filter-vehicle-container').classList.remove('hidden'); 
        }
-       
        if(['User', 'GA', 'SectionHead', 'TeamLeader', 'HRGA'].includes(currentUser.role)) { document.getElementById('btn-create').classList.remove('hidden'); }
        if(['Administrator', 'HRGA'].includes(currentUser.role)) { document.getElementById('export-controls').classList.remove('hidden'); }
        if(currentUser.role === 'Administrator') { document.getElementById('btn-admin-settings').classList.remove('hidden'); }
@@ -218,7 +409,50 @@
        setInterval(checkReminders, 60000);
     };
 
-    function populateDeptFilter(data) { const sel = document.getElementById('filter-dept'); const depts = [...new Set(data.map(item => item.department).filter(Boolean))].sort(); let html = '<option value="All">All Departments</option>'; depts.forEach(d => { html += `<option value="${d}">${d}</option>`; }); sel.innerHTML = html; }
+    // =========================================================================
+    // 2. DATA LOAD & FILTERS
+    // =========================================================================
+    function loadData() { 
+        document.getElementById('data-table-body').innerHTML = '<tr><td colspan="8" class="text-center py-10 text-slate-400"><span class="loader-spin mr-2"></span> Fetching data...</td></tr>'; 
+        
+        fetch('api/vms.php', { 
+            method: 'POST', 
+            body: JSON.stringify({ action: 'getData', role: currentUser.role, username: currentUser.username, department: currentUser.department }) 
+        })
+        .then(async r => { 
+            const text = await r.text(); 
+            try { return JSON.parse(text); } 
+            catch (e) { throw new Error("Server Error: " + text.substring(0, 100)); } 
+        })
+        .then(res => { 
+            if(res.success) { 
+                availableVehicles = res.vehicles || []; 
+                allBookingsData = res.bookings || []; 
+                
+                populateDeptFilter(allBookingsData); 
+                populateVehicleFilter(availableVehicles);
+                renderFleetStatus(availableVehicles); 
+                renderStats(); 
+                renderDetailedStats();
+                applyFilters(); 
+                populateVehicleSelect(); 
+            } else { 
+                document.getElementById('data-table-body').innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">Error: ${res.message}</td></tr>`; 
+            } 
+        })
+        .catch(err => { 
+            document.getElementById('data-table-body').innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">System Error: ${err.message}</td></tr>`; 
+            console.error(err); 
+        }); 
+    }
+
+    function populateDeptFilter(data) { 
+        const sel = document.getElementById('filter-dept'); 
+        const depts = [...new Set(data.map(item => item.department).filter(Boolean))].sort(); 
+        let html = '<option value="All">All Departments</option>'; 
+        depts.forEach(d => { html += `<option value="${d}">${d}</option>`; }); 
+        sel.innerHTML = html; 
+    }
     
     function populateVehicleFilter(vehicles) { 
         const sel = document.getElementById('filter-vehicle'); 
@@ -228,7 +462,12 @@
     }
 
     let currentStatusFilter = 'All'; 
-    function filterTableByStatus(status) { const cards = document.querySelectorAll('.stats-card'); cards.forEach(c => c.classList.remove('stats-active')); currentStatusFilter = status; applyFilters(); }
+    function filterTableByStatus(status) { 
+        const cards = document.querySelectorAll('.stats-card'); 
+        cards.forEach(c => c.classList.remove('stats-active')); 
+        currentStatusFilter = status; 
+        applyFilters(); 
+    }
     
     function applyFilters() { 
         const deptVal = document.getElementById('filter-dept').value; 
@@ -240,144 +479,14 @@
             else if(currentStatusFilter === 'Failed') { filtered = filtered.filter(r => r.status === 'Rejected' || r.status === 'Cancelled'); } 
             else { filtered = filtered.filter(r => r.status === currentStatusFilter); } 
         } 
-        
         if(deptVal !== 'All') { filtered = filtered.filter(r => r.department === deptVal); } 
         if(vehicleVal !== 'All') { filtered = filtered.filter(r => r.vehicle === vehicleVal); } 
-        
         renderTable(filtered); 
     }
 
-    function openAdminSettings() { if(!currentFuelPrices.price_pertamax) fetchFuelPrices(); document.getElementById('set-turbo').value = currentFuelPrices.price_pertamax_turbo; document.getElementById('set-pertamax').value = currentFuelPrices.price_pertamax; document.getElementById('set-pertalite').value = currentFuelPrices.price_pertalite; openModal('modal-settings'); }
-    function saveFuelSettings() { const prices = { price_pertamax_turbo: document.getElementById('set-turbo').value, price_pertamax: document.getElementById('set-pertamax').value, price_pertalite: document.getElementById('set-pertalite').value }; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'saveFuelPrices', prices: prices }) }).then(r => r.json()).then(res => { if(res.success) { closeModal('modal-settings'); fetchFuelPrices(); showAlert("Success", "Prices updated."); } }); }
-    function fetchFuelPrices() { fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'getFuelPrices' }) }).then(r => r.json()).then(res => { if(res.success) currentFuelPrices = res.prices; }); }
-    function toggleFuelSection() { const isChecked = document.getElementById('check-fuel').checked; const details = document.getElementById('fuel-details'); if(isChecked) details.classList.remove('hidden'); else details.classList.add('hidden'); }
-    function calcFuel() { const cost = parseFloat(document.getElementById('input-fuel-cost').value) || 0; const type = document.getElementById('input-fuel-type').value; const key = 'price_' + type.toLowerCase().replace(' ', '_'); const price = parseFloat(currentFuelPrices[key] || 10000); const liters = (cost / price).toFixed(2); document.getElementById('disp-liters').innerText = liters; }
-    function openExportModal() { openModal('modal-export'); } 
-    function doExport(type, isAllTime) { const start = document.getElementById('exp-start').value; const end = document.getElementById('exp-end').value; const loader = document.getElementById('exp-loading'); if(!isAllTime && (!start || !end)) { showAlert("Error", "Please select dates."); return; } loader.classList.remove('hidden'); fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'exportData', role: currentUser.role, department: currentUser.department, startDate: start, endDate: end }) }).then(r => r.json()).then(res => { loader.classList.add('hidden'); if(!res.success || !res.bookings.length) { showAlert("Info", "No data available."); return; } if(type === 'excel') exportExcel(res.bookings); if(type === 'pdf') exportPdf(res.bookings); closeModal('modal-export'); }).catch(() => { loader.classList.add('hidden'); showAlert("Error", "Export failed."); }); }
-    function exportExcel(data) { const wb = XLSX.utils.book_new(); let rows = []; rows.push(["VEHICLE MANAGEMENT SYSTEM - OFFICIAL REPORT"]); rows.push(["Generated At: " + new Date().toLocaleString()]); rows.push(["Generated By: " + currentUser.fullname]); rows.push([]); rows.push([ "Request ID", "Date Created", "Time", "Requester Name", "Department", "Role", "Vehicle Unit", "Trip Purpose", "Departure Time", "Start KM", "Return Time", "End KM", "Total Distance (KM)", "Route Details", "Current Status", "Plant Appr", "GA Approver", "GA Approved Time", "Head Approver", "Head Approved Time", "Action Note / Rejection Reason" ]); data.forEach(r => { const startK = parseInt(r.startKm) || 0; const endK = parseInt(r.endKm) || 0; const dist = (endK > 0 && endK >= startK) ? (endK - startK) : "-"; const dateOnly = r.timestamp ? r.timestamp.split(' ')[0] : '-'; const timeOnly = r.timestamp ? r.timestamp.split(' ')[1] : '-'; rows.push([ r.id, dateOnly, timeOnly, r.fullname, r.department, r.role, r.vehicle, r.purpose, r.departTime || '-', r.startKm || '-', r.returnTime || '-', r.endKm || '-', dist, r.actionComment || '-', r.status, r.plantBy || '-', r.gaBy, r.gaTime || '-', r.headBy, r.headTime || '-', r.actionComment ]); }); const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = [ {wch:15}, {wch:12}, {wch:10}, {wch:20}, {wch:15}, {wch:10}, {wch:15}, {wch:30}, {wch:18}, {wch:10}, {wch:18}, {wch:10}, {wch:10}, {wch:25}, {wch:15}, {wch:15}, {wch:20}, {wch:18}, {wch:20}, {wch:18}, {wch:30} ]; XLSX.utils.book_append_sheet(wb, ws, "VMS Data"); XLSX.writeFile(wb, "VMS_Report_" + new Date().toISOString().slice(0,10) + ".xlsx"); }
-    function exportPdf(data) { const { jsPDF } = window.jspdf; const doc = new jsPDF('l', 'mm', 'a3'); doc.setFontSize(14); doc.setTextColor(37, 99, 235); doc.text("Vehicle Management Report", 14, 15); doc.setFontSize(9); doc.setTextColor(100); doc.text("Generated: " + new Date().toLocaleString(), 14, 20); const body = data.map(r => [ r.id, r.timestamp.split(' ')[0], r.fullname, r.vehicle, r.purpose, `${r.startKm || 0} - ${r.endKm || 0}`, r.status, r.plantBy || '-', r.gaBy || '-', r.headBy || '-' ]); doc.autoTable({ startY: 25, head: [['ID', 'Date', 'User', 'Vehicle', 'Purpose', 'KM (Start-End)', 'Status', 'Plant Appr', 'GA Appr', 'Head Appr']], body: body, theme: 'grid', headStyles: { fillColor: [37, 99, 235] }, styles: { fontSize: 8 } }); doc.save("VMS_Report.pdf"); }
-
-    function loadData() { 
-        document.getElementById('data-table-body').innerHTML = '<tr><td colspan="8" class="text-center py-10 text-slate-400"><span class="loader-spin mr-2"></span> Fetching data...</td></tr>'; 
-        fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'getData', role: currentUser.role, username: currentUser.username, department: currentUser.department }) })
-        .then(async r => { const text = await r.text(); try { return JSON.parse(text); } catch (e) { console.error("Backend Error Raw:", text); throw new Error("Server Error: " + text.substring(0, 100)); } })
-        .then(res => { 
-            if(res.success) { 
-                availableVehicles = res.vehicles || []; 
-                allBookingsData = res.bookings || []; 
-                populateDeptFilter(allBookingsData); 
-                populateVehicleFilter(availableVehicles);
-                renderFleetStatus(availableVehicles); 
-                renderStats(); 
-                
-                // NEW: CALL RENDER DETAILED STATS
-                renderDetailedStats();
-                
-                applyFilters(); 
-                populateVehicleSelect(); 
-            } 
-            else { document.getElementById('data-table-body').innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">Error: ${res.message}</td></tr>`; } 
-        })
-        .catch(err => { 
-            document.getElementById('data-table-body').innerHTML = `<tr><td colspan="8" class="text-center py-10 text-red-500">System Error: ${err.message}</td></tr>`; 
-            console.error(err); 
-        }); 
-    }
-
-    // ==========================================
-    // NEW: RENDER ADVANCED DETAILED STATS
-    // ==========================================
-    function renderDetailedStats() {
-        const allowedRoles = ['Administrator', 'PlantHead', 'HRGA'];
-        const isHRGATeamLeader = (currentUser.role === 'TeamLeader' && currentUser.department === 'HRGA');
-        if (!allowedRoles.includes(currentUser.role) && !isHRGATeamLeader) return;
-
-        document.getElementById('detailed-stats-section').classList.remove('hidden');
-
-        let users = {}, depts = {}, vehKM = {}, vehFuel = {};
-
-        allBookingsData.forEach(b => {
-            if (b.status !== 'Cancelled' && b.status !== 'Rejected') {
-                users[b.fullname] = (users[b.fullname] || 0) + 1;
-                depts[b.department] = (depts[b.department] || 0) + 1;
-            }
-
-            if (b.status === 'Done' || b.status === 'Pending Review' || b.status === 'Correction Needed') {
-                let start = parseInt(b.startKm) || 0;
-                let end = parseInt(b.endKm) || 0;
-                let dist = end - start;
-                if (dist > 0) {
-                    vehKM[b.vehicle] = (vehKM[b.vehicle] || 0) + dist;
-                }
-                
-                let lts = parseFloat(b.fuelLiters) || 0;
-                if (lts > 0 && dist > 0) {
-                    if (!vehFuel[b.vehicle]) vehFuel[b.vehicle] = { km: 0, lts: 0 };
-                    vehFuel[b.vehicle].km += dist;
-                    vehFuel[b.vehicle].lts += lts;
-                }
-            }
-        });
-
-        const getTop5 = (obj) => Object.entries(obj).sort((a,b) => b[1] - a[1]).slice(0, 5);
-        let topUsers = getTop5(users);
-        let topDepts = getTop5(depts);
-        let topVehKM = getTop5(vehKM);
-        
-        let effData = Object.entries(vehFuel).map(([veh, data]) => {
-            return [veh, (data.km / data.lts).toFixed(1)];
-        }).sort((a,b) => b[1] - a[1]).slice(0, 5);
-
-        const renderList = (data, title, icon, colorName, unit, isFloat = false) => {
-            let maxVal = data.length > 0 ? parseFloat(data[0][1]) : 1;
-            
-            const colorMap = {
-                'blue': { bgLight: 'bg-blue-50', text: 'text-blue-600', icon: 'text-blue-500', bar: 'bg-blue-500' },
-                'purple': { bgLight: 'bg-purple-50', text: 'text-purple-600', icon: 'text-purple-500', bar: 'bg-purple-500' },
-                'orange': { bgLight: 'bg-orange-50', text: 'text-orange-600', icon: 'text-orange-500', bar: 'bg-orange-500' },
-                'emerald': { bgLight: 'bg-emerald-50', text: 'text-emerald-600', icon: 'text-emerald-500', bar: 'bg-emerald-500' }
-            };
-            let c = colorMap[colorName];
-
-            let html = `
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden group">
-                <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full ${c.bgLight} opacity-50 group-hover:scale-[2.5] transition-transform duration-700 ease-out z-0"></div>
-                <div class="relative z-10">
-                    <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <i class="fas ${icon} ${c.icon}"></i> ${title}
-                    </h3>
-                    <div class="space-y-3">
-            `;
-            
-            if(data.length === 0) html += `<div class="text-xs text-slate-400 italic">No data yet.</div>`;
-            
-            data.forEach(([name, val], idx) => {
-                let pct = (parseFloat(val) / maxVal) * 100;
-                let displayVal = isFloat ? val : val;
-                html += `
-                    <div>
-                        <div class="flex justify-between text-[10px] font-bold mb-1">
-                            <span class="text-slate-600 truncate pr-2">${idx+1}. ${name}</span>
-                            <span class="${c.text} whitespace-nowrap">${displayVal} ${unit}</span>
-                        </div>
-                        <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                            <div class="${c.bar} h-1.5 rounded-full anim-fill shadow-[0_0_5px_rgba(0,0,0,0.1)]" style="--target-width: ${pct}%; animation-delay: ${idx * 0.15}s;"></div>
-                        </div>
-                    </div>
-                `;
-            });
-            html += `</div></div></div>`;
-            return html;
-        };
-
-        const container = document.getElementById('detailed-stats-container');
-        container.innerHTML = 
-            renderList(topUsers, 'Top Users', 'fa-user-ninja', 'blue', 'Trips') +
-            renderList(topDepts, 'Top Departments', 'fa-building', 'purple', 'Trips') +
-            renderList(topVehKM, 'Highest Mileage', 'fa-tachometer-alt', 'orange', 'KM') +
-            renderList(effData, 'Best Efficiency', 'fa-leaf', 'emerald', 'KM/L', true);
-    }
-
+    // =========================================================================
+    // 3. UI RENDERING (STATS, FLEET, TABLE)
+    // =========================================================================
     function renderStats() {
         const t = allBookingsData.length;
         const p = allBookingsData.filter(r => r.status.includes('Pending') || r.status === 'Pending Review' || r.status === 'Correction Needed').length;
@@ -409,10 +518,98 @@
             buildCard('Cancelled/Reject', f, 'fa-times-circle', 'red', 'Failed', 'failed');
     }
     
-    function renderFleetStatus(v){
-        const c=document.getElementById('fleet-status-container');
-        c.innerHTML='';
-        if(v.length===0){
+    function renderDetailedStats() {
+        const allowedRoles = ['Administrator', 'PlantHead', 'HRGA'];
+        const isHRGATeamLeader = (currentUser.role === 'TeamLeader' && currentUser.department === 'HRGA');
+        if (!allowedRoles.includes(currentUser.role) && !isHRGATeamLeader) return;
+
+        document.getElementById('detailed-stats-section').classList.remove('hidden');
+
+        let users = {}, depts = {}, vehKM = {}, vehFuel = {};
+
+        allBookingsData.forEach(b => {
+            if (b.status !== 'Cancelled' && b.status !== 'Rejected') {
+                users[b.fullname] = (users[b.fullname] || 0) + 1;
+                depts[b.department] = (depts[b.department] || 0) + 1;
+            }
+
+            if (b.status === 'Done' || b.status === 'Pending Review' || b.status === 'Correction Needed') {
+                let start = parseInt(b.startKm) || 0;
+                let end = parseInt(b.endKm) || 0;
+                let dist = end - start;
+                if (dist > 0) {
+                    vehKM[b.vehicle] = (vehKM[b.vehicle] || 0) + dist;
+                }
+                
+                let ratio = parseFloat(b.fuelRatio) || 0;
+                if(ratio > 0) {
+                     if(!vehFuel[b.vehicle] || ratio > vehFuel[b.vehicle]) {
+                         vehFuel[b.vehicle] = ratio;
+                     }
+                }
+            }
+        });
+
+        const getTop5 = (obj) => Object.entries(obj).sort((a,b) => b[1] - a[1]).slice(0, 5);
+        let topUsers = getTop5(users);
+        let topDepts = getTop5(depts);
+        let topVehKM = getTop5(vehKM);
+        let effData = getTop5(vehFuel); 
+
+        const renderList = (data, title, icon, colorName, unit, isFloat = false) => {
+            let maxVal = data.length > 0 ? parseFloat(data[0][1]) : 1;
+            
+            const colorMap = {
+                'blue': { bgLight: 'bg-blue-50', text: 'text-blue-600', icon: 'text-blue-500', barFrom: 'from-blue-400', barTo: 'to-blue-600' },
+                'purple': { bgLight: 'bg-purple-50', text: 'text-purple-600', icon: 'text-purple-500', barFrom: 'from-purple-400', barTo: 'to-purple-600' },
+                'orange': { bgLight: 'bg-orange-50', text: 'text-orange-600', icon: 'text-orange-500', barFrom: 'from-orange-400', barTo: 'to-orange-600' },
+                'emerald': { bgLight: 'bg-emerald-50', text: 'text-emerald-600', icon: 'text-emerald-500', barFrom: 'from-emerald-400', barTo: 'to-emerald-600' }
+            };
+            let c = colorMap[colorName];
+
+            let html = `
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden group analytic-item">
+                <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full ${c.bgLight} opacity-50 group-hover:scale-[2.5] transition-transform duration-700 ease-out z-0"></div>
+                <div class="relative z-10">
+                    <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i class="fas ${icon} ${c.icon}"></i> ${title}
+                    </h3>
+                    <div class="space-y-3">
+            `;
+            
+            if(data.length === 0) html += `<div class="text-xs text-slate-400 italic">No data yet.</div>`;
+            
+            data.forEach(([name, val], idx) => {
+                let pct = (parseFloat(val) / maxVal) * 100;
+                let displayVal = isFloat ? parseFloat(val).toFixed(1) : val;
+                html += `
+                    <div>
+                        <div class="flex justify-between text-[10px] font-bold mb-1">
+                            <span class="text-slate-600 truncate pr-2">${idx+1}. ${name}</span>
+                            <span class="${c.text} whitespace-nowrap">${displayVal} ${unit}</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div class="h-1.5 rounded-full anim-fill shadow-[0_0_5px_rgba(0,0,0,0.1)] bg-gradient-to-r ${c.barFrom} ${c.barTo} bg-live-gradient" style="--target-width: ${pct}%; animation-delay: ${idx * 0.15}s;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div></div></div>`;
+            return html;
+        };
+
+        const container = document.getElementById('detailed-stats-container');
+        container.innerHTML = 
+            renderList(topUsers, 'Top Users', 'fa-user-ninja', 'blue', 'Trips') +
+            renderList(topDepts, 'Top Departments', 'fa-building', 'purple', 'Trips') +
+            renderList(topVehKM, 'Highest Mileage', 'fa-tachometer-alt', 'orange', 'KM') +
+            renderList(effData, 'Best Efficiency', 'fa-leaf', 'emerald', 'KM/L', true);
+    }
+
+    function renderFleetStatus(v) {
+        const c = document.getElementById('fleet-status-container');
+        c.innerHTML = '';
+        if(!v || v.length === 0){
             c.innerHTML='<div class="text-slate-500 text-sm italic">No fleet available.</div>';
             return;
         }
@@ -465,22 +662,38 @@
             </div>`;
         });
     }
-    
-    function renderTable(d){
-        const tb=document.getElementById('data-table-body'),cc=document.getElementById('data-card-container');
-        tb.innerHTML='';cc.innerHTML='';
-        if(d.length===0){tb.innerHTML='<tr><td colspan="8" class="text-center py-10 text-slate-400 italic">No data found.</td></tr>';cc.innerHTML='<div class="text-center py-10 text-slate-400 italic">No data found.</div>';return;}
+
+    function renderTable(d) {
+        const tb = document.getElementById('data-table-body');
+        const cc = document.getElementById('data-card-container');
+        tb.innerHTML = '';
+        cc.innerHTML = '';
         
-        d.forEach(r=>{
-            const s=r.status||'Unknown',ts=r.timestamp?r.timestamp.split(' ')[0]:'-',is=r.id?String(r.id).slice(-4):'????';
-            let b='bg-gray-100 text-gray-600 border-gray-200';
+        if (!d || d.length === 0) {
+            tb.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-slate-400 italic">No data found.</td></tr>';
+            cc.innerHTML = '<div class="text-center py-10 text-slate-400 italic">No data found.</div>';
+            return;
+        }
+        
+        d.forEach(r => {
+            const s = r.status || 'Unknown';
+            const ts = r.timestamp ? r.timestamp.split(' ')[0] : '-';
+            const is = r.id ? String(r.id).slice(-4) : '????';
+            
+            let b = 'bg-gray-100 text-gray-600 border-gray-200';
             let statusDisplay = `<span class="status-badge ${b} whitespace-nowrap">${s}</span>`;
-            if(s==='Done') b='bg-emerald-50 text-emerald-700 border-emerald-200';
-            else if(s==='Active') b='bg-blue-50 text-blue-700 border-blue-200';
-            else if(s==='Rejected') b='bg-red-50 text-red-700 border-red-200';
-            else if(s==='Cancelled') { b='bg-red-50 text-red-700 border-red-200'; const cancelTime = formatDateFriendly(r.finalTime); statusDisplay = `<div class="flex flex-col items-center"><span class="status-badge ${b} whitespace-nowrap mb-1">Cancelled</span><span class="text-[9px] text-slate-400">by User</span><span class="text-[8px] text-slate-400 font-mono">${cancelTime}</span></div>`; }
-            else if(s.includes('Pending')||s==='Correction Needed'||s==='Pending Review') b='bg-amber-50 text-amber-700 border-amber-200';
-            if(s !== 'Cancelled') statusDisplay = `<span class="status-badge ${b} whitespace-nowrap">${s}</span>`;
+            
+            if (s === 'Done') { b = 'bg-emerald-50 text-emerald-700 border-emerald-200'; }
+            else if (s === 'Active') { b = 'bg-blue-50 text-blue-700 border-blue-200'; }
+            else if (s === 'Rejected') { b = 'bg-red-50 text-red-700 border-red-200'; }
+            else if (s === 'Cancelled') { 
+                b = 'bg-red-50 text-red-700 border-red-200'; 
+                const cancelTime = formatDateFriendly(r.finalTime); 
+                statusDisplay = `<div class="flex flex-col items-center"><span class="status-badge ${b} whitespace-nowrap mb-1">Cancelled</span><span class="text-[9px] text-slate-400">by User</span><span class="text-[8px] text-slate-400 font-mono">${cancelTime}</span></div>`; 
+            }
+            else if (s.includes('Pending') || s === 'Correction Needed' || s === 'Pending Review') { b = 'bg-amber-50 text-amber-700 border-amber-200'; }
+            
+            if (s !== 'Cancelled') { statusDisplay = `<span class="status-badge ${b} whitespace-nowrap">${s}</span>`; }
 
             const isPlantPath = (r.plantStatus !== 'Auto-Skip');
             const getStepClass = (st) => { if(st === 'Approved') return 'step-approved'; if(st === 'Rejected') return 'step-rejected'; if(st === 'Pending') return 'step-waiting'; if(st === 'Auto-Skip') return 'step-approved'; return 'step-pending'; };
@@ -491,8 +704,8 @@
             else { l1Status = r.headStatus; l1Icon = 'fa-user-tie'; l1By = r.headBy; l1Time = r.headTime; }
 
             let l1C = (l1Status==='Pending') ? (s.includes('Pending') && !s.includes('HRGA') && !s.includes('Final') ? 'step-pending' : 'step-waiting') : getStepClass(l1Status);
-            if(s === 'Rejected' && l1Status === 'Pending') l1C = 'step-waiting';
-            if(s.includes('Pending Plant Head') || s.includes('Pending Dept Head')) l1C = 'step-pending'; 
+            if (s === 'Rejected' && l1Status === 'Pending') l1C = 'step-waiting';
+            if (s.includes('Pending Plant Head') || s.includes('Pending Dept Head')) l1C = 'step-pending'; 
 
             let l2C = (r.gaStatus==='Pending') ? (s==='Pending HRGA' ? 'step-pending' : (l1Status!=='Approved'?'step-waiting':'step-approved')) : getStepClass(r.gaStatus);
             let l3C = (r.finalStatus==='Pending') ? (s==='Pending Final' ? 'step-pending' : (r.gaStatus!=='Approved'?'step-waiting':'step-approved')) : getStepClass(r.finalStatus);
@@ -599,17 +812,188 @@
         });
     }
 
-    function submitData() { const v = document.getElementById('input-vehicle').value, p = document.getElementById('input-purpose').value, btn = document.getElementById('btn-create-submit'); if(!v || !p) return showAlert("Error", "Please complete all fields."); btn.disabled = true; btn.innerText = "Processing..."; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'submit', username: currentUser.username, fullname: currentUser.fullname, role: currentUser.role, department: currentUser.department, vehicle: v, purpose: p }) }).then(r => r.json()).then(res => { btn.disabled = false; btn.innerText = "Submit Request"; if(res.success) { closeModal('modal-create'); loadData(); showAlert("Success", "Request sent."); } else { showAlert("Error", res.message); } }); }
+    // =========================================================================
+    // 4. ACTION & EXPORT FUNCTIONS
+    // =========================================================================
+    function openAdminSettings() { if(!currentFuelPrices.price_pertamax) fetchFuelPrices(); document.getElementById('set-turbo').value = currentFuelPrices.price_pertamax_turbo; document.getElementById('set-pertamax').value = currentFuelPrices.price_pertamax; document.getElementById('set-pertalite').value = currentFuelPrices.price_pertalite; openModal('modal-settings'); }
+    function saveFuelSettings() { const prices = { price_pertamax_turbo: document.getElementById('set-turbo').value, price_pertamax: document.getElementById('set-pertamax').value, price_pertalite: document.getElementById('set-pertalite').value }; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'saveFuelPrices', prices: prices }) }).then(r => r.json()).then(res => { if(res.success) { closeModal('modal-settings'); fetchFuelPrices(); showAlert("Success", "Prices updated."); } }); }
+    function fetchFuelPrices() { fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'getFuelPrices' }) }).then(r => r.json()).then(res => { if(res.success) currentFuelPrices = res.prices; }); }
+    function toggleFuelSection() { const isChecked = document.getElementById('check-fuel').checked; const details = document.getElementById('fuel-details'); if(isChecked) details.classList.remove('hidden'); else details.classList.add('hidden'); }
+    function calcFuel() { const cost = parseFloat(document.getElementById('input-fuel-cost').value) || 0; const type = document.getElementById('input-fuel-type').value; const key = 'price_' + type.toLowerCase().replace(' ', '_'); const price = parseFloat(currentFuelPrices[key] || 10000); const liters = (cost / price).toFixed(2); document.getElementById('disp-liters').innerText = liters; }
+    
+    function populateVehicleSelect() { const sel = document.getElementById('input-vehicle'); sel.innerHTML = '<option value="">-- Select Unit (Available) --</option>'; availableVehicles.filter(v => v.status === 'Available').forEach(v => { sel.innerHTML += `<option value="${v.plant}">${v.plant} - ${v.model}</option>`; }); }
+    
+    function submitData() { 
+        const v = document.getElementById('input-vehicle').value, p = document.getElementById('input-purpose').value, btn = document.getElementById('btn-create-submit'); 
+        if(!v || !p) return showAlert("Error", "Please complete all fields."); 
+        btn.disabled = true; btn.innerText = "Processing..."; 
+        fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'submit', username: currentUser.username, fullname: currentUser.fullname, role: currentUser.role, department: currentUser.department, vehicle: v, purpose: p }) })
+        .then(r => r.json()).then(res => { btn.disabled = false; btn.innerText = "Submit Request"; if(res.success) { closeModal('modal-create'); loadData(); showAlert("Success", "Request sent."); } else { showAlert("Error", res.message); } }); 
+    }
+    
     function callUpdate(id, act, comment) { fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: {comment: comment} }) }).then(r => r.json()).then(res => { if(res.success) loadData(); else showAlert("Error", res.message || "Failed to update"); }).catch(e => showAlert("Error", "Connection error")); }
     function approve(id, role) { showConfirm("Approve Request", "You can add an optional note below:", (comment) => { callUpdate(id, 'approve', comment); }); }
     function reject(id, role) { showConfirm("Confirm Rejection", "Please provide a REASON for rejection:", (comment) => { if(!comment) return showAlert("Error", "Reason is required for rejection"); callUpdate(id, 'reject', comment); }); }
     function confirmTrip(id) { showConfirm("Verify Trip", "Verify that this trip is completed and data is correct?", (c) => callUpdate(id, 'verifyTrip', c)); } 
     function requestCorrection(id) { showConfirm("Request Correction", "Reason for correction (sent to user):", (c) => { if(!c) return showAlert("Error", "Reason required"); callUpdate(id, 'requestCorrection', c); }); }
+    function openCancelModal(id) { document.getElementById('cancel-id').value = id; document.getElementById('cancel-note').value = ''; openModal('modal-cancel'); }
+    function submitCancel() { const id = document.getElementById('cancel-id').value, note = document.getElementById('cancel-note').value, btn = document.getElementById('btn-cancel-submit'); btn.disabled = true; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: 'cancel', userRole: currentUser.role, extraData: {comment: note} }) }).then(() => { closeModal('modal-cancel'); loadData(); }); }
+
+    // EXPORT
+    function openExportModal() { openModal('modal-export'); } 
+    function doExport(type, isAllTime) { 
+        const start = document.getElementById('exp-start').value; 
+        const end = document.getElementById('exp-end').value; 
+        const loader = document.getElementById('exp-loading'); 
+        if(!isAllTime && (!start || !end)) { showAlert("Error", "Please select dates."); return; } 
+        loader.classList.remove('hidden'); 
+        fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'exportData', role: currentUser.role, department: currentUser.department, startDate: start, endDate: end }) })
+        .then(r => r.json())
+        .then(res => { 
+            if(!res.success || !res.bookings.length) { loader.classList.add('hidden'); showAlert("Info", "No data available for selected dates."); return; } 
+            if(type === 'excel') exportExcel(res.bookings); 
+            if(type === 'pdf') exportPdf(res.bookings); 
+        }).catch(() => { loader.classList.add('hidden'); showAlert("Error", "Export failed."); }); 
+    }
     
-    function populateVehicleSelect() { const sel = document.getElementById('input-vehicle'); sel.innerHTML = '<option value="">-- Select Unit (Available) --</option>'; availableVehicles.filter(v => v.status === 'Available').forEach(v => { sel.innerHTML += `<option value="${v.plant}">${v.plant} - ${v.model}</option>`; }); }
-    
+    function exportExcel(data) { 
+        const wb = XLSX.utils.book_new(); 
+        const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/'); 
+        let rows = []; 
+        rows.push(["VEHICLE MANAGEMENT SYSTEM - AUDIT REPORT"]); 
+        rows.push(["Generated At: ", new Date().toLocaleString()]); 
+        rows.push(["Generated By: ", currentUser.fullname]); 
+        rows.push([]); 
+        rows.push([ "Request ID", "Date", "User", "Department", "Vehicle", "Purpose", "Status", "Start ODO", "End ODO", "Total Dist (KM)", "Fuel Type", "Liters", "Total Cost", "Efficiency (KM/L)", "Photo ODO Start (URL)", "Photo ODO End (URL)", "Photo Receipt (URL)" ]); 
+        
+        data.forEach(r => { 
+            const startK = parseInt(r.startKm) || 0; 
+            const endK = parseInt(r.endKm) || 0; 
+            const dist = (endK > 0 && endK >= startK) ? (endK - startK) : 0; 
+            const dateOnly = r.timestamp ? r.timestamp.split(' ')[0] : '-'; 
+            const urlStart = (r.startPhoto && r.startPhoto !== '0') ? baseUrl + r.startPhoto : '-';
+            const urlEnd = (r.endPhoto && r.endPhoto !== '0') ? baseUrl + r.endPhoto : '-';
+            const urlRec = (r.fuelReceipt && r.fuelReceipt !== '0' && r.fuelReceipt !== 'null') ? baseUrl + r.fuelReceipt : '-';
+            rows.push([ r.id, dateOnly, r.fullname, r.department, r.vehicle, r.purpose, r.status, startK, endK, dist, r.fuelType || '-', parseFloat(r.fuelLiters||0), parseFloat(r.fuelCost||0), parseFloat(r.fuelRatio||0).toFixed(2), urlStart, urlEnd, urlRec ]); 
+        }); 
+        
+        const ws = XLSX.utils.aoa_to_sheet(rows); 
+        ws['!cols'] = [ {wch:15}, {wch:12}, {wch:20}, {wch:15}, {wch:12}, {wch:30}, {wch:15}, {wch:10}, {wch:10}, {wch:15}, {wch:12}, {wch:10}, {wch:12}, {wch:15}, {wch:45}, {wch:45}, {wch:45} ]; 
+        XLSX.utils.book_append_sheet(wb, ws, "Audit Data"); 
+        XLSX.writeFile(wb, "VMS_Audit_Report_" + new Date().toISOString().slice(0,10) + ".xlsx"); 
+        document.getElementById('exp-loading').classList.add('hidden');
+        closeModal('modal-export');
+    }
+
+    async function getBase64ImageFromUrl(imageUrl) {
+        if(!imageUrl || imageUrl === '0' || imageUrl === 'null') return null;
+        try {
+            const res = await fetch(imageUrl);
+            const blob = await res.blob();
+            return await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (e) {
+            console.warn("Failed to load image for PDF:", imageUrl);
+            return null;
+        }
+    }
+
+    async function exportPdf(data) { 
+        const { jsPDF } = window.jspdf; 
+        const doc = new jsPDF('l', 'mm', 'a4'); 
+        
+        doc.setFontSize(16); 
+        doc.setTextColor(37, 99, 235); 
+        doc.text("VMS - Vehicle Usage & Audit Report", 14, 15); 
+        doc.setFontSize(9); 
+        doc.setTextColor(100); 
+        doc.text("Generated: " + new Date().toLocaleString(), 14, 22); 
+
+        const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
+        document.getElementById('exp-loading').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Mengambil foto dari server... Mohon tunggu.';
+
+        const bodyData = [];
+        
+        for (let r of data) {
+            let startK = parseInt(r.startKm) || 0; 
+            let endK = parseInt(r.endKm) || 0; 
+            let dist = (endK > 0 && endK >= startK) ? (endK - startK) : 0; 
+
+            let startB64 = await getBase64ImageFromUrl(r.startPhoto && r.startPhoto !== '0' ? baseUrl + r.startPhoto : null);
+            let endB64 = await getBase64ImageFromUrl(r.endPhoto && r.endPhoto !== '0' ? baseUrl + r.endPhoto : null);
+            let recB64 = await getBase64ImageFromUrl(r.fuelReceipt && r.fuelReceipt !== '0' && r.fuelReceipt !== 'null' ? baseUrl + r.fuelReceipt : null);
+
+            bodyData.push([ 
+                r.id + "\n" + r.timestamp.split(' ')[0], 
+                r.fullname + "\n(" + r.department + ")", 
+                r.vehicle, 
+                r.purpose, 
+                startK + " -> " + endK + "\n(" + dist + " km)", 
+                r.status, 
+                (r.fuelCost > 0 ? "Rp " + parseFloat(r.fuelCost).toLocaleString() + "\n(" + r.fuelLiters + "L)" : "-"),
+                startB64, 
+                endB64,   
+                recB64    
+            ]); 
+        }
+
+        doc.autoTable({ 
+            startY: 28, 
+            head: [['ID / Date', 'User', 'Vehicle', 'Purpose', 'ODO & Dist', 'Status', 'Fuel', 'Start ODO', 'End ODO', 'Receipt']], 
+            body: bodyData, 
+            theme: 'grid', 
+            headStyles: { fillColor: [37, 99, 235], halign: 'center' }, 
+            styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak', halign: 'center', valign: 'middle' },
+            columnStyles: {
+                0: { cellWidth: 20 },
+                1: { cellWidth: 25 },
+                2: { cellWidth: 20 },
+                3: { cellWidth: 35, halign: 'left' },
+                4: { cellWidth: 20 },
+                5: { cellWidth: 20 },
+                6: { cellWidth: 20 },
+                7: { cellWidth: 35, minCellHeight: 25 }, 
+                8: { cellWidth: 35 },
+                9: { cellWidth: 35 }
+            },
+            didDrawCell: function(data) {
+                if (data.section === 'body' && (data.column.index >= 7 && data.column.index <= 9)) {
+                    let base64Img = data.cell.raw;
+                    if (base64Img) {
+                        try {
+                            let imgFormat = base64Img.substring("data:image/".length, base64Img.indexOf(";base64"));
+                            imgFormat = imgFormat.toUpperCase() === 'PNG' ? 'PNG' : 'JPEG';
+                            const padding = 2;
+                            const x = data.cell.x + padding;
+                            const y = data.cell.y + padding;
+                            const w = data.cell.width - (padding*2);
+                            const h = data.cell.height - (padding*2);
+                            doc.addImage(base64Img, imgFormat, x, y, w, h);
+                        } catch(e) { console.error('Error drawing image on PDF'); }
+                    } else {
+                        doc.text("-", data.cell.x + data.cell.width/2, data.cell.y + data.cell.height/2, { align: 'center' });
+                    }
+                    data.cell.text = '';
+                }
+            }
+        }); 
+        
+        doc.save("VMS_Audit_Report_" + new Date().toISOString().slice(0,10) + ".pdf"); 
+        document.getElementById('exp-loading').classList.add('hidden');
+        document.getElementById('exp-loading').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating Report... Please wait.';
+        closeModal('modal-export');
+    }
+
+    // =========================================================================
+    // 5. CAMERA & TRIP UPDATE LOGIC
+    // =========================================================================
     function openTripModal(id, act, startKmVal, vehiclePlat, existingEndKm = '', existingFuelCost = 0, existingFuelType = '') { 
-        document.getElementById('trip-id').value = id; document.getElementById('trip-action').value = act; 
+        document.getElementById('trip-id').value = id; 
+        document.getElementById('trip-action').value = act; 
         document.getElementById('modal-trip-title').innerText = (act === 'startTrip') ? 'Departure Update' : (act === 'endTrip' ? 'Arrival Update' : 'Correct Trip Data');
         document.getElementById('lbl-km').innerText = act === 'startTrip' ? 'Current Odometer (KM)' : 'End KM';
         
@@ -650,12 +1034,10 @@
 
             if (act === 'submitCorrection') {
                 document.getElementById('photo-note-dashboard').innerText = "(Abaikan jika tidak ingin mengubah foto)";
-                
                 if (existingEndKm && parseInt(existingEndKm) > 0) {
                     document.getElementById('input-km').value = existingEndKm;
                     calcTotalDistance();
                 }
-                
                 if (existingFuelCost && parseFloat(existingFuelCost) > 0) {
                     document.getElementById('check-fuel').checked = true;
                     document.getElementById('fuel-details').classList.remove('hidden');
@@ -666,7 +1048,6 @@
             } else {
                  document.getElementById('photo-note-dashboard').innerText = "";
             }
-            
         } else { 
             document.getElementById('div-route-update').classList.add('hidden'); 
             document.getElementById('input-route-update').required = false; 
@@ -696,6 +1077,7 @@
             stopCamera(type);
         }
     }
+
     async function startCamera(type) {
         const video = document.getElementById(`camera-stream-${type}`);
         const preview = document.getElementById(`camera-preview-${type}`);
@@ -708,13 +1090,18 @@
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
             video.srcObject = stream;
             if(type === 'dashboard') videoStreamDashboard = stream; else videoStreamReceipt = stream;
-        } catch (err) { showAlert("Camera Error", "Cannot access camera. Please use File Upload."); togglePhotoSource('file', type); }
+        } catch (err) { 
+            showAlert("Camera Error", "Cannot access camera. Please use File Upload."); 
+            togglePhotoSource('file', type); 
+        }
     }
+
     function stopCamera(type) {
         let stream = (type === 'dashboard') ? videoStreamDashboard : videoStreamReceipt;
         if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
         if(type === 'dashboard') videoStreamDashboard = null; else videoStreamReceipt = null;
     }
+
     function takeSnapshot(type) {
         const video = document.getElementById(`camera-stream-${type}`);
         const canvas = document.getElementById(`camera-canvas-${type}`);
@@ -729,6 +1116,7 @@
             document.getElementById(`btn-retake-${type}`).classList.remove('hidden');
         }
     }
+
     function retakePhoto(type) {
         if(type === 'dashboard') capturedDashboardBase64 = null; else capturedReceiptBase64 = null;
         document.getElementById(`camera-preview-${type}`).classList.add('hidden');
@@ -736,6 +1124,7 @@
         document.getElementById(`btn-capture-${type}`).classList.remove('hidden');
         document.getElementById(`btn-retake-${type}`).classList.add('hidden');
     }
+
     function compressImage(base64Str, maxWidth = 800, quality = 0.5) {
         return new Promise((resolve, reject) => {
             const img = new Image(); img.src = base64Str;
@@ -773,7 +1162,6 @@
 
             btn.disabled = true; btn.innerText = "Processing Image..."; 
             
-            // 1. DASHBOARD PHOTO
             let base64Data = null; 
             let cleanBase64 = null;
             
@@ -783,7 +1171,12 @@
                 const fileInput = document.getElementById('input-photo'); 
                 if (fileInput.files.length > 0) {
                     const file = fileInput.files[0]; 
-                    base64Data = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (e) => resolve(e.target.result); reader.onerror = (e) => reject("Failed"); reader.readAsDataURL(file); }); 
+                    base64Data = await new Promise((resolve, reject) => { 
+                        const reader = new FileReader(); 
+                        reader.onload = (e) => resolve(e.target.result); 
+                        reader.onerror = (e) => reject("Failed"); 
+                        reader.readAsDataURL(file); 
+                    }); 
                 }
             } 
             
@@ -794,7 +1187,6 @@
                 throw new Error("Please capture/upload Dashboard photo.");
             }
 
-            // 2. RECEIPT PHOTO
             let receiptBase64 = null;
             if(hasFuel) {
                 let receiptRaw = null;
@@ -804,7 +1196,12 @@
                     const recInput = document.getElementById('input-receipt');
                     if(recInput.files.length > 0) {
                         const rFile = recInput.files[0];
-                        receiptRaw = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (e) => resolve(e.target.result); reader.onerror = (e) => reject("Failed"); reader.readAsDataURL(rFile); });
+                        receiptRaw = await new Promise((resolve, reject) => { 
+                            const reader = new FileReader(); 
+                            reader.onload = (e) => resolve(e.target.result); 
+                            reader.onerror = (e) => reject("Failed"); 
+                            reader.readAsDataURL(rFile); 
+                        });
                     }
                 }
                 
@@ -826,25 +1223,42 @@
         } 
     }
 
-    function sendTripData(id, act, extraData) { const btn = document.getElementById('btn-trip-submit'); btn.innerText = "Sending Data..."; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: extraData }) }).then(r => r.json()).then(res => { btn.disabled = false; btn.innerText = "Save Update"; if(res.success) { closeModal('modal-trip'); loadData(); } else { showAlert("Error", res.message); } }).catch(err => { btn.disabled = false; btn.innerText = "Save Update"; console.error(err); showAlert("Error", "Connection Failed: " + err.message); }); }
-    function calcTotalDistance() { const start = parseInt(document.getElementById('modal-start-km-val').value) || 0; const end = parseInt(document.getElementById('input-km').value) || 0; const total = end - start; const disp = document.getElementById('disp-total-km'); if (total < 0) { disp.innerText = "Check ODO"; disp.className = "text-red-600 font-bold"; } else { disp.innerText = total; disp.className = ""; } }
+    function sendTripData(id, act, extraData) { 
+        const btn = document.getElementById('btn-trip-submit'); 
+        btn.innerText = "Sending Data..."; 
+        fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: act, userRole: currentUser.role, approverName: currentUser.fullname, extraData: extraData }) })
+        .then(r => r.json())
+        .then(res => { 
+            btn.disabled = false; btn.innerText = "Save Update"; 
+            if(res.success) { closeModal('modal-trip'); loadData(); } 
+            else { showAlert("Error", res.message); } 
+        })
+        .catch(err => { 
+            btn.disabled = false; btn.innerText = "Save Update"; 
+            console.error(err); 
+            showAlert("Error", "Connection Failed: " + err.message); 
+        }); 
+    }
+
+    function calcTotalDistance() { 
+        const start = parseInt(document.getElementById('modal-start-km-val').value) || 0; 
+        const end = parseInt(document.getElementById('input-km').value) || 0; 
+        const total = end - start; 
+        const disp = document.getElementById('disp-total-km'); 
+        if (total < 0) { disp.innerText = "Check ODO"; disp.className = "text-red-600 font-bold"; } 
+        else { disp.innerText = total; disp.className = ""; } 
+    }
     
     function viewPhoto(url) { 
         if (!url || url === 'null' || url === 'undefined' || url.trim() === '' || url === '0') {
             showAlert("Informasi", "Gambar tidak tersedia.");
             return;
         }
-        
         const viewer = document.getElementById('viewer-img');
         viewer.src = ''; 
-        
         viewer.src = url.trim() + '?t=' + new Date().getTime(); 
-        
         openModal('modal-image'); 
     }
-    
-    function openCancelModal(id) { document.getElementById('cancel-id').value = id; document.getElementById('cancel-note').value = ''; openModal('modal-cancel'); }
-    function submitCancel() { const id = document.getElementById('cancel-id').value, note = document.getElementById('cancel-note').value, btn = document.getElementById('btn-cancel-submit'); btn.disabled = true; fetch('api/vms.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: 'cancel', userRole: currentUser.role, extraData: {comment: note} }) }).then(() => { closeModal('modal-cancel'); loadData(); }); }
   </script>
 </body>
 </html>
