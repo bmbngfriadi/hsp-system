@@ -16,8 +16,10 @@
     .loader-spin { border: 3px solid #e2e8f0; border-top: 3px solid #d97706; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .status-badge { padding: 4px 10px; border-radius: 9999px; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; border: 1px solid transparent; display: inline-block; }
-    .animate-slide-up { animation: slideUp 0.3s ease-out; }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .animate-slide-up { animation: slideUp 0.4s ease-out forwards; opacity: 0; transform: translateY(20px); }
+    @keyframes slideUp { to { transform: translateY(0); opacity: 1; } }
+    .delay-100 { animation-delay: 100ms; }
+    .delay-200 { animation-delay: 200ms; }
     .tab-active { border-bottom: 2px solid #d97706; color: #d97706; font-weight: 700; }
     .tab-inactive { color: #64748b; font-weight: 500; }
     .dropdown-scroll::-webkit-scrollbar { width: 5px; }
@@ -51,9 +53,9 @@
           <button onclick="switchTab('inventory')" id="tab-inventory" class="px-6 py-3 text-sm tab-inactive transition-colors"><i class="fas fa-boxes mr-2"></i> <span data-i18n="tab_inv">Dept Inventory</span></button>
       </div>
 
-      <div id="view-request" class="animate-fade-in space-y-6">
+      <div id="view-request" class="space-y-6">
         
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 animate-slide-up">
            <div onclick="filterTable('All')" class="group relative cursor-pointer bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
                <div class="absolute -right-6 -top-6 w-24 h-24 bg-blue-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700 ease-out"></div>
                <div class="relative z-10 flex justify-between items-start">
@@ -114,18 +116,62 @@
                <div class="absolute bottom-0 left-0 h-1 bg-indigo-500 w-0 group-hover:w-full transition-all duration-500 ease-out"></div>
            </div>
         </div>
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-2">
+
+        <div class="animate-slide-up delay-100">
+            <div class="flex items-center gap-2 mb-3">
+                <i class="fas fa-chart-pie text-amber-500"></i>
+                <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider" data-i18n="insights">Quick Insights</h3>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+                
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 relative overflow-hidden group">
+                   <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-purple-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700 ease-out"></div>
+                   <div class="relative z-10">
+                       <div class="flex items-center gap-2 mb-4 text-purple-600">
+                           <i class="fas fa-building bg-purple-100 p-2 rounded-lg"></i> 
+                           <span class="font-bold text-sm text-slate-700" data-i18n="top_dept">Top Departments</span>
+                       </div>
+                       <div id="ins-top-dept" class="space-y-3"></div>
+                   </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 relative overflow-hidden group">
+                   <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-rose-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700 ease-out"></div>
+                   <div class="relative z-10">
+                       <div class="flex items-center gap-2 mb-4 text-rose-600">
+                           <i class="fas fa-star bg-rose-100 p-2 rounded-lg"></i> 
+                           <span class="font-bold text-sm text-slate-700" data-i18n="top_items">Most Requested Items</span>
+                       </div>
+                       <div id="ins-top-items" class="space-y-3"></div>
+                   </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 relative overflow-hidden group flex flex-col justify-center items-center text-center">
+                   <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-sky-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700 ease-out"></div>
+                   <div class="relative z-10 w-full flex flex-col items-center">
+                       <div class="text-sky-500 mb-2 bg-sky-50 p-3 rounded-full group-hover:-translate-y-1 transition-transform">
+                           <i class="fas fa-boxes text-2xl"></i>
+                       </div>
+                       <div class="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1" data-i18n="total_vol">Total Items Volume</div>
+                       <div class="text-4xl font-extrabold text-slate-800 tabular-nums my-1" id="ins-vol-total">0</div>
+                       <div class="text-[10px] text-slate-400 font-medium" data-i18n="units_req">units requested all time</div>
+                   </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-6 animate-slide-up delay-200">
            <div><h2 class="text-xl font-bold text-slate-700" data-i18n="hist_title">Request History</h2><p class="text-xs text-slate-500"><span data-i18n="showing">Showing:</span> <span id="current-filter-label" class="font-bold text-amber-600">All Data</span></p></div>
            <div class="flex gap-2 w-full sm:w-auto">
              <div id="export-controls" class="hidden flex gap-2">
-                 <button onclick="openExportModal()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-700"><i class="fas fa-file-export"></i> <span data-i18n="btn_export">Export</span></button>
+                 <button onclick="openExportModal()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700 transition"><i class="fas fa-file-export mr-1"></i> <span data-i18n="btn_export">Export</span></button>
              </div>
              <button onclick="loadData()" class="bg-white border border-gray-300 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50"><i class="fas fa-sync-alt"></i></button>
              <button id="btn-create" onclick="openCreateModal()" class="flex-1 sm:flex-none bg-amber-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-amber-700 transition items-center justify-center gap-2"><i class="fas fa-plus"></i> <span data-i18n="btn_new">New Request</span></button>
            </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-slide-up delay-200">
            <div id="data-card-container" class="md:hidden bg-slate-50 p-3 space-y-4"></div>
            <div class="hidden md:block overflow-x-auto">
              <table class="w-full text-left text-sm">
@@ -145,8 +191,8 @@
         </div>
       </div>
 
-      <div id="view-inventory" class="hidden animate-fade-in space-y-6">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div id="view-inventory" class="hidden space-y-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-slide-up">
             <div><h2 class="text-xl font-bold text-slate-700" data-i18n="inv_title">Inventory Stock</h2><p class="text-xs text-slate-500" data-i18n="inv_desc">Monitoring stock levels.</p></div>
             <div class="flex flex-wrap gap-2 w-full sm:w-auto items-center">
                 <div class="relative w-full sm:w-48">
@@ -169,7 +215,7 @@
                 <button onclick="loadInventoryStock()" class="bg-white border border-gray-300 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 whitespace-nowrap"><i class="fas fa-sync-alt"></i></button>
             </div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-slide-up delay-100">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs font-bold">
@@ -293,7 +339,8 @@
       en: {
         nav_title: "ATK System", nav_sub: "PT Cemindo Gemilang Tbk", tab_req: "Requests History", tab_inv: "Dept Inventory",
         stat_total: "Total", stat_pending: "Pending", stat_approved: "Approved", stat_completed: "Completed",
-        click_filter: "Click to filter",
+        click_filter: "Click to filter", insights: "Quick Insights",
+        top_dept: "Top Departments", top_items: "Most Requested Items", total_vol: "Total Items Volume", reqs: "reqs", units: "units", units_req: "units requested all time",
         hist_title: "Request History", showing: "Showing:", btn_export: "Export", btn_new: "New Request",
         th_id: "ID / Date", th_req: "Requester", th_items: "Items Details", th_app: "Approval Status",
         th_stat: "Status", th_act: "Action", inv_title: "Inventory Stock", inv_desc: "Monitoring stock levels.",
@@ -317,12 +364,17 @@
         msg_usage_exceed: "Usage cannot exceed Stock.", msg_req_zero: "Request Qty must be > 0.",
         msg_conn_fail: "Connection failed.", btn_receive: "Receive", btn_edit: "Edit", btn_approve: "Approve", btn_reject: "Reject", btn_cancel_req: "Cancel",
         lbl_action: "Action", txt_sel_dept_first: "Please select specific department first.", txt_bulk_success: "Bulk stock updated successfully.",
-        txt_stock_updated: "Stock Updated", txt_empty_data: "Empty data", txt_invalid_fmt: "Invalid format.", msg_req_received: "Items received? This will add stock to your inventory."
+        txt_stock_updated: "Stock Updated", txt_empty_data: "Empty data", txt_invalid_fmt: "Invalid format.", msg_req_received: "Items received? This will add stock to your inventory.",
+        
+        /* Export Audit Texts */
+        rep_title: "ATK Request Audit Report", gen_by: "Generated By:", gen_date: "Date Generated:",
+        col_req: "Requester", col_dept: "Department", col_items: "Items Requested", col_item_name: "Item Name", col_qty: "Qty", col_unit: "Unit", col_reason: "Reason", col_status: "Status", col_app: "Approvals", col_period: "Period", col_rcv: "Received At", col_note: "Notes / Reject Reason", rcv_lbl: "Rcv:"
       },
       id: {
         nav_title: "Sistem ATK", nav_sub: "PT Cemindo Gemilang Tbk", tab_req: "Riwayat Permintaan", tab_inv: "Stok Departemen",
         stat_total: "Total", stat_pending: "Menunggu", stat_approved: "Disetujui", stat_completed: "Selesai",
-        click_filter: "Klik untuk filter",
+        click_filter: "Klik untuk filter", insights: "Ringkasan Cepat",
+        top_dept: "Departemen Teratas", top_items: "Barang Paling Diminta", total_vol: "Total Volume Barang", reqs: "permintaan", units: "unit", units_req: "unit diminta sepanjang waktu",
         hist_title: "Riwayat Permintaan", showing: "Menampilkan:", btn_export: "Ekspor", btn_new: "Buat Baru",
         th_id: "ID / Tanggal", th_req: "Pemohon", th_items: "Detail Barang", th_app: "Status Persetujuan",
         th_stat: "Status", th_act: "Aksi", inv_title: "Stok Inventaris", inv_desc: "Memantau jumlah stok.",
@@ -346,7 +398,11 @@
         msg_usage_exceed: "Pemakaian tidak boleh melebihi Stok.", msg_req_zero: "Jumlah permintaan harus > 0.",
         msg_conn_fail: "Koneksi gagal.", btn_receive: "Terima", btn_edit: "Edit", btn_approve: "Setujui", btn_reject: "Tolak", btn_cancel_req: "Batal",
         lbl_action: "Aksi", txt_sel_dept_first: "Pilih spesifik departemen terlebih dahulu.", txt_bulk_success: "Stok masal berhasil diperbarui.",
-        txt_stock_updated: "Stok Diperbarui", txt_empty_data: "Data kosong", txt_invalid_fmt: "Format tidak valid.", msg_req_received: "Barang sudah diterima? Ini akan menambahkan stok ke inventaris departemen Anda."
+        txt_stock_updated: "Stok Diperbarui", txt_empty_data: "Data kosong", txt_invalid_fmt: "Format tidak valid.", msg_req_received: "Barang sudah diterima? Ini akan menambahkan stok ke inventaris departemen Anda.",
+        
+        /* Export Audit Texts */
+        rep_title: "Laporan Audit Permintaan ATK", gen_by: "Dibuat Oleh:", gen_date: "Tanggal Dibuat:",
+        col_req: "Pemohon", col_dept: "Departemen", col_items: "Daftar Barang", col_item_name: "Nama Barang", col_qty: "Jumlah", col_unit: "Satuan", col_reason: "Alasan", col_status: "Status Akhir", col_app: "Jejak Persetujuan", col_period: "Periode", col_rcv: "Tgl Diterima", col_note: "Catatan / Alasan", rcv_lbl: "Diterima:"
       }
     };
 
@@ -361,7 +417,10 @@
             if(i18n[currentLang][k]) el.setAttribute('placeholder', i18n[currentLang][k]);
         });
         if(isBulkEditMode) toggleBulkUI();
-        if(currentData.length > 0 && !document.getElementById('view-request').classList.contains('hidden')) renderData(currentData);
+        if(currentData.length > 0 && !document.getElementById('view-request').classList.contains('hidden')) {
+            renderData(currentData);
+            renderStats(currentData); 
+        }
         if(fullInventoryData.length > 0 && !document.getElementById('view-inventory').classList.contains('hidden')) renderInventoryTable(fullInventoryData);
     }
 
@@ -371,22 +430,18 @@
         applyLanguage(); 
     }
     
-    // --- ANIMASI ANGKA STATISTIK ---
     function animateValue(id, start, end, duration) {
         if (start === end) return;
         let obj = document.getElementById(id);
+        if(!obj) return;
         let startTimestamp = null;
         const step = (timestamp) => {
             if (!startTimestamp) startTimestamp = timestamp;
             const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-            // Ease out quad
             const easeProgress = progress * (2 - progress);
             obj.innerText = Math.floor(easeProgress * (end - start) + start);
-            if (progress < 1) {
-                window.requestAnimationFrame(step);
-            } else {
-                obj.innerText = end;
-            }
+            if (progress < 1) { window.requestAnimationFrame(step); } 
+            else { obj.innerText = end; }
         };
         window.requestAnimationFrame(step);
     }
@@ -513,23 +568,80 @@
     
     function renderStats(data) { 
         if(!data) return; 
-        
         const total = data.length;
         const pending = data.filter(r => r.status.includes('Pending')).length;
         const approved = data.filter(r => r.status.includes('Approved') || r.status === 'Auto-Approved').length;
         const completed = data.filter(r => r.status === 'Completed').length;
 
-        // Ambil nilai saat ini, jika kosong set ke 0
         const currTotal = parseInt(document.getElementById('stat-total').innerText) || 0;
         const currPending = parseInt(document.getElementById('stat-pending').innerText) || 0;
         const currApproved = parseInt(document.getElementById('stat-approved').innerText) || 0;
         const currCompleted = parseInt(document.getElementById('stat-completed').innerText) || 0;
 
-        // Animasi angka
         animateValue('stat-total', currTotal, total, 1000);
         animateValue('stat-pending', currPending, pending, 1000);
         animateValue('stat-approved', currApproved, approved, 1000);
         animateValue('stat-completed', currCompleted, completed, 1000);
+
+        let deptCount = {};
+        let itemVolume = {};
+        let totalVol = 0;
+
+        data.forEach(r => {
+            deptCount[r.department] = (deptCount[r.department] || 0) + 1;
+            if(r.items) {
+                r.items.forEach(i => {
+                    let q = parseInt(i.qty) || 0;
+                    itemVolume[i.name] = (itemVolume[i.name] || 0) + q;
+                    totalVol += q;
+                });
+            }
+        });
+
+        let sortedDepts = Object.entries(deptCount).sort((a,b) => b[1] - a[1]).slice(0,3);
+        let maxDeptReq = sortedDepts.length > 0 ? sortedDepts[0][1] : 1;
+        let deptHtml = '';
+        sortedDepts.forEach(([dName, count], idx) => {
+            let pct = Math.round((count / maxDeptReq) * 100);
+            let colors = ['bg-purple-500', 'bg-purple-400', 'bg-purple-300'];
+            deptHtml += `<div class="w-full">
+                <div class="flex justify-between text-[10px] font-bold text-slate-600 mb-1">
+                    <span class="truncate pr-2">${dName}</span>
+                    <span>${count} ${i18n[currentLang].reqs}</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                    <div class="${colors[idx]} h-1.5 rounded-full" style="width: 0%; transition: width 1s ease-out;" data-target-width="${pct}%"></div>
+                </div>
+            </div>`;
+        });
+        document.getElementById('ins-top-dept').innerHTML = deptHtml || `<div class="text-xs text-slate-400 italic">${i18n[currentLang].empty_data}</div>`;
+
+        let sortedItems = Object.entries(itemVolume).sort((a,b) => b[1] - a[1]).slice(0,3);
+        let maxItemVol = sortedItems.length > 0 ? sortedItems[0][1] : 1;
+        let itemHtml = '';
+        sortedItems.forEach(([iName, qty], idx) => {
+            let pct = Math.round((qty / maxItemVol) * 100);
+            let colors = ['bg-rose-500', 'bg-rose-400', 'bg-rose-300'];
+            itemHtml += `<div class="w-full">
+                <div class="flex justify-between text-[10px] font-bold text-slate-600 mb-1">
+                    <span class="truncate pr-2 w-48" title="${iName}">${iName}</span>
+                    <span>${qty}</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                    <div class="${colors[idx]} h-1.5 rounded-full" style="width: 0%; transition: width 1s ease-out;" data-target-width="${pct}%"></div>
+                </div>
+            </div>`;
+        });
+        document.getElementById('ins-top-items').innerHTML = itemHtml || `<div class="text-xs text-slate-400 italic">${i18n[currentLang].empty_data}</div>`;
+
+        setTimeout(() => {
+            document.querySelectorAll('#ins-top-dept [data-target-width], #ins-top-items [data-target-width]').forEach(el => {
+                el.style.width = el.getAttribute('data-target-width');
+            });
+        }, 50);
+
+        const currVol = parseInt(document.getElementById('ins-vol-total').innerText) || 0;
+        animateValue('ins-vol-total', currVol, totalVol, 1500);
     }
 
     function filterTable(filterType) { document.getElementById('current-filter-label').innerText = i18n[currentLang]['stat_' + filterType.toLowerCase()] || filterType; if(filterType === 'All') { renderData(currentData); } else if (filterType === 'Pending') { renderData(currentData.filter(r => r.status.includes('Pending'))); } else if (filterType === 'Approved') { renderData(currentData.filter(r => r.status.includes('Approved'))); } else if (filterType === 'Completed') { renderData(currentData.filter(r => r.status === 'Completed')); } }
@@ -607,10 +719,166 @@
     function cancelRequest(id){ showConfirmReason(i18n[currentLang].btn_cancel_req, i18n[currentLang].reason_desc, (reason) => { fetch('api/atk.php',{method:'POST',body:JSON.stringify({action:'updateStatus',id:id,act:'cancel',username:currentUser.username,reason:reason})}).then(()=>loadData()); }); }
     function confirmReceive(id) { showConfirm(i18n[currentLang].btn_receive, i18n[currentLang].msg_req_received, () => { fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: 'confirmReceive', username: currentUser.username, fullname: currentUser.fullname }) }).then(r => r.json()).then(res => { if(res.success) { loadData(); if(!document.getElementById('view-inventory').classList.contains('hidden')) loadInventoryStock(); showAlert(i18n[currentLang].success_title, res.message); } else showAlert(i18n[currentLang].error_title, res.message); }); }); }
     
+    // --- EXPORT REPORT LOGIC (AUDIT READY) ---
     function openExportModal() { openModal('modal-export'); }
-    function doExport(type, isAllTime) { const start = document.getElementById('exp-start').value; const end = document.getElementById('exp-end').value; document.getElementById('exp-loading').classList.remove('hidden'); fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'exportData', role: currentUser.role, department: currentUser.department, startDate: start, endDate: end }) }).then(r => r.json()).then(data => { document.getElementById('exp-loading').classList.add('hidden'); if(!data || data.length === 0) { showAlert(i18n[currentLang].info_title, i18n[currentLang].empty_data); return; } if(type === 'excel') exportExcel(data); if(type === 'pdf') exportPdf(data); closeModal('modal-export'); }); }
-    function exportExcel(data) { const wb = XLSX.utils.book_new(); const ws = XLSX.utils.json_to_sheet(data.map(r=>({ID:r.id, Date:r.timestamp, User:r.username, Status:r.status, Received:r.receivedAt}))); XLSX.utils.book_append_sheet(wb, ws, "ATK"); XLSX.writeFile(wb, "ATK_Report.xlsx"); }
-    function exportPdf(data) { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text("ATK Report",10,10); doc.autoTable({head:[['ID','User','Status','Received']],body:data.map(r=>[r.id,r.username,r.status,r.receivedAt])}); doc.save("ATK_Report.pdf"); }
+
+    function doExport(type, isAllTime) { 
+        const start = document.getElementById('exp-start').value; 
+        const end = document.getElementById('exp-end').value; 
+        document.getElementById('exp-loading').classList.remove('hidden'); 
+        
+        fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'exportData', role: currentUser.role, department: currentUser.department, startDate: start, endDate: end }) })
+        .then(r => r.json())
+        .then(data => { 
+            document.getElementById('exp-loading').classList.add('hidden'); 
+            if(!data || data.length === 0) { showAlert(i18n[currentLang].info_title, i18n[currentLang].empty_data); return; } 
+            
+            if(type === 'excel') exportExcel(data); 
+            if(type === 'pdf') exportPdf(data); 
+            
+            closeModal('modal-export'); 
+        }); 
+    }
+
+    function exportExcel(data) { 
+        const nowStr = new Date().toLocaleString('id-ID');
+        const title = i18n[currentLang].rep_title.toUpperCase();
+        
+        // 1. Build Header Array (AOA)
+        let aoa = [
+            [title],
+            ["PT Cemindo Gemilang Tbk - Plant Batam"],
+            [""],
+            [i18n[currentLang].gen_by, currentUser.fullname + " (" + currentUser.role + ")", "", i18n[currentLang].gen_date, nowStr],
+            [""],
+            [
+                "ID", 
+                "Timestamp", 
+                i18n[currentLang].col_period, 
+                i18n[currentLang].col_req, 
+                i18n[currentLang].col_dept, 
+                i18n[currentLang].col_item_name, 
+                i18n[currentLang].col_qty, 
+                i18n[currentLang].col_unit, 
+                i18n[currentLang].col_reason, 
+                "L1 Approver", 
+                "L1 Action Date", 
+                "L2 Approver", 
+                "L2 Action Date", 
+                i18n[currentLang].col_status, 
+                i18n[currentLang].col_rcv, 
+                i18n[currentLang].col_note
+            ]
+        ];
+
+        // 2. Add Data Rows (Flat Structure: 1 Item = 1 Row)
+        data.forEach(r => {
+            if (r.items && r.items.length > 0) {
+                r.items.forEach(it => {
+                    aoa.push([
+                        r.id,
+                        r.timestamp,
+                        r.period || "-",
+                        r.fullname || r.username,
+                        r.department,
+                        it.name,
+                        parseInt(it.qty) || 0, // Dibuat sebagai integer agar mudah di-sum di Excel
+                        it.unit,
+                        r.reason || "-",
+                        r.appHead || "-",
+                        r.headActionAt || "-",
+                        r.appHrga || "-",
+                        r.hrgaActionAt || "-",
+                        r.status,
+                        r.receivedAt || "-",
+                        r.rejectReason || "-"
+                    ]);
+                });
+            } else {
+                // Failsafe jika items kosong
+                aoa.push([
+                    r.id, r.timestamp, r.period || "-", r.fullname || r.username, r.department,
+                    "-", 0, "-", r.reason || "-", r.appHead || "-", r.headActionAt || "-", r.appHrga || "-", r.hrgaActionAt || "-", r.status, r.receivedAt || "-", r.rejectReason || "-"
+                ]);
+            }
+        });
+
+        const wb = XLSX.utils.book_new(); 
+        const ws = XLSX.utils.aoa_to_sheet(aoa); 
+        
+        // Auto-Width Setup for Professional Look
+        const wscols = [
+            {wch: 22}, {wch: 20}, {wch: 12}, {wch: 25}, {wch: 18}, 
+            {wch: 35}, {wch: 10}, {wch: 10}, // Item Name, Qty, Unit
+            {wch: 35}, {wch: 25}, {wch: 20}, {wch: 25}, 
+            {wch: 20}, {wch: 15}, {wch: 20}, {wch: 30}
+        ];
+        ws['!cols'] = wscols;
+
+        XLSX.utils.book_append_sheet(wb, ws, "Audit_Log"); 
+        XLSX.writeFile(wb, `ATK_Audit_Report_${new Date().getTime()}.xlsx`); 
+    }
+
+    function exportPdf(data) { 
+        const { jsPDF } = window.jspdf; 
+        const doc = new jsPDF('landscape', 'mm', 'a4'); 
+        
+        // Header Format Professional
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text(i18n[currentLang].rep_title, 14, 15);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text("PT Cemindo Gemilang Tbk - Plant Batam", 14, 21);
+        doc.text(`${i18n[currentLang].gen_by} ${currentUser.fullname} (${currentUser.role})   |   ${i18n[currentLang].gen_date} ${new Date().toLocaleString('id-ID')}`, 14, 26);
+        
+        const tableData = [];
+        data.forEach(r => {
+            let itemsStr = "";
+            if (r.items) {
+                r.items.forEach(i => { itemsStr += `• ${i.name} (${i.qty} ${i.unit})\n`; });
+            }
+            
+            // Kolom Status & Catatan & Receive Time
+            let statAndNote = r.status;
+            if(r.receivedAt) statAndNote += `\n\n${i18n[currentLang].rcv_lbl}\n${formatDateSimple(r.receivedAt)}`;
+            if(r.rejectReason) statAndNote += `\n\nNote: ${r.rejectReason}`;
+
+            tableData.push([
+                r.id + "\n" + r.timestamp.split(' ')[0],
+                r.department + "\n" + r.username,
+                itemsStr.trim(),
+                (r.reason || "-"),
+                statAndNote.trim(),
+                `L1: ${r.appHead || "-"}\nL2: ${r.appHrga || "-"}`
+            ]);
+        });
+
+        doc.autoTable({
+            startY: 32,
+            head: [['ID & Date', i18n[currentLang].col_dept + ' & ' + i18n[currentLang].col_req, i18n[currentLang].col_items, i18n[currentLang].col_reason, i18n[currentLang].col_status, i18n[currentLang].col_app]],
+            body: tableData,
+            theme: 'grid',
+            styles: { fontSize: 8, cellPadding: 2, valign: 'top' },
+            headStyles: { fillColor: [217, 119, 6], textColor: 255, fontStyle: 'bold' }, // Amber color header
+            columnStyles: {
+                0: { cellWidth: 30 },
+                1: { cellWidth: 35 },
+                2: { cellWidth: 65 },
+                3: { cellWidth: 40 },
+                4: { cellWidth: 45 }, // Diperlebar agar waktu receive muat rapi
+                5: { cellWidth: 'auto' }
+            },
+            didDrawPage: function (data) {
+                // Footer Page Number
+                let str = 'Page ' + doc.internal.getNumberOfPages();
+                doc.setFontSize(8);
+                doc.text(str, data.settings.margin.left, doc.internal.pageSize.height - 10);
+            }
+        });
+
+        doc.save(`ATK_Audit_Report_${new Date().getTime()}.pdf`); 
+    }
   </script>
 </body>
 </html>
