@@ -263,7 +263,9 @@
       'eps': { icon: 'fa-id-card-clip', color: 'red', title: 'Exit Permit System', desc_en: 'Employee gate pass & permit management.', desc_id: 'Sistem izin keluar & manajemen gate pass.', url: 'eps.php' },
       'vms': { icon: 'fa-car-side', color: 'blue', title: 'Vehicle Management', desc_en: 'Operational vehicle booking & monitoring.', desc_id: 'Pemesanan & pemantauan kendaraan operasional.', url: 'vms.php' },
       'mgp': { icon: 'fa-truck-loading', color: 'emerald', title: 'Material Gate Pass', desc_en: 'Material in/out control system.', desc_id: 'Sistem kontrol keluar/masuk barang.', url: 'mgp.php' },
-      'atk': { icon: 'fa-pen-ruler', color: 'amber', title: 'ATK Request System', desc_en: 'Office supplies & ATK request management.', desc_id: 'Manajemen permintaan alat tulis kantor (ATK).', url: 'atk.php' }
+      'atk': { icon: 'fa-pen-ruler', color: 'amber', title: 'ATK Request System', desc_en: 'Office supplies & ATK request management.', desc_id: 'Manajemen permintaan alat tulis kantor (ATK).', url: 'atk.php' },
+      // TAMBAHKAN BARIS INI:
+      'med': { icon: 'fa-briefcase-medical', color: 'rose', title: 'Medical Plafond', desc_en: 'Medical budget & claim monitoring.', desc_id: 'Pemantauan budget dan klaim medis.', url: 'med.php' }
     };
 
     window.onload = function() {
