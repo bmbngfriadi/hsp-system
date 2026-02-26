@@ -8,7 +8,7 @@ header("Access-Control-Allow-Origin: *");
 require 'db.php'; 
 require 'helper.php';
 
-// --- AUTO MIGRATION TABLES ---
+// --- AUTO MIGRATION TABLES & COLUMNS ---
 $conn->query("CREATE TABLE IF NOT EXISTS med_plafond (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE,
@@ -33,35 +33,47 @@ $conn->query("CREATE TABLE IF NOT EXISTS med_claims (
     created_at DATETIME
 )");
 
-// AUTO ADD COLUMN UNTUK HISTORY REMAINING BALANCE
-try {
-    $conn->query("ALTER TABLE med_claims ADD COLUMN remaining_balance DECIMAL(15,2) DEFAULT 0");
-} catch (Exception $e) { /* Abaikan jika kolom sudah ada */ }
+// Tambah Kolom Kategori Baru (Abaikan jika sudah ada)
+$newColsPlafond = [
+    "initial_kacamata" => "DECIMAL(15,2) DEFAULT 0",
+    "current_kacamata" => "DECIMAL(15,2) DEFAULT 0",
+    "initial_persalinan" => "DECIMAL(15,2) DEFAULT 0",
+    "current_persalinan" => "DECIMAL(15,2) DEFAULT 0",
+    "initial_inap" => "DECIMAL(15,2) DEFAULT 0",
+    "current_inap" => "DECIMAL(15,2) DEFAULT 0",
+    "harga_kamar" => "DECIMAL(15,2) DEFAULT 0"
+];
+foreach($newColsPlafond as $col => $def) {
+    try { $conn->query("ALTER TABLE med_plafond ADD COLUMN $col $def"); } catch (Exception $e) {}
+}
+
+try { $conn->query("ALTER TABLE med_claims ADD COLUMN remaining_balance DECIMAL(15,2) NULL DEFAULT NULL"); } catch (Exception $e) {}
+try { $conn->query("ALTER TABLE med_claims ADD COLUMN claim_type VARCHAR(50) DEFAULT 'Rawat Jalan'"); } catch (Exception $e) {}
 
 // Helper Upload Image / PDF
 function uploadMedicalFile($base64Data, $prefix) {
     $uploadDir = "../uploads/med/"; 
     if (!is_dir($uploadDir)) { mkdir($uploadDir, 0777, true); }
+    $ext = ".jpg";
+    if (strpos($base64Data, 'application/pdf') !== false) $ext = ".pdf";
+    elseif (strpos($base64Data, 'image/png') !== false) $ext = ".png";
+    if (strpos($base64Data, 'base64,') !== false) $base64Data = explode('base64,', $base64Data)[1];
     
-    $ext = ".jpg"; // default
-    if (strpos($base64Data, 'application/pdf') !== false) {
-        $ext = ".pdf";
-    } elseif (strpos($base64Data, 'image/png') !== false) {
-        $ext = ".png";
-    }
-
-    if (strpos($base64Data, 'base64,') !== false) {
-        $base64Data = explode('base64,', $base64Data)[1];
-    }
     $decodedData = base64_decode($base64Data);
     if ($decodedData === false) return false;
     
     $fileName = $prefix . "_" . time() . "_" . rand(100,999) . $ext;
     $filePath = $uploadDir . $fileName;
-    if (file_put_contents($filePath, $decodedData)) {
-        return "uploads/med/" . $fileName; 
-    }
+    if (file_put_contents($filePath, $decodedData)) return "uploads/med/" . $fileName; 
     return false;
+}
+
+// Map Claim Type to DB Columns
+function getCol($type, $isInitial = false) {
+    if ($type === 'Kacamata') return $isInitial ? 'initial_kacamata' : 'current_kacamata';
+    if ($type === 'Persalinan') return $isInitial ? 'initial_persalinan' : 'current_persalinan';
+    if ($type === 'Rawat Inap') return $isInitial ? 'initial_inap' : 'current_inap';
+    return $isInitial ? 'initial_budget' : 'current_budget'; // Rawat Jalan
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
@@ -69,11 +81,10 @@ $action = $input['action'] ?? '';
 $now = date('Y-m-d H:i:s');
 
 try {
-    // --- GET USERS FOR HRGA DROPDOWN ---
+    // --- GET USERS FOR DROPDOWN ---
     if ($action == 'getUsers') {
         $res = $conn->query("SELECT username, fullname, department FROM users ORDER BY fullname ASC");
-        echo json_encode(['success' => true, 'data' => $res->fetch_all(MYSQLI_ASSOC)]);
-        exit;
+        echo json_encode(['success' => true, 'data' => $res->fetch_all(MYSQLI_ASSOC)]); exit;
     }
 
     // --- 1. GET PLAFOND DATA ---
@@ -87,34 +98,39 @@ try {
 
         if (in_array($role, $globalRoles) || $isHrgaLeader) {
             $sql = "SELECT u.username, u.fullname, u.department, 
-                           IFNULL(p.initial_budget, 0) as initial_budget, 
-                           IFNULL(p.current_budget, 0) as current_budget 
+                           IFNULL(p.initial_budget, 0) as init_jalan, IFNULL(p.current_budget, 0) as curr_jalan,
+                           IFNULL(p.initial_kacamata, 0) as init_kacamata, IFNULL(p.current_kacamata, 0) as curr_kacamata,
+                           IFNULL(p.initial_persalinan, 0) as init_persalinan, IFNULL(p.current_persalinan, 0) as curr_persalinan,
+                           IFNULL(p.initial_inap, 0) as init_inap, IFNULL(p.current_inap, 0) as curr_inap,
+                           IFNULL(p.harga_kamar, 0) as harga_kamar
                     FROM users u LEFT JOIN med_plafond p ON u.username = p.username 
                     ORDER BY u.department, u.fullname";
             $res = $conn->query($sql);
             echo json_encode(['success' => true, 'data' => $res->fetch_all(MYSQLI_ASSOC)]);
         } else {
-            $sql = "SELECT initial_budget, current_budget FROM med_plafond WHERE username = '$username'";
+            $sql = "SELECT * FROM med_plafond WHERE username = '$username'";
             $res = $conn->query($sql);
             if ($row = $res->fetch_assoc()) echo json_encode(['success' => true, 'data' => $row]);
-            else echo json_encode(['success' => true, 'data' => ['initial_budget' => 0, 'current_budget' => 0]]);
+            else echo json_encode(['success' => true, 'data' => null]);
         }
         exit;
     }
 
-    // --- 2. SET PLAFOND (ADMIN ONLY - SINGLE) ---
+    // --- 2. SET PLAFOND (ADMIN ONLY) ---
     if ($action == 'setBudget') {
         if ($input['role'] !== 'Administrator') { echo json_encode(['success' => false, 'message' => 'Unauthorized']); exit; }
-        
         $u = $conn->real_escape_string($input['target_username']);
-        $init_budget = floatval($input['initial_budget']);
-        $curr_budget = floatval($input['current_budget']);
+        $ij = floatval($input['init_jalan']); $cj = floatval($input['curr_jalan']);
+        $ik = floatval($input['init_kacamata']); $ck = floatval($input['curr_kacamata']);
+        $ip = floatval($input['init_persalinan']); $cp = floatval($input['curr_persalinan']);
+        $ii = floatval($input['init_inap']); $ci = floatval($input['curr_inap']);
+        $hk = floatval($input['harga_kamar']);
         
-        $check = $conn->query("SELECT initial_budget, current_budget FROM med_plafond WHERE username = '$u'");
+        $check = $conn->query("SELECT id FROM med_plafond WHERE username = '$u'");
         if ($check->num_rows > 0) {
-            $conn->query("UPDATE med_plafond SET initial_budget = $init_budget, current_budget = $curr_budget, last_updated = '$now' WHERE username = '$u'");
+            $conn->query("UPDATE med_plafond SET initial_budget=$ij, current_budget=$cj, initial_kacamata=$ik, current_kacamata=$ck, initial_persalinan=$ip, current_persalinan=$cp, initial_inap=$ii, current_inap=$ci, harga_kamar=$hk, last_updated='$now' WHERE username='$u'");
         } else {
-            $conn->query("INSERT INTO med_plafond (username, initial_budget, current_budget, last_updated) VALUES ('$u', $init_budget, $curr_budget, '$now')");
+            $conn->query("INSERT INTO med_plafond (username, initial_budget, current_budget, initial_kacamata, current_kacamata, initial_persalinan, current_persalinan, initial_inap, current_inap, harga_kamar, last_updated) VALUES ('$u', $ij, $cj, $ik, $ck, $ip, $cp, $ii, $ci, $hk, '$now')");
         }
         echo json_encode(['success' => true]); exit;
     }
@@ -122,85 +138,77 @@ try {
     // --- 2.1 IMPORT PLAFOND BULK (ADMIN ONLY) ---
     if ($action == 'importBudgetBulk') {
         if ($input['role'] !== 'Administrator') { echo json_encode(['success' => false, 'message' => 'Unauthorized']); exit; }
-        
         $items = $input['data'];
         $conn->begin_transaction();
         try {
-            // ON DUPLICATE KEY UPDATE memungkinkan insert baru atau update yang sudah ada sekaligus
-            $stmt = $conn->prepare("INSERT INTO med_plafond (username, initial_budget, current_budget, last_updated) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE initial_budget = VALUES(initial_budget), current_budget = VALUES(current_budget), last_updated = VALUES(last_updated)");
+            $stmt = $conn->prepare("INSERT INTO med_plafond (username, initial_budget, current_budget, initial_kacamata, current_kacamata, initial_persalinan, current_persalinan, initial_inap, current_inap, harga_kamar, last_updated) VALUES (?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE initial_budget=VALUES(initial_budget), current_budget=VALUES(current_budget), initial_kacamata=VALUES(initial_kacamata), current_kacamata=VALUES(current_kacamata), initial_persalinan=VALUES(initial_persalinan), current_persalinan=VALUES(current_persalinan), initial_inap=VALUES(initial_inap), current_inap=VALUES(current_inap), harga_kamar=VALUES(harga_kamar), last_updated=VALUES(last_updated)");
             foreach ($items as $it) {
                 $u = $conn->real_escape_string($it['username']);
-                $init = floatval($it['initial_budget']);
-                $curr = floatval($it['current_budget']);
+                $ij=floatval($it['init_jalan']); $cj=floatval($it['curr_jalan']);
+                $ik=floatval($it['init_kaca']); $ck=floatval($it['curr_kaca']);
+                $ip=floatval($it['init_salin']); $cp=floatval($it['curr_salin']);
+                $ii=floatval($it['init_inap']); $ci=floatval($it['curr_inap']);
+                $hk=floatval($it['kamar']);
                 if (!empty($u)) {
-                    $stmt->bind_param("sdds", $u, $init, $curr, $now);
+                    $stmt->bind_param("sddddddddds", $u, $ij, $cj, $ik, $ck, $ip, $cp, $ii, $ci, $hk, $now);
                     $stmt->execute();
                 }
             }
             $conn->commit();
             echo json_encode(['success' => true]);
-        } catch (Exception $e) {
-            $conn->rollback();
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-        }
+        } catch (Exception $e) { $conn->rollback(); echo json_encode(['success' => false, 'message' => $e->getMessage()]); }
         exit;
     }
 
     // --- 3. GET CLAIMS DATA ---
-    if ($action == 'getClaims') {
+    if ($action == 'getClaims' || $action == 'exportData') {
         $role = $input['role'];
         $username = $conn->real_escape_string($input['username']);
         $dept = $conn->real_escape_string($input['department'] ?? '');
         
         $sql = "SELECT c.*, 
-                IF(c.remaining_balance > 0, c.remaining_balance, IFNULL(p.current_budget, 0)) as display_balance,
-                IFNULL(p.initial_budget, 0) as user_initial_budget
-                FROM med_claims c 
-                LEFT JOIN med_plafond p ON c.username = p.username ";
-        
-        $globalRoles = ['Administrator', 'HRGA', 'PlantHead'];
-        $isHrgaLeader = ($role === 'TeamLeader' && $dept === 'HRGA');
-        
-        if (!in_array($role, $globalRoles) && !$isHrgaLeader) {
-            $sql .= "WHERE c.username = '$username' ";
-        }
-        
-        $sql .= "ORDER BY CASE WHEN c.status = 'Pending HRGA' THEN 0 ELSE 1 END, c.created_at DESC LIMIT 100";
-        
-        $res = $conn->query($sql);
-        echo json_encode(['success' => true, 'data' => $res->fetch_all(MYSQLI_ASSOC)]); exit;
-    }
-
-    // --- 4. EXPORT DATA (EXCEL & PDF) ---
-    if ($action == 'exportData') {
-        $role = $input['role'];
-        $username = $conn->real_escape_string($input['username']);
-        $dept = $conn->real_escape_string($input['department'] ?? '');
-        
-        $sql = "SELECT c.*, 
-                IF(c.remaining_balance > 0, c.remaining_balance, IFNULL(p.current_budget, 0)) as display_balance,
-                IFNULL(p.initial_budget, 0) as user_initial_budget 
+                CASE c.claim_type 
+                    WHEN 'Kacamata' THEN p.current_kacamata
+                    WHEN 'Persalinan' THEN p.current_persalinan
+                    WHEN 'Rawat Inap' THEN p.current_inap
+                    ELSE p.current_budget 
+                END as live_current,
+                CASE c.claim_type 
+                    WHEN 'Kacamata' THEN p.initial_kacamata
+                    WHEN 'Persalinan' THEN p.initial_persalinan
+                    WHEN 'Rawat Inap' THEN p.initial_inap
+                    ELSE p.initial_budget 
+                END as user_initial_budget
                 FROM med_claims c 
                 LEFT JOIN med_plafond p ON c.username = p.username 
                 WHERE 1=1 ";
         
-        if (!empty($input['startDate']) && !empty($input['endDate'])) {
+        if ($action == 'exportData' && !empty($input['startDate']) && !empty($input['endDate'])) {
             $start = $conn->real_escape_string($input['startDate']) . " 00:00:00";
             $end = $conn->real_escape_string($input['endDate']) . " 23:59:59";
             $sql .= " AND c.created_at BETWEEN '$start' AND '$end' ";
         }
-        
+
         $globalRoles = ['Administrator', 'HRGA', 'PlantHead'];
         $isHrgaLeader = ($role === 'TeamLeader' && $dept === 'HRGA');
-        
         if (!in_array($role, $globalRoles) && !$isHrgaLeader) {
             $sql .= " AND c.username = '$username' ";
         }
         
-        $sql .= " ORDER BY c.created_at ASC"; 
+        if ($action == 'getClaims') {
+            $sql .= "ORDER BY CASE WHEN c.status = 'Pending HRGA' THEN 0 ELSE 1 END, c.created_at DESC LIMIT 100";
+        } else {
+            $sql .= " ORDER BY c.created_at ASC"; 
+        }
         
         $res = $conn->query($sql);
-        echo json_encode(['success' => true, 'data' => $res->fetch_all(MYSQLI_ASSOC)]); exit;
+        $data = [];
+        while($row = $res->fetch_assoc()) {
+            // Assign display balance properly
+            $row['display_balance'] = $row['remaining_balance'] !== null ? floatval($row['remaining_balance']) : floatval($row['live_current']);
+            $data[] = $row;
+        }
+        echo json_encode(['success' => true, 'data' => $data]); exit;
     }
 
     // --- 5. SUBMIT CLAIM ---
@@ -210,6 +218,7 @@ try {
         $role = $input['role'];
         $invoiceNo = $conn->real_escape_string($input['invoiceNo']);
         $amount = floatval($input['amount']);
+        $claimType = $conn->real_escape_string($input['claimType']);
         $photoBase64 = $input['photoBase64'] ?? '';
         
         $targetUser = $submitterUser;
@@ -219,16 +228,14 @@ try {
         if (in_array($role, ['HRGA', 'Administrator']) && !empty($input['targetUsername'])) {
             $targetUser = $conn->real_escape_string($input['targetUsername']);
             $uData = $conn->query("SELECT fullname, department FROM users WHERE username='$targetUser'")->fetch_assoc();
-            if($uData) {
-                $fullname = $uData['fullname'];
-                $dept = $uData['department'];
-            }
+            if($uData) { $fullname = $uData['fullname']; $dept = $uData['department']; }
         }
 
-        $chk = $conn->query("SELECT current_budget FROM med_plafond WHERE username = '$targetUser'");
-        $currBudget = $chk->num_rows > 0 ? floatval($chk->fetch_assoc()['current_budget']) : 0;
+        $currCol = getCol($claimType, false);
+        $chk = $conn->query("SELECT $currCol FROM med_plafond WHERE username = '$targetUser'");
+        $currBudget = $chk->num_rows > 0 ? floatval($chk->fetch_assoc()[$currCol]) : 0;
         
-        if ($currBudget < $amount) { echo json_encode(['success' => false, 'message' => 'Plafond tidak mencukupi!']); exit; }
+        if ($currBudget < $amount) { echo json_encode(['success' => false, 'message' => 'Plafond ('.$claimType.') tidak mencukupi!']); exit; }
 
         $photoUrl = uploadMedicalFile($photoBase64, "INV_$reqId");
         if (!$photoUrl) { echo json_encode(['success' => false, 'message' => 'Gagal upload file.']); exit; }
@@ -236,16 +243,14 @@ try {
         $status = in_array($role, ['HRGA', 'Administrator']) ? 'Confirmed' : 'Pending HRGA';
         $hrgaBy = ($status === 'Confirmed') ? $conn->real_escape_string($input['fullname']) : NULL;
         $hrgaTime = ($status === 'Confirmed') ? "'$now'" : "NULL";
-        
         $newBudget = $currBudget - $amount;
 
         $conn->begin_transaction();
         try {
-            $conn->query("UPDATE med_plafond SET current_budget = $newBudget, last_updated = '$now' WHERE username = '$targetUser'");
-            $stmt = $conn->prepare("INSERT INTO med_claims (req_id, username, fullname, department, invoice_no, amount, photo_url, status, hrga_by, hrga_time, remaining_balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, $hrgaTime, ?, ?)");
-            $stmt->bind_param("sssssdsssds", $reqId, $targetUser, $fullname, $dept, $invoiceNo, $amount, $photoUrl, $status, $hrgaBy, $newBudget, $now);
+            $conn->query("UPDATE med_plafond SET $currCol = $newBudget, last_updated = '$now' WHERE username = '$targetUser'");
+            $stmt = $conn->prepare("INSERT INTO med_claims (req_id, username, fullname, department, claim_type, invoice_no, amount, photo_url, status, hrga_by, hrga_time, remaining_balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, $hrgaTime, ?, ?)");
+            $stmt->bind_param("ssssssdsssds", $reqId, $targetUser, $fullname, $dept, $claimType, $invoiceNo, $amount, $photoUrl, $status, $hrgaBy, $newBudget, $now);
             $stmt->execute();
-            
             $conn->commit();
             echo json_encode(['success' => true]);
         } catch (Exception $e) { $conn->rollback(); echo json_encode(['success' => false, 'message' => $e->getMessage()]); }
@@ -257,25 +262,34 @@ try {
         $reqId = $conn->real_escape_string($input['reqId']);
         $newAmount = floatval($input['amount']);
         $newInvoice = $conn->real_escape_string($input['invoiceNo']);
+        $newType = $conn->real_escape_string($input['claimType']);
         $photoBase64 = $input['photoBase64'] ?? '';
 
         $claim = $conn->query("SELECT * FROM med_claims WHERE req_id = '$reqId'")->fetch_assoc();
         if($claim['status'] !== 'Pending HRGA') { echo json_encode(['success' => false, 'message' => 'Hanya status Pending yang bisa diedit.']); exit; }
 
         $oldAmount = floatval($claim['amount']);
+        $oldType = $claim['claim_type'];
         $u = $claim['username'];
 
-        $plafond = $conn->query("SELECT current_budget FROM med_plafond WHERE username='$u'")->fetch_assoc();
-        $currBudget = floatval($plafond['current_budget']);
-        
-        $diff = $newAmount - $oldAmount;
-        if ($currBudget < $diff) { echo json_encode(['success' => false, 'message' => 'Plafond tidak mencukupi untuk penambahan nominal ini.']); exit; }
-        
-        $newBudget = $currBudget - $diff;
+        $colOld = getCol($oldType, false);
+        $colNew = getCol($newType, false);
 
         $conn->begin_transaction();
         try {
-            $conn->query("UPDATE med_plafond SET current_budget = $newBudget WHERE username='$u'");
+            // Refund Old
+            $conn->query("UPDATE med_plafond SET $colOld = $colOld + $oldAmount WHERE username='$u'");
+            
+            // Check New
+            $chk = $conn->query("SELECT $colNew FROM med_plafond WHERE username='$u'")->fetch_assoc();
+            if ($chk[$colNew] < $newAmount) {
+                $conn->query("UPDATE med_plafond SET $colOld = $colOld - $oldAmount WHERE username='$u'"); // Revert Refund
+                throw new Exception("Plafond (".$newType.") tidak mencukupi untuk penambahan ini.");
+            }
+            
+            // Deduct New
+            $newRem = floatval($chk[$colNew]) - $newAmount;
+            $conn->query("UPDATE med_plafond SET $colNew = $newRem WHERE username='$u'");
 
             $photoQuery = "";
             if (!empty($photoBase64)) {
@@ -283,7 +297,7 @@ try {
                 $photoQuery = ", photo_url='$photoUrl'";
             }
 
-            $conn->query("UPDATE med_claims SET invoice_no='$newInvoice', amount=$newAmount, remaining_balance=$newBudget $photoQuery WHERE req_id='$reqId'");
+            $conn->query("UPDATE med_claims SET claim_type='$newType', invoice_no='$newInvoice', amount=$newAmount, remaining_balance=$newRem $photoQuery WHERE req_id='$reqId'");
             $conn->commit();
             echo json_encode(['success' => true]);
         } catch (Exception $e) { $conn->rollback(); echo json_encode(['success' => false, 'message' => $e->getMessage()]); }
@@ -300,18 +314,21 @@ try {
         $claim = $conn->query("SELECT * FROM med_claims WHERE req_id = '$reqId'")->fetch_assoc();
         $targetUser = $claim['username'];
         $amount = floatval($claim['amount']);
+        $col = getCol($claim['claim_type'], false);
 
         if ($act == 'confirm') {
             $conn->query("UPDATE med_claims SET status = 'Confirmed', hrga_by = '$hrgaName', hrga_time = '$now' WHERE req_id = '$reqId'");
             echo json_encode(['success' => true]);
         } 
         elseif ($act == 'reject') {
-            $plafond = $conn->query("SELECT current_budget FROM med_plafond WHERE username='$targetUser'")->fetch_assoc();
-            $newBudget = floatval($plafond['current_budget']) + $amount;
-            
             $conn->begin_transaction();
             try {
-                $conn->query("UPDATE med_plafond SET current_budget = $newBudget, last_updated = '$now' WHERE username = '$targetUser'");
+                $conn->query("UPDATE med_plafond SET $col = $col + $amount, last_updated = '$now' WHERE username = '$targetUser'");
+                
+                // Get updated balance to store in history
+                $plafond = $conn->query("SELECT $col FROM med_plafond WHERE username='$targetUser'")->fetch_assoc();
+                $newBudget = floatval($plafond[$col]);
+
                 $conn->query("UPDATE med_claims SET status = 'Rejected', hrga_by = '$hrgaName', hrga_time = '$now', reject_reason = '$reason', remaining_balance = $newBudget WHERE req_id = '$reqId'");
                 $conn->commit();
                 echo json_encode(['success' => true]);
