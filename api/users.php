@@ -29,10 +29,9 @@ if ($action == 'updateProfile') {
 
 // --- 2. GET ALL USERS (Admin Only) ---
 if ($action == 'getAllUsers') {
-    $res = $conn->query("SELECT * FROM users ORDER BY id ASC");
+    $res = $conn->query("SELECT * FROM users ORDER BY fullname ASC");
     $users = [];
     while ($row = $res->fetch_assoc()) {
-        // Hilangkan password dari list agar aman
         $row['apps'] = $row['allowed_apps']; // Mapping agar sesuai frontend lama
         $users[] = $row;
     }
@@ -41,17 +40,20 @@ if ($action == 'getAllUsers') {
 
 // --- 3. GET DROPDOWN OPTIONS ---
 if ($action == 'getOptions') {
-    // Ambil unique department & role
+    // Ambil unique department, role & apps
     $deptRes = $conn->query("SELECT DISTINCT department FROM users WHERE department != '' ORDER BY department");
     $roleRes = $conn->query("SELECT DISTINCT role FROM users WHERE role != '' ORDER BY role");
+    $appsRes = $conn->query("SELECT DISTINCT allowed_apps FROM users WHERE allowed_apps != '' ORDER BY allowed_apps");
     
     $depts = [];
     $roles = [];
+    $apps = [];
     
     while($r = $deptRes->fetch_assoc()) $depts[] = $r['department'];
     while($r = $roleRes->fetch_assoc()) $roles[] = $r['role'];
+    if ($appsRes) { while($r = $appsRes->fetch_assoc()) $apps[] = $r['allowed_apps']; }
     
-    sendJson(['departments' => $depts, 'roles' => $roles]);
+    sendJson(['departments' => $depts, 'roles' => $roles, 'apps' => $apps]);
 }
 
 // --- 4. SAVE USER (Create / Update via Admin) ---
@@ -69,8 +71,6 @@ if ($action == 'saveUser') {
     $ph = $conn->real_escape_string($data['phone']);
 
     if (!$isEdit) {
-        // Mode: NEW USER
-        // Cek duplicate
         $check = $conn->query("SELECT id FROM users WHERE username = '$u'");
         if ($check->num_rows > 0) {
             sendJson(['success' => false, 'message' => 'Username already exists!']);
@@ -86,7 +86,6 @@ if ($action == 'saveUser') {
         }
 
     } else {
-        // Mode: UPDATE USER
         $sql = "UPDATE users SET 
                 password='$p', fullname='$f', nik='$n', department='$d', role='$r', allowed_apps='$a', phone='$ph' 
                 WHERE username='$u'";
@@ -110,6 +109,37 @@ if ($action == 'deleteUser') {
         sendJson(['success' => true, 'message' => 'User deleted.']);
     } else {
         sendJson(['success' => false, 'message' => $conn->error]);
+    }
+}
+
+// --- 6. IMPORT BULK USERS (Admin Only) ---
+if ($action == 'importUsers') {
+    $users = $input['data'];
+    $conn->begin_transaction();
+    try {
+        // ON DUPLICATE KEY UPDATE: Jika username sudah ada, maka akan terupdate otomatis. Jika belum, terinsert baru.
+        $stmt = $conn->prepare("INSERT INTO users (username, password, fullname, nik, department, role, allowed_apps, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE password=VALUES(password), fullname=VALUES(fullname), nik=VALUES(nik), department=VALUES(department), role=VALUES(role), allowed_apps=VALUES(allowed_apps), phone=VALUES(phone)");
+        
+        foreach ($users as $u) {
+            $un = $conn->real_escape_string($u['username']);
+            $pw = $conn->real_escape_string($u['password']);
+            $fn = $conn->real_escape_string($u['fullname']);
+            $nk = $conn->real_escape_string($u['nik'] ?? '');
+            $dp = $conn->real_escape_string($u['department']);
+            $rl = $conn->real_escape_string($u['role']);
+            $ap = $conn->real_escape_string($u['allowed_apps']);
+            $ph = $conn->real_escape_string($u['phone'] ?? '');
+
+            if(!empty($un) && !empty($fn)) {
+                $stmt->bind_param("ssssssss", $un, $pw, $fn, $nk, $dp, $rl, $ap, $ph);
+                $stmt->execute();
+            }
+        }
+        $conn->commit();
+        sendJson(['success' => true, 'message' => 'Users imported successfully']);
+    } catch (Exception $e) {
+        $conn->rollback();
+        sendJson(['success' => false, 'message' => $e->getMessage()]);
     }
 }
 ?>

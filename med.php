@@ -47,7 +47,7 @@
     <main class="flex-grow container mx-auto px-4 py-6 overflow-y-auto pb-20 sm:pb-6 custom-scrollbar">
       <div class="animate-slide-up space-y-6">
         
-        <div id="budget-summary-section" class="grid grid-cols-1 sm:grid-cols-3 gap-4 hidden">
+        <div id="budget-summary-section" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4 relative overflow-hidden group">
                 <div class="absolute -right-4 -top-4 w-16 h-16 rounded-full bg-slate-50 group-hover:scale-[2] transition-transform duration-500 z-0"></div>
                 <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xl z-10"><i class="fas fa-wallet"></i></div>
@@ -74,16 +74,43 @@
             </div>
         </div>
 
+        <div id="global-budget-section" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+            <div class="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div>
+                    <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-users text-rose-500"></i> <span data-i18n="emp_budgets">Employee Budgets Overview</span></h3>
+                </div>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <select id="filter-dept-budget" onchange="renderGlobalBudgetTable()" class="border border-slate-300 rounded-lg p-2 text-xs focus:ring-rose-500 bg-white">
+                        <option value="All" data-i18n="all_depts">All Departments</option>
+                    </select>
+                    <div class="relative w-full sm:w-64">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fas fa-search"></i></span>
+                        <input type="text" id="search-budget" onkeyup="renderGlobalBudgetTable()" class="w-full border border-slate-300 rounded-lg p-2 pl-9 text-xs focus:ring-2 focus:ring-rose-500 outline-none" data-i18n="search_emp" placeholder="Search employee...">
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-x-auto max-h-[300px] custom-scrollbar">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-white text-slate-500 uppercase text-[10px] font-bold sticky top-0 shadow-sm z-10">
+                        <tr>
+                            <th class="px-6 py-3" data-i18n="th_emp">Employee</th>
+                            <th class="px-6 py-3">Dept</th>
+                            <th class="px-6 py-3 text-right" data-i18n="init_plafond">Initial Plafond</th>
+                            <th class="px-6 py-3 text-right" data-i18n="used_plafond">Used Plafond</th>
+                            <th class="px-6 py-3 text-right text-rose-600" data-i18n="rem_plafond">Rem. Plafond</th>
+                        </tr>
+                    </thead>
+                    <tbody id="global-budget-body" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
            <div><h2 class="text-xl font-bold text-slate-700" data-i18n="history_title">Medical Claims History</h2><p class="text-xs text-slate-500" data-i18n="history_desc">Realtime plafond deduction & tracking.</p></div>
            <div class="flex gap-2 w-full sm:w-auto items-center flex-wrap sm:flex-nowrap">
-             
              <button id="btn-export" onclick="openExportModal()" class="hidden bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition items-center gap-2 btn-action"><i class="fas fa-file-export"></i> <span data-i18n="btn_export">Export</span></button>
-             
              <button id="btn-admin" onclick="openAdminModal()" class="hidden bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-700 transition flex items-center gap-2 btn-action"><i class="fas fa-cogs"></i> <span data-i18n="btn_manage">Manage</span></button>
-             
              <button onclick="loadData()" class="bg-white border border-gray-300 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 btn-action"><i class="fas fa-sync-alt"></i></button>
-             
              <button id="btn-create" onclick="openSubmitModal()" class="hidden flex-1 sm:flex-none bg-rose-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-rose-700 transition items-center justify-center gap-2 btn-action"><i class="fas fa-plus"></i> <span data-i18n="btn_submit_claim">Submit Claim</span></button>
            </div>
         </div>
@@ -126,7 +153,6 @@
                   <button onclick="doExport('excel', false)" class="bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-700 flex items-center justify-center gap-2 transition"><i class="fas fa-file-excel"></i> Excel</button>
                   <button onclick="doExport('pdf', false)" class="bg-rose-600 text-white py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-rose-700 flex items-center justify-center gap-2 transition"><i class="fas fa-file-pdf"></i> PDF</button>
               </div>
-              <div id="exp-loading" class="hidden text-center mt-4 text-xs font-bold text-blue-600"><i class="fas fa-spinner fa-spin mr-2"></i> <span data-i18n="gen_report">Generating Report... Please wait.</span></div>
           </div>
       </div>
   </div>
@@ -202,39 +228,45 @@
 
   <div id="modal-admin" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-xl w-full max-w-4xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
+          
           <div class="bg-slate-800 px-6 py-4 flex justify-between items-center text-white flex-none">
               <h3 class="font-bold"><i class="fas fa-cogs text-rose-400 mr-2"></i> <span data-i18n="manage_plafond">Manage User Plafonds</span></h3>
               <button onclick="closeModal('modal-admin')" class="text-slate-400 hover:text-white"><i class="fas fa-times text-lg"></i></button>
           </div>
           
-          <div class="p-4 bg-slate-50 border-b border-slate-200 flex-none">
+          <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-3 flex-none">
+              <div class="flex gap-2 w-full sm:w-auto">
+                  <button onclick="downloadBudgetTemplate()" class="bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-100 transition shadow-sm flex items-center gap-1"><i class="fas fa-download text-blue-500"></i> <span data-i18n="dl_template">Template</span></button>
+                  <button onclick="document.getElementById('import-budget-file').click()" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-700 transition shadow-sm flex items-center gap-1"><i class="fas fa-file-excel"></i> <span data-i18n="import_excel">Import Excel</span></button>
+                  <input type="file" id="import-budget-file" accept=".xlsx, .xls" class="hidden" onchange="handleImportBudget(event)">
+              </div>
+              <div class="relative w-full sm:w-64">
+                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fas fa-search"></i></span>
+                  <input type="text" id="admin-search-user" onkeyup="filterAdminTable()" class="w-full border border-slate-300 rounded-lg p-2 pl-9 text-xs focus:ring-2 focus:ring-rose-500 outline-none shadow-sm" data-i18n="search_emp" placeholder="Search employee...">
+              </div>
+          </div>
+
+          <div class="p-4 bg-white border-b border-slate-200 flex-none shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
               <form onsubmit="event.preventDefault(); saveBudget();" class="flex gap-3 items-end flex-wrap">
                   <div class="flex-1 min-w-[200px]">
                       <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1" data-i18n="sel_user">Select User</label>
-                      <select id="admin-user-select" onchange="onAdminUserSelect()" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-white focus:ring-2 focus:ring-rose-500" required></select>
+                      <select id="admin-user-select" onchange="onAdminUserSelect()" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-rose-500" required></select>
                   </div>
                   <div class="flex-1 min-w-[150px]">
                       <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1" data-i18n="init_plafond">Initial Budget (Rp)</label>
-                      <input type="number" id="admin-init-input" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-white focus:ring-2 focus:ring-rose-500" required>
+                      <input type="number" id="admin-init-input" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-rose-500" required>
                   </div>
                   <div class="flex-1 min-w-[150px]">
                       <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1" data-i18n="curr_plafond">Current Plafond (Rp)</label>
-                      <input type="number" id="admin-curr-input" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-white focus:ring-2 focus:ring-rose-500" required>
+                      <input type="number" id="admin-curr-input" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-rose-500" required>
                   </div>
                   <button type="submit" id="btn-save-budget" class="bg-rose-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-rose-700 shadow-sm transition"><i class="fas fa-save mr-1"></i> <span data-i18n="btn_save">Save</span></button>
               </form>
           </div>
-
-          <div class="px-4 py-3 border-b border-slate-200 bg-white flex-none">
-              <div class="relative">
-                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fas fa-search"></i></span>
-                  <input type="text" id="admin-search-user" onkeyup="filterAdminTable()" class="w-full border border-slate-300 rounded-lg p-2 pl-9 text-xs focus:ring-2 focus:ring-rose-500 outline-none" data-i18n="search_emp" placeholder="Search employee...">
-              </div>
-          </div>
           
-          <div class="overflow-y-auto flex-1 p-0 custom-scrollbar bg-white">
+          <div class="overflow-y-auto flex-1 p-0 custom-scrollbar bg-slate-50">
               <table class="w-full text-left text-sm" id="admin-users-table">
-                  <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold sticky top-0 shadow-sm z-10 border-b border-slate-200">
+                  <thead class="bg-white text-slate-500 uppercase text-[10px] font-bold sticky top-0 shadow-sm z-10">
                       <tr>
                           <th class="px-4 py-3" data-i18n="th_emp">Employee</th>
                           <th class="px-4 py-3">Dept</th>
@@ -243,7 +275,7 @@
                           <th class="px-4 py-3 text-center w-10"><i class="fas fa-mouse-pointer"></i></th>
                       </tr>
                   </thead>
-                  <tbody id="admin-table-body" class="divide-y divide-slate-100"></tbody>
+                  <tbody id="admin-table-body" class="divide-y divide-slate-100 bg-white"></tbody>
               </table>
           </div>
       </div>
@@ -287,8 +319,9 @@
             curr_plafond: "Current Plafond", reject_claim: "Reject Claim", refund_info: "Plafond will be refunded to the user.", btn_reject: "Reject",
             btn_confirm: "Confirm", btn_edit: "Edit", req_fields: "Please fill in all required fields!", wait: "Waiting review...",
             no_data: "No claims found.", processing: "Processing...", upload_req: "Photo/PDF proof is required for new submission.", rem_plafond_desc: "Rem. Plafond",
-            search_emp: "Search employee name, department, or username...",
-            export_report: "Export Report", export_start: "Start Date", export_end: "End Date", export_all: "Export All Time (Excel)", gen_report: "Generating Report... Please wait."
+            search_emp: "Search employee name, department, or username...", view_doc: "Open Document",
+            export_report: "Export Report", export_start: "Start Date", export_end: "End Date", export_all: "Export All Time (Excel)",
+            emp_budgets: "Employee Budgets Overview", all_depts: "All Departments", import_excel: "Import Excel", dl_template: "Template"
         },
         id: {
             app_title: "Plafond Medis", init_plafond: "Plafond Awal", rem_plafond: "Sisa Plafond", used_plafond: "Plafond Terpakai",
@@ -303,8 +336,9 @@
             curr_plafond: "Plafond Saat Ini", reject_claim: "Tolak Klaim", refund_info: "Plafond akan dikembalikan ke karyawan.", btn_reject: "Tolak",
             btn_confirm: "Konfirmasi", btn_edit: "Edit", req_fields: "Mohon isi semua kolom yang wajib!", wait: "Menunggu review...",
             no_data: "Tidak ada klaim ditemukan.", processing: "Memproses...", upload_req: "Bukti Foto/PDF wajib diunggah untuk form baru.", rem_plafond_desc: "Sisa Plafond",
-            search_emp: "Cari nama karyawan, departemen, atau username...",
-            export_report: "Ekspor Laporan", export_start: "Tanggal Mulai", export_end: "Tanggal Akhir", export_all: "Ekspor Semua (Excel)", gen_report: "Membuat Laporan... Mohon tunggu."
+            search_emp: "Cari nama karyawan, departemen, atau username...", view_doc: "Buka Dokumen",
+            export_report: "Ekspor Laporan", export_start: "Tanggal Mulai", export_end: "Tanggal Akhir", export_all: "Ekspor Semua (Excel)",
+            emp_budgets: "Ringkasan Budget Karyawan", all_depts: "Semua Departemen", import_excel: "Import Excel", dl_template: "Template"
         }
     };
 
@@ -334,6 +368,7 @@
     let currentUser = null;
     let confirmCallback = null;
     let adminUsersData = [];
+    let globalBudgetData = [];
     const rawUser = localStorage.getItem('portal_user');
     if(!rawUser) { window.location.href = "index.php"; } else { currentUser = JSON.parse(rawUser); }
 
@@ -385,6 +420,7 @@
         const canViewAll = ['Administrator', 'PlantHead', 'HRGA'].includes(currentUser.role) || (currentUser.role === 'TeamLeader' && currentUser.department === 'HRGA');
         if (canViewAll) {
             document.getElementById('th-rem-plafond').classList.remove('hidden');
+            document.getElementById('global-budget-section').classList.remove('hidden');
         }
 
         if(['User', 'HRGA'].includes(currentUser.role)) {
@@ -418,14 +454,29 @@
     }
 
     function loadData() {
-        fetch('api/med.php', { method: 'POST', body: JSON.stringify({ action: 'getPlafond', role: currentUser.role, username: currentUser.username }) })
+        fetch('api/med.php', { method: 'POST', body: JSON.stringify({ action: 'getPlafond', role: currentUser.role, username: currentUser.username, department: currentUser.department }) })
         .then(r=>r.json()).then(res => {
-            if(res.success && res.data && !Array.isArray(res.data)) {
-                const init = parseFloat(res.data.initial_budget);
-                const curr = parseFloat(res.data.current_budget);
-                document.getElementById('disp-initial').innerText = formatRp(init);
-                document.getElementById('disp-current').innerText = formatRp(curr);
-                document.getElementById('disp-used').innerText = formatRp(init - curr);
+            if(res.success) {
+                if (Array.isArray(res.data)) {
+                    globalBudgetData = res.data;
+                    populateBudgetDeptFilter();
+                    renderGlobalBudgetTable();
+                    
+                    const myData = res.data.find(u => u.username === currentUser.username);
+                    if (myData) {
+                        const init = parseFloat(myData.initial_budget);
+                        const curr = parseFloat(myData.current_budget);
+                        document.getElementById('disp-initial').innerText = formatRp(init);
+                        document.getElementById('disp-current').innerText = formatRp(curr);
+                        document.getElementById('disp-used').innerText = formatRp(init - curr > 0 ? init - curr : 0);
+                    }
+                } else {
+                    const init = parseFloat(res.data.initial_budget);
+                    const curr = parseFloat(res.data.current_budget);
+                    document.getElementById('disp-initial').innerText = formatRp(init);
+                    document.getElementById('disp-current').innerText = formatRp(curr);
+                    document.getElementById('disp-used').innerText = formatRp(init - curr > 0 ? init - curr : 0);
+                }
             }
         });
 
@@ -436,6 +487,53 @@
         });
     }
 
+    // --- GLOBAL BUDGET TABLE ---
+    function populateBudgetDeptFilter() {
+        const sel = document.getElementById('filter-dept-budget');
+        const depts = [...new Set(globalBudgetData.map(u => u.department).filter(Boolean))].sort();
+        let html = `<option value="All" data-i18n="all_depts">${t('all_depts')}</option>`;
+        depts.forEach(d => { html += `<option value="${d}">${d}</option>`; });
+        sel.innerHTML = html;
+    }
+
+    function renderGlobalBudgetTable() {
+        const input = document.getElementById('search-budget').value.toLowerCase();
+        const dept = document.getElementById('filter-dept-budget').value;
+        const tb = document.getElementById('global-budget-body');
+        tb.innerHTML = '';
+
+        let filtered = globalBudgetData;
+        if(dept !== 'All') filtered = filtered.filter(u => u.department === dept);
+        if(input) {
+            filtered = filtered.filter(u => 
+                u.fullname.toLowerCase().includes(input) || 
+                u.username.toLowerCase().includes(input) || 
+                (u.department && u.department.toLowerCase().includes(input))
+            );
+        }
+
+        if(filtered.length === 0) {
+            tb.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 italic text-xs">${t('no_data')}</td></tr>`;
+            return;
+        }
+
+        filtered.forEach(u => {
+            const init = parseFloat(u.initial_budget) || 0;
+            const curr = parseFloat(u.current_budget) || 0;
+            const used = init - curr > 0 ? init - curr : 0;
+            
+            tb.innerHTML += `
+            <tr class="hover:bg-rose-50 transition border-b border-slate-100">
+                <td class="px-6 py-3 font-bold text-slate-700">${u.fullname} <span class="text-[9px] font-normal text-slate-400 block">${u.username}</span></td>
+                <td class="px-6 py-3 text-slate-500 text-xs">${u.department || '-'}</td>
+                <td class="px-6 py-3 text-right font-bold text-slate-700">${formatRp(init)}</td>
+                <td class="px-6 py-3 text-right text-orange-500 font-bold">${formatRp(used)}</td>
+                <td class="px-6 py-3 text-right font-black text-rose-600">${formatRp(curr)}</td>
+            </tr>`;
+        });
+    }
+
+    // --- CLAIMS TABLE ---
     function renderTable(data) {
         const tb = document.getElementById('table-body');
         const cc = document.getElementById('data-card-container');
@@ -625,6 +723,7 @@
         document.getElementById('admin-user-select').value = '';
         document.getElementById('admin-init-input').value = '';
         document.getElementById('admin-curr-input').value = '';
+        document.getElementById('import-budget-file').value = '';
         loadAdminBudgets();
     }
 
@@ -704,7 +803,7 @@
             body: JSON.stringify({ action: 'setBudget', role: currentUser.role, target_username: u, initial_budget: init, current_budget: curr }) 
         })
         .then(r=>r.json()).then(res => {
-            btn.disabled = false; btn.innerHTML = `<i class="fas fa-save mr-1"></i> ${t('btn_save')}`;
+            btn.disabled = false; btn.innerHTML = `<i class="fas fa-save mr-1"></i> Save`;
             if(res.success) { 
                 document.getElementById('admin-init-input').value = ''; 
                 document.getElementById('admin-curr-input').value = ''; 
@@ -717,17 +816,71 @@
         });
     }
 
-    // --- EXPORT PDF & EXCEL ---
+    // --- BULK IMPORT EXCEL ---
+    function downloadBudgetTemplate() {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([
+            ["Username", "Initial_Budget", "Current_Budget"],
+            ["johndoe", 5000000, 5000000],
+            ["janedoe", 3000000, 2500000]
+        ]);
+        XLSX.utils.book_append_sheet(wb, ws, "Template");
+        XLSX.writeFile(wb, "Template_Import_Budget.xlsx");
+    }
+
+    function handleImportBudget(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(firstSheet);
+
+                const formattedData = json.map(row => ({
+                    username: row.Username || row.username,
+                    initial_budget: parseFloat(String(row.Initial_Budget || row.initial_budget || 0).replace(/,/g, '')),
+                    current_budget: parseFloat(String(row.Current_Budget || row.current_budget || 0).replace(/,/g, ''))
+                })).filter(row => row.username);
+
+                if (formattedData.length === 0) {
+                    document.getElementById('import-budget-file').value = '';
+                    showAlert("Error", "Invalid format or empty data.");
+                    return;
+                }
+
+                // Send to API
+                fetch('api/med.php', {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'importBudgetBulk', role: currentUser.role, data: formattedData })
+                }).then(r=>r.json()).then(res => {
+                    document.getElementById('import-budget-file').value = ''; 
+                    if(res.success) {
+                        showAlert("Success", "Bulk import successful!");
+                        loadAdminBudgets();
+                        loadData();
+                    } else {
+                        showAlert("Error", res.message);
+                    }
+                });
+            } catch (err) {
+                document.getElementById('import-budget-file').value = '';
+                showAlert("Error", "Failed to parse Excel file.");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // --- EXPORT PDF & EXCEL (ENGLISH ONLY) ---
     function openExportModal() { openModal('modal-export'); }
     
     function doExport(type, isAllTime) {
         const start = document.getElementById('exp-start').value;
         const end = document.getElementById('exp-end').value;
-        const loader = document.getElementById('exp-loading');
         
         if(!isAllTime && (!start || !end)) { showAlert("Error", "Please select dates."); return; }
-        
-        loader.classList.remove('hidden');
         
         fetch('api/med.php', { 
             method: 'POST', 
@@ -743,14 +896,12 @@
         .then(r => r.json())
         .then(res => {
             if(!res.success || !res.data.length) {
-                loader.classList.add('hidden');
                 showAlert("Info", "No data available for selected dates.");
                 return;
             }
             if(type === 'excel') exportExcel(res.data);
             if(type === 'pdf') exportPdf(res.data);
         }).catch(() => {
-            loader.classList.add('hidden');
             showAlert("Error", "Export failed.");
         });
     }
@@ -768,17 +919,24 @@
         rows.push([
             "Request ID", "Date", "Employee Name", "Department", 
             "Invoice No.", "Claim Amount (Rp)", "HRGA Status", 
-            "HRGA Review By", "Reject Reason", "Remaining Balance (Rp)", "Proof URL"
+            "HRGA Review By", "Reject Reason", 
+            "Initial Plafond (Rp)", "Used Plafond (Rp)", "Remaining Balance (Rp)", "Proof URL"
         ]);
         
         data.forEach(r => {
             const dateOnly = r.created_at ? r.created_at.split(' ')[0] : '-';
             const proofUrl = (r.photo_url && r.photo_url !== '0') ? baseUrl + r.photo_url : '-';
+            
+            let initPlafond = parseFloat(r.user_initial_budget) || 0;
+            let remBalance = parseFloat(r.display_balance) || 0;
+            let usedPlafond = initPlafond - remBalance;
+            if (usedPlafond < 0) usedPlafond = 0;
 
             rows.push([
                 r.req_id, dateOnly, r.fullname, r.department, 
                 r.invoice_no, parseFloat(r.amount), r.status, 
-                r.hrga_by || '-', r.reject_reason || '-', parseFloat(r.display_balance), proofUrl
+                r.hrga_by || '-', r.reject_reason || '-', 
+                initPlafond, usedPlafond, remBalance, proofUrl
             ]);
         });
         
@@ -786,104 +944,92 @@
         ws['!cols'] = [
             {wch:20}, {wch:12}, {wch:25}, {wch:20}, 
             {wch:20}, {wch:18}, {wch:15}, 
-            {wch:20}, {wch:25}, {wch:20}, {wch:50}
+            {wch:20}, {wch:25}, 
+            {wch:20}, {wch:20}, {wch:20}, {wch:50}
         ];
         
         XLSX.utils.book_append_sheet(wb, ws, "Audit Data");
         XLSX.writeFile(wb, "Medical_Audit_Report_" + new Date().toISOString().slice(0,10) + ".xlsx");
-        
-        document.getElementById('exp-loading').classList.add('hidden');
         closeModal('modal-export');
     }
 
-    async function getBase64ImageFromUrl(imageUrl) {
-        if(!imageUrl || imageUrl === '0' || imageUrl === 'null' || imageUrl.toLowerCase().endsWith('.pdf')) return null;
-        try {
-            const res = await fetch(imageUrl);
-            const blob = await res.blob();
-            return await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-            });
-        } catch (e) { return null; }
-    }
-
-    async function exportPdf(data) {
+    function exportPdf(data) {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4');
+        const doc = new jsPDF('l', 'mm', 'a4'); 
         
         doc.setFontSize(16);
-        doc.setTextColor(225, 29, 72); // Rose color
+        doc.setTextColor(225, 29, 72);
         doc.text("Medical Plafond - Claim Audit Report", 14, 15);
         doc.setFontSize(9);
         doc.setTextColor(100);
-        doc.text("Generated: " + new Date().toLocaleString(), 14, 22);
+        doc.text("Generated: " + new Date().toLocaleString() + " | By: " + currentUser.fullname, 14, 22);
 
         const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
-        document.getElementById('exp-loading').innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Fetching images... Please wait.`;
-
         const bodyData = [];
         
         for (let r of data) {
-            let proofB64 = await getBase64ImageFromUrl(r.photo_url && r.photo_url !== '0' ? baseUrl + r.photo_url : null);
             let proofText = "-";
-            if (!proofB64 && r.photo_url) {
-                proofText = r.photo_url.toLowerCase().endsWith('.pdf') ? "PDF File\n(Link in Excel)" : "URL Only";
+            let fullUrl = "";
+            
+            if (r.photo_url && r.photo_url !== '0' && r.photo_url !== 'null') {
+                fullUrl = baseUrl + r.photo_url;
+                proofText = "Open Document"; 
             }
+            
+            let initPlafond = parseFloat(r.user_initial_budget) || 0;
+            let remBalance = parseFloat(r.display_balance) || 0;
+            let usedPlafond = initPlafond - remBalance;
+            if (usedPlafond < 0) usedPlafond = 0;
 
             bodyData.push([
-                r.req_id.slice(-8) + "\n" + r.created_at.split(' ')[0],
-                r.fullname + "\n(" + r.department + ")",
-                r.invoice_no,
-                "Rp " + parseFloat(r.amount).toLocaleString('id-ID'),
-                r.status + "\n" + (r.hrga_by ? r.hrga_by : ""),
-                "Rp " + parseFloat(r.display_balance).toLocaleString('id-ID'),
-                proofB64 || proofText
+                r.req_id.slice(-6) + "\n" + r.created_at.split(' ')[0],
+                r.fullname + "\n" + r.department,
+                r.invoice_no + "\nRp " + parseFloat(r.amount).toLocaleString('en-US'),
+                r.status + (r.hrga_by ? "\nBy: " + r.hrga_by : ""),
+                "Rp " + initPlafond.toLocaleString('en-US'),
+                "Rp " + usedPlafond.toLocaleString('en-US'),
+                "Rp " + remBalance.toLocaleString('en-US'),
+                proofText,
+                fullUrl 
             ]);
         }
 
         doc.autoTable({
             startY: 28,
-            head: [['ID / Date', 'Employee', 'Invoice No.', 'Claim Amount', 'Status', 'Rem. Balance', 'Proof']],
-            body: bodyData,
+            head: [['ID / Date', 'Employee & Dept', 'Invoice & Amount', 'Status', 'Initial Plafond', 'Used Plafond', 'Rem. Plafond', 'Proof Document']],
+            body: bodyData.map(row => row.slice(0, 8)),
             theme: 'grid',
-            headStyles: { fillColor: [225, 29, 72], halign: 'center' },
+            headStyles: { fillColor: [225, 29, 72], halign: 'center', valign: 'middle' },
             styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', halign: 'center', valign: 'middle' },
             columnStyles: {
                 0: { cellWidth: 25 },
-                1: { cellWidth: 40, halign: 'left' },
-                2: { cellWidth: 30 },
-                3: { cellWidth: 35, halign: 'right' },
-                4: { cellWidth: 35 },
-                5: { cellWidth: 35, halign: 'right', fontStyle: 'bold', textColor: [225, 29, 72] },
-                6: { cellWidth: 40, minCellHeight: 25 }
+                1: { cellWidth: 45, halign: 'left' },
+                2: { cellWidth: 40, halign: 'left' },
+                3: { cellWidth: 35 },
+                4: { cellWidth: 30, halign: 'right' },
+                5: { cellWidth: 30, halign: 'right', textColor: [234, 88, 12] },
+                6: { cellWidth: 30, halign: 'right', fontStyle: 'bold', textColor: [225, 29, 72] },
+                7: { cellWidth: 30, fontStyle: 'italic' } 
+            },
+            willDrawCell: function(data) {
+                if (data.section === 'body' && data.column.index === 7) {
+                    const url = bodyData[data.row.index][8];
+                    if (url) {
+                        data.cell.styles.textColor = [37, 99, 235]; 
+                    }
+                }
             },
             didDrawCell: function(data) {
-                if (data.section === 'body' && data.column.index === 6) {
-                    let cellValue = data.cell.raw;
-                    if (typeof cellValue === 'string' && cellValue.startsWith('data:image/')) {
-                        try {
-                            let imgFormat = cellValue.substring("data:image/".length, cellValue.indexOf(";base64"));
-                            imgFormat = imgFormat.toUpperCase() === 'PNG' ? 'PNG' : 'JPEG';
-                            const padding = 2;
-                            const x = data.cell.x + padding;
-                            const y = data.cell.y + padding;
-                            const w = data.cell.width - (padding*2);
-                            const h = data.cell.height - (padding*2);
-                            doc.addImage(cellValue, imgFormat, x, y, w, h);
-                            data.cell.text = ''; // clear text so it doesn't print over image
-                        } catch(e) { console.error('Error drawing image on PDF'); }
+                if (data.section === 'body' && data.column.index === 7) {
+                    const url = bodyData[data.row.index][8];
+                    if (url) {
+                        doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: url });
                     }
                 }
             }
         });
         
         doc.save("Medical_Audit_Report_" + new Date().toISOString().slice(0,10) + ".pdf");
-        
-        document.getElementById('exp-loading').classList.add('hidden');
-        document.getElementById('exp-loading').innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> ${t('gen_report')}`;
         closeModal('modal-export');
     }
   </script>

@@ -80,8 +80,12 @@ try {
     if ($action == 'getPlafond') {
         $role = $input['role'];
         $username = $conn->real_escape_string($input['username']);
+        $dept = $conn->real_escape_string($input['department'] ?? '');
         
-        if ($role === 'Administrator') {
+        $globalRoles = ['Administrator', 'HRGA', 'PlantHead'];
+        $isHrgaLeader = ($role === 'TeamLeader' && $dept === 'HRGA');
+
+        if (in_array($role, $globalRoles) || $isHrgaLeader) {
             $sql = "SELECT u.username, u.fullname, u.department, 
                            IFNULL(p.initial_budget, 0) as initial_budget, 
                            IFNULL(p.current_budget, 0) as current_budget 
@@ -98,7 +102,7 @@ try {
         exit;
     }
 
-    // --- 2. SET PLAFOND (ADMIN ONLY) ---
+    // --- 2. SET PLAFOND (ADMIN ONLY - SINGLE) ---
     if ($action == 'setBudget') {
         if ($input['role'] !== 'Administrator') { echo json_encode(['success' => false, 'message' => 'Unauthorized']); exit; }
         
@@ -115,6 +119,33 @@ try {
         echo json_encode(['success' => true]); exit;
     }
 
+    // --- 2.1 IMPORT PLAFOND BULK (ADMIN ONLY) ---
+    if ($action == 'importBudgetBulk') {
+        if ($input['role'] !== 'Administrator') { echo json_encode(['success' => false, 'message' => 'Unauthorized']); exit; }
+        
+        $items = $input['data'];
+        $conn->begin_transaction();
+        try {
+            // ON DUPLICATE KEY UPDATE memungkinkan insert baru atau update yang sudah ada sekaligus
+            $stmt = $conn->prepare("INSERT INTO med_plafond (username, initial_budget, current_budget, last_updated) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE initial_budget = VALUES(initial_budget), current_budget = VALUES(current_budget), last_updated = VALUES(last_updated)");
+            foreach ($items as $it) {
+                $u = $conn->real_escape_string($it['username']);
+                $init = floatval($it['initial_budget']);
+                $curr = floatval($it['current_budget']);
+                if (!empty($u)) {
+                    $stmt->bind_param("sdds", $u, $init, $curr, $now);
+                    $stmt->execute();
+                }
+            }
+            $conn->commit();
+            echo json_encode(['success' => true]);
+        } catch (Exception $e) {
+            $conn->rollback();
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
+    }
+
     // --- 3. GET CLAIMS DATA ---
     if ($action == 'getClaims') {
         $role = $input['role'];
@@ -122,10 +153,10 @@ try {
         $dept = $conn->real_escape_string($input['department'] ?? '');
         
         $sql = "SELECT c.*, 
-                IF(c.remaining_balance > 0, c.remaining_balance, 
-                   IFNULL((SELECT current_budget FROM med_plafond p WHERE p.username = c.username), 0)
-                ) as display_balance 
-                FROM med_claims c ";
+                IF(c.remaining_balance > 0, c.remaining_balance, IFNULL(p.current_budget, 0)) as display_balance,
+                IFNULL(p.initial_budget, 0) as user_initial_budget
+                FROM med_claims c 
+                LEFT JOIN med_plafond p ON c.username = p.username ";
         
         $globalRoles = ['Administrator', 'HRGA', 'PlantHead'];
         $isHrgaLeader = ($role === 'TeamLeader' && $dept === 'HRGA');
@@ -133,7 +164,8 @@ try {
         if (!in_array($role, $globalRoles) && !$isHrgaLeader) {
             $sql .= "WHERE c.username = '$username' ";
         }
-        $sql .= "ORDER BY c.id DESC LIMIT 100";
+        
+        $sql .= "ORDER BY CASE WHEN c.status = 'Pending HRGA' THEN 0 ELSE 1 END, c.created_at DESC LIMIT 100";
         
         $res = $conn->query($sql);
         echo json_encode(['success' => true, 'data' => $res->fetch_all(MYSQLI_ASSOC)]); exit;
@@ -146,10 +178,11 @@ try {
         $dept = $conn->real_escape_string($input['department'] ?? '');
         
         $sql = "SELECT c.*, 
-                IF(c.remaining_balance > 0, c.remaining_balance, 
-                   IFNULL((SELECT current_budget FROM med_plafond p WHERE p.username = c.username), 0)
-                ) as display_balance 
-                FROM med_claims c WHERE 1=1 ";
+                IF(c.remaining_balance > 0, c.remaining_balance, IFNULL(p.current_budget, 0)) as display_balance,
+                IFNULL(p.initial_budget, 0) as user_initial_budget 
+                FROM med_claims c 
+                LEFT JOIN med_plafond p ON c.username = p.username 
+                WHERE 1=1 ";
         
         if (!empty($input['startDate']) && !empty($input['endDate'])) {
             $start = $conn->real_escape_string($input['startDate']) . " 00:00:00";
@@ -164,7 +197,7 @@ try {
             $sql .= " AND c.username = '$username' ";
         }
         
-        $sql .= " ORDER BY c.created_at ASC"; // Ascending untuk laporan audit berurutan
+        $sql .= " ORDER BY c.created_at ASC"; 
         
         $res = $conn->query($sql);
         echo json_encode(['success' => true, 'data' => $res->fetch_all(MYSQLI_ASSOC)]); exit;

@@ -9,6 +9,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <script>
     tailwind.config = {
       theme: {
@@ -38,7 +40,6 @@
     .hidden-important { display: none !important; }
     input:disabled { background-color: #f8fafc; color: #64748b; cursor: not-allowed; border-color: #e2e8f0; }
     
-    /* Custom Scrollbar for Modals */
     .custom-scroll::-webkit-scrollbar { width: 6px; }
     .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -108,7 +109,7 @@
           </div>
       </div>
 
-      <div id="app-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8"></div>
+      <div id="app-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"></div>
     </div>
   </div>
 
@@ -171,14 +172,14 @@
          </div>
          
          <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 flex-none">
-            <button onclick="closeModal('modal-profile')" class="px-4 py-2 text-slate-500 font-bold text-sm hover:bg-slate-200 rounded-lg transition" data-i18n="cancel">Cancel</button>
+            <button type="button" onclick="closeModal('modal-profile')" class="px-4 py-2 text-slate-500 font-bold text-sm hover:bg-slate-200 rounded-lg transition" data-i18n="cancel">Cancel</button>
             <button onclick="submitProfile()" id="btn-prof" class="px-6 py-2 bg-blue-600 text-white font-bold text-sm rounded-lg shadow hover:bg-blue-700 transition flex items-center gap-2"><i class="fas fa-save"></i> <span data-i18n="save">Save</span></button>
          </div>
       </div>
   </div>
 
   <div id="modal-users" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl w-full max-w-5xl shadow-2xl overflow-hidden animate-fade-in-up flex flex-col h-[85vh]">
+    <div class="bg-white rounded-xl w-full max-w-5xl shadow-2xl overflow-hidden animate-fade-in-up flex flex-col h-[90vh]">
         <div class="bg-slate-800 px-6 py-4 border-b border-slate-700 flex justify-between items-center flex-none">
             <div class="flex items-center gap-3"><div class="bg-slate-700 p-2 rounded-lg text-yellow-400"><i class="fas fa-users-cog"></i></div><h3 class="font-bold text-lg text-white">Manage Users (Master Database)</h3></div>
             <button onclick="closeModal('modal-users')" class="text-slate-400 hover:text-white transition"><i class="fas fa-times text-lg"></i></button>
@@ -187,6 +188,14 @@
             <div class="w-1/3 border-r border-slate-200 bg-slate-50 flex flex-col">
                 <div class="p-4 border-b border-slate-200 bg-white">
                     <button onclick="resetUserForm()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-bold text-sm shadow-sm transition mb-3 flex items-center justify-center gap-2"><i class="fas fa-plus"></i> Add New User</button>
+                    
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <button onclick="downloadUserTemplate()" class="bg-white border border-slate-300 text-slate-700 py-1.5 rounded-lg text-[10px] font-bold hover:bg-slate-50 transition shadow-sm"><i class="fas fa-download text-blue-500"></i> Template</button>
+                        <button onclick="document.getElementById('import-user-file').click()" class="bg-emerald-600 text-white py-1.5 rounded-lg text-[10px] font-bold hover:bg-emerald-700 transition shadow-sm"><i class="fas fa-file-import"></i> Import</button>
+                        <button onclick="exportUsers()" class="bg-blue-600 text-white py-1.5 rounded-lg text-[10px] font-bold hover:bg-blue-700 transition shadow-sm"><i class="fas fa-file-export"></i> Export</button>
+                        <input type="file" id="import-user-file" accept=".xlsx, .xls" class="hidden" onchange="handleImportUsers(event)">
+                    </div>
+
                     <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fas fa-search"></i></span><input type="text" id="search-user" onkeyup="filterUserList()" class="w-full border border-slate-300 rounded-lg p-2 pl-9 text-xs focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Search user..."></div>
                 </div>
                 <div id="user-list-container" class="flex-1 overflow-y-auto custom-scroll p-2 space-y-1"><div class="text-center py-10 text-slate-400 text-xs italic">Loading users...</div></div>
@@ -211,16 +220,31 @@
                             <div class="col-span-2"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Full Name</label><input type="text" id="u-fullname" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" required placeholder="John Doe"></div>
                             <div class="col-span-1"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">NIK</label><input type="text" id="u-nik" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="12345"></div>
                             <div class="col-span-1"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Phone (WA)</label><input type="text" id="u-phone" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="0812..."></div>
-                            <div class="col-span-1"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Department</label><input type="text" id="u-dept" list="dept-datalist" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white" placeholder="Select..." required><datalist id="dept-datalist"></datalist></div>
-                            <div class="col-span-1"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Role</label><input type="text" id="u-role" list="role-datalist" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white" placeholder="Select..." required><datalist id="role-datalist"></datalist></div>
-                            <div class="col-span-2"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Allowed Apps</label><input type="text" id="u-apps" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="e.g. eps, vms" value="eps, vms, mgp, atk"></div>
+                            
+                            <div class="col-span-1">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Department</label>
+                                <select id="u-dept-select" onchange="checkCustom('dept')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white" required></select>
+                                <input type="text" id="u-dept-custom" class="hidden w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-2" placeholder="Input New Department">
+                            </div>
+                            
+                            <div class="col-span-1">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Role</label>
+                                <select id="u-role-select" onchange="checkCustom('role')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white" required></select>
+                                <input type="text" id="u-role-custom" class="hidden w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-2" placeholder="Input New Role">
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Allowed Apps</label>
+                                <select id="u-apps-select" onchange="checkCustom('apps')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white" required></select>
+                                <input type="text" id="u-apps-custom" class="hidden w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-2" placeholder="e.g. eps, vms, mgp, atk, med">
+                            </div>
                         </div>
                     </form>
                 </div>
                 <div class="p-6 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
                     <button id="btn-delete-user" onclick="deleteUser()" class="hidden text-red-500 hover:text-red-700 text-sm font-bold flex items-center gap-2 px-3 py-2 rounded hover:bg-red-50 transition"><i class="fas fa-trash"></i> Delete User</button>
                     <div class="flex gap-3 ml-auto">
-                        <button onclick="resetUserForm()" class="px-5 py-2 text-slate-600 font-bold text-sm hover:bg-slate-200 rounded-lg transition">Cancel</button>
+                        <button type="button" onclick="resetUserForm()" class="px-5 py-2 text-slate-600 font-bold text-sm hover:bg-slate-200 rounded-lg transition">Cancel</button>
                         <button onclick="document.getElementById('user-form').dispatchEvent(new Event('submit'))" id="btn-save-user" class="px-6 py-2 bg-blue-600 text-white font-bold text-sm rounded-lg shadow hover:bg-blue-700 transition flex items-center gap-2"><i class="fas fa-save"></i> Save Changes</button>
                     </div>
                 </div>
@@ -259,12 +283,12 @@
         }
     };
     
+    // UPDATE KONFIGURASI APP
     const appsConfig = {
       'eps': { icon: 'fa-id-card-clip', color: 'red', title: 'Exit Permit System', desc_en: 'Employee gate pass & permit management.', desc_id: 'Sistem izin keluar & manajemen gate pass.', url: 'eps.php' },
       'vms': { icon: 'fa-car-side', color: 'blue', title: 'Vehicle Management', desc_en: 'Operational vehicle booking & monitoring.', desc_id: 'Pemesanan & pemantauan kendaraan operasional.', url: 'vms.php' },
       'mgp': { icon: 'fa-truck-loading', color: 'emerald', title: 'Material Gate Pass', desc_en: 'Material in/out control system.', desc_id: 'Sistem kontrol keluar/masuk barang.', url: 'mgp.php' },
       'atk': { icon: 'fa-pen-ruler', color: 'amber', title: 'ATK Request System', desc_en: 'Office supplies & ATK request management.', desc_id: 'Manajemen permintaan alat tulis kantor (ATK).', url: 'atk.php' },
-      // TAMBAHKAN BARIS INI:
       'med': { icon: 'fa-briefcase-medical', color: 'rose', title: 'Medical Plafond', desc_en: 'Medical budget & claim monitoring.', desc_id: 'Pemantauan budget dan klaim medis.', url: 'med.php' }
     };
 
@@ -274,7 +298,7 @@
         if(stored) { currentUser = JSON.parse(stored); showDashboard(); } else { showLogin(); }
     };
 
-    // --- FUNGSI TOGGLE PASSWORD VISIBILITY (BARU) ---
+    // --- FUNGSI TOGGLE PASSWORD VISIBILITY ---
     function togglePass(inputId, iconId) {
         const input = document.getElementById(inputId);
         const icon = document.getElementById(iconId);
@@ -454,16 +478,63 @@
         loadUsers(); 
         loadDropdownOptions(); 
     }
-    
+
+    function populateSelect(id, dataList, defaultVal = '') {
+        const sel = document.getElementById(id);
+        sel.innerHTML = '<option value="">-- Select --</option>';
+        dataList.forEach(item => {
+            sel.innerHTML += `<option value="${item}">${item}</option>`;
+        });
+        sel.innerHTML += '<option value="custom" class="font-bold text-blue-600">➕ Create New...</option>';
+        if(defaultVal) setFieldValue(id.replace('u-', '').replace('-select', ''), defaultVal);
+    }
+
     function loadDropdownOptions() { 
         fetch('api/users.php', { method: 'POST', body: JSON.stringify({ action: 'getOptions' }) })
         .then(r => r.json())
         .then(options => {
-            const dList = document.getElementById('dept-datalist'); dList.innerHTML = ''; 
-            options.departments.forEach(d => { const opt = document.createElement('option'); opt.value = d; dList.appendChild(opt); }); 
-            const rList = document.getElementById('role-datalist'); rList.innerHTML = ''; 
-            options.roles.forEach(r => { const opt = document.createElement('option'); opt.value = r; rList.appendChild(opt); });
+            populateSelect('u-dept-select', options.departments);
+            populateSelect('u-role-select', options.roles);
+            populateSelect('u-apps-select', options.apps, 'eps, vms, mgp, atk, med');
         });
+    }
+
+    function checkCustom(field) {
+        const sel = document.getElementById(`u-${field}-select`);
+        const cust = document.getElementById(`u-${field}-custom`);
+        if(sel.value === 'custom') {
+            cust.classList.remove('hidden');
+            cust.required = true;
+        } else {
+            cust.classList.add('hidden');
+            cust.required = false;
+        }
+    }
+
+    function getFieldValue(field) {
+        const sel = document.getElementById(`u-${field}-select`).value;
+        if(sel === 'custom') return document.getElementById(`u-${field}-custom`).value;
+        return sel;
+    }
+
+    function setFieldValue(field, val) {
+        const sel = document.getElementById(`u-${field}-select`);
+        const cust = document.getElementById(`u-${field}-custom`);
+        
+        let exists = false;
+        for(let i = 0; i < sel.options.length; i++) {
+            if(sel.options[i].value === val) exists = true;
+        }
+        
+        if(exists) {
+            sel.value = val;
+            cust.classList.add('hidden');
+            cust.value = '';
+        } else {
+            sel.value = 'custom';
+            cust.classList.remove('hidden');
+            cust.value = val;
+        }
     }
     
     function loadUsers() { 
@@ -497,15 +568,18 @@
         document.getElementById('form-title').innerText = "Edit User: " + user.username; 
         document.getElementById('form-mode-badge').innerText = "Edit Mode"; 
         document.getElementById('form-mode-badge').className = "bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-1 rounded uppercase"; 
+        
         document.getElementById('u-username').value = user.username; 
         document.getElementById('u-username').disabled = true; 
         document.getElementById('u-password').value = user.password; 
         document.getElementById('u-fullname').value = user.fullname; 
         document.getElementById('u-nik').value = user.nik; 
         document.getElementById('u-phone').value = user.phone; 
-        document.getElementById('u-dept').value = user.department; 
-        document.getElementById('u-role').value = user.role; 
-        document.getElementById('u-apps').value = user.apps; 
+        
+        setFieldValue('dept', user.department);
+        setFieldValue('role', user.role);
+        setFieldValue('apps', user.apps);
+
         document.getElementById('btn-delete-user').classList.remove('hidden'); 
         document.getElementById('btn-save-user').innerHTML = '<i class="fas fa-check"></i> Update User'; 
     }
@@ -516,9 +590,11 @@
         document.getElementById('form-mode-badge').className = "bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded uppercase"; 
         document.getElementById('user-form').reset(); 
         document.getElementById('u-username').disabled = false; 
-        document.getElementById('u-apps').value = "eps, vms, mgp, atk"; 
-        document.getElementById('u-role').value = ""; 
-        document.getElementById('u-dept').value = ""; 
+        
+        setFieldValue('dept', '');
+        setFieldValue('role', '');
+        setFieldValue('apps', 'eps, vms, mgp, atk, med');
+        
         document.getElementById('btn-delete-user').classList.add('hidden'); 
         document.getElementById('btn-save-user').innerHTML = '<i class="fas fa-plus"></i> Create User'; 
     }
@@ -531,9 +607,9 @@
             fullname: document.getElementById('u-fullname').value, 
             nik: document.getElementById('u-nik').value, 
             phone: document.getElementById('u-phone').value, 
-            department: document.getElementById('u-dept').value, 
-            role: document.getElementById('u-role').value, 
-            apps: document.getElementById('u-apps').value 
+            department: getFieldValue('dept'), 
+            role: getFieldValue('role'), 
+            apps: getFieldValue('apps') 
         }; 
         if(!data.username || !data.password || !data.fullname) { alert("Please fill required fields"); return; } 
         
@@ -565,6 +641,76 @@
             alert(res.message); 
             if(res.success) { resetUserForm(); loadUsers(); loadDropdownOptions(); }
         });
+    }
+
+    // --- BULK EXPORT & IMPORT ---
+    function downloadUserTemplate() {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([
+            ["Username", "Password", "Fullname", "NIK", "Department", "Role", "Allowed_Apps", "Phone"],
+            ["johndoe", "pass123", "John Doe", "12345", "IT", "User", "eps, vms, mgp, atk, med", "0812345678"]
+        ]);
+        XLSX.utils.book_append_sheet(wb, ws, "Template");
+        XLSX.writeFile(wb, "Template_Import_Users.xlsx");
+    }
+
+    function exportUsers() {
+        if (allUsers.length === 0) return alert("No users to export");
+        const wb = XLSX.utils.book_new();
+        const rows = [["Username", "Password", "Fullname", "NIK", "Department", "Role", "Allowed_Apps", "Phone"]];
+        allUsers.forEach(u => {
+            rows.push([u.username, u.password, u.fullname, u.nik, u.department, u.role, u.apps, u.phone]);
+        });
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        XLSX.utils.book_append_sheet(wb, ws, "Users");
+        XLSX.writeFile(wb, "Users_Database.xlsx");
+    }
+
+    function handleImportUsers(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                const data = new Uint8Array(evt.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                
+                const formatted = json.map(r => ({
+                    username: r.Username || r.username,
+                    password: r.Password || r.password,
+                    fullname: r.Fullname || r.fullname,
+                    nik: r.NIK || r.nik || '',
+                    department: r.Department || r.department || '',
+                    role: r.Role || r.role || 'User',
+                    allowed_apps: r.Allowed_Apps || r.allowed_apps || 'eps, vms, mgp, atk, med',
+                    phone: r.Phone || r.phone || ''
+                })).filter(r => r.username && r.fullname);
+
+                if(formatted.length === 0) {
+                    document.getElementById('import-user-file').value = '';
+                    return alert("Invalid or empty data.");
+                }
+
+                fetch('api/users.php', {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'importUsers', data: formatted })
+                }).then(r=>r.json()).then(res => {
+                    document.getElementById('import-user-file').value = '';
+                    if(res.success) {
+                        alert("Bulk import successful!");
+                        loadUsers();
+                        loadDropdownOptions();
+                    } else {
+                        alert("Import failed: " + res.message);
+                    }
+                });
+            } catch(err) {
+                document.getElementById('import-user-file').value = '';
+                alert("Failed to parse Excel file.");
+            }
+        };
+        reader.readAsArrayBuffer(file);
     }
   </script>
 </body>
