@@ -27,7 +27,6 @@
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     
-    /* Elegant Table Styling */
     .table-pro th { padding-top: 0.75rem; padding-bottom: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0; }
     .table-pro td { padding-top: 0.875rem; padding-bottom: 0.875rem; vertical-align: middle; }
   </style>
@@ -324,15 +323,15 @@
           
           <div class="overflow-y-auto flex-1 p-2 custom-scrollbar bg-slate-50">
               <table class="w-full text-left text-sm whitespace-nowrap table-pro" id="admin-users-table">
-                  <thead class="bg-white text-slate-500 text-[10px] sticky top-0 shadow-[0_2px_4px_rgba(0,0,0,0.02)] z-10">
+                  <thead class="bg-white text-slate-500 uppercase text-[9px] font-bold sticky top-0 shadow-[0_2px_4px_rgba(0,0,0,0.02)] z-10">
                       <tr>
-                          <th class="px-4 py-3 border-r border-slate-200 align-middle bg-slate-50">Employee</th>
-                          <th class="px-3 py-2 text-center bg-blue-50/80 text-blue-700">R.Jalan<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
-                          <th class="px-3 py-2 text-center bg-purple-50/80 text-purple-700">Kacamata<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
-                          <th class="px-3 py-2 text-center bg-green-50/80 text-green-700">Persalinan<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
-                          <th class="px-3 py-2 text-center bg-orange-50/80 text-orange-700">R.Inap<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
-                          <th class="px-3 py-2 text-center bg-slate-50">Kamar</th>
-                          <th class="px-3 py-2 text-center w-10 bg-slate-50"><i class="fas fa-edit"></i></th>
+                          <th class="px-3 py-2 border-r border-slate-200 align-middle bg-slate-50">Employee</th>
+                          <th class="px-2 py-2 text-center bg-blue-50/80 text-blue-700">R.Jalan<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
+                          <th class="px-2 py-2 text-center bg-purple-50/80 text-purple-700">Kacamata<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
+                          <th class="px-2 py-2 text-center bg-green-50/80 text-green-700">Persalinan<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
+                          <th class="px-2 py-2 text-center bg-orange-50/80 text-orange-700">R.Inap<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
+                          <th class="px-2 py-2 text-center bg-slate-50">Kamar</th>
+                          <th class="px-3 py-2 text-center w-8 bg-slate-50"><i class="fas fa-edit"></i></th>
                       </tr>
                   </thead>
                   <tbody id="admin-table-body" class="divide-y divide-slate-100 bg-white text-[11px] font-medium"></tbody>
@@ -390,7 +389,7 @@
             th_rem_plafond: "Sisa Plafond", th_inv: "Kategori & Nota", th_status: "Status", th_hrga: "Review HRGA", th_action: "Aksi",
             btn_ok: "OK", btn_cancel: "Batal", btn_proceed: "Ya, Lanjutkan",
             modal_submit_title: "Kirim Klaim Medis", modal_edit_title: "Edit Klaim Medis", deduct_info: "Plafond akan langsung terpotong saat disubmit.",
-            target_emp: "Karyawan Tujuan", invoice_no: "No. Invoice", amount: "Nominal (Rp)", upload_proof: "Unggah Bukti (Img/PDF)",
+            target_emp: "Karyawan Tujuan", invoice_no: "No. Invoice", amount: "Nominal (Rp)", upload_proof: "Unggah Bukti (Gambar/PDF)",
             opt_edit_note: "(Opsional)", click_upload: "Klik untuk unggah file", btn_submit: "Kirim", btn_save: "Simpan",
             manage_plafond: "Kelola Plafond Karyawan", sel_user: "Pilih Karyawan",
             reject_claim: "Tolak Klaim", refund_info: "Plafond akan dikembalikan ke karyawan.", btn_reject: "Tolak",
@@ -469,6 +468,26 @@
             container.innerHTML = `<img src="${url}" class="w-full h-full object-contain bg-slate-900 rounded-2xl">`;
         }
         openModal('modal-viewer');
+    }
+
+    // Compression function (Downsize images before uploading)
+    function compressImage(base64Str, maxWidth = 1000, quality = 0.7) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = base64Str;
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width; let height = img.height;
+                    if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                } catch(e) { reject(e); }
+            };
+            img.onerror = () => resolve(base64Str); // Fallback jika error render
+        });
     }
 
     window.onload = function() {
@@ -583,6 +602,8 @@
             return;
         }
 
+        const toMil = (num) => { let n = parseFloat(num)||0; return n >= 1000000 ? (n/1000000).toFixed(1)+'M' : (n/1000).toFixed(0)+'K'; };
+
         filtered.forEach(u => {
             const cl = (v) => parseFloat(v)||0;
             const ij=cl(u.init_jalan), cj=cl(u.curr_jalan), uj=ij-cj>0?ij-cj:0;
@@ -597,23 +618,18 @@
                     <div class="font-bold text-slate-700 truncate w-36" title="${u.fullname}">${u.fullname}</div>
                     <div class="text-[9px] text-slate-500 font-medium">${u.department||'-'}</div>
                 </td>
-                
                 <td class="px-3 py-2.5 text-right text-slate-500">${formatRp(ij)}</td>
                 <td class="px-3 py-2.5 text-right text-orange-500 font-semibold">${formatRp(uj)}</td>
                 <td class="px-3 py-2.5 text-right font-bold text-rose-600 border-r border-slate-100 bg-rose-50/20">${formatRp(cj)}</td>
-                
                 <td class="px-3 py-2.5 text-right text-slate-500">${formatRp(ik)}</td>
                 <td class="px-3 py-2.5 text-right text-orange-500 font-semibold">${formatRp(uk)}</td>
                 <td class="px-3 py-2.5 text-right font-bold text-rose-600 border-r border-slate-100 bg-rose-50/20">${formatRp(ck)}</td>
-                
                 <td class="px-3 py-2.5 text-right text-slate-500">${formatRp(ip)}</td>
                 <td class="px-3 py-2.5 text-right text-orange-500 font-semibold">${formatRp(up)}</td>
                 <td class="px-3 py-2.5 text-right font-bold text-rose-600 border-r border-slate-100 bg-rose-50/20">${formatRp(cp)}</td>
-                
                 <td class="px-3 py-2.5 text-right text-slate-500">${formatRp(ii)}</td>
                 <td class="px-3 py-2.5 text-right text-orange-500 font-semibold">${formatRp(ui)}</td>
                 <td class="px-3 py-2.5 text-right font-bold text-rose-600 border-r border-slate-100 bg-rose-50/20">${formatRp(ci)}</td>
-                
                 <td class="px-4 py-2.5 text-right font-bold text-indigo-700 bg-indigo-50/20">${formatRp(hk)}</td>
             </tr>`;
         });
@@ -656,7 +672,9 @@
             let fileIcon = r.photo_url && r.photo_url.toLowerCase().endsWith('.pdf') ? 'fa-file-pdf' : 'fa-image';
             const photoHtml = r.photo_url ? `<button onclick="viewFile('${r.photo_url}')" class="text-blue-600 bg-blue-50 border border-blue-200 px-2 py-1 rounded-md text-[10px] font-bold shadow-sm hover:bg-blue-100 transition inline-flex items-center gap-1 mt-1.5"><i class="fas ${fileIcon}"></i> Proof Doc</button>` : '';
 
-            const remPlafondTd = canViewAll ? `<td class="px-6 py-4 text-right bg-rose-50/30 align-middle border-x border-slate-100"><div class="font-black text-rose-600 text-sm drop-shadow-sm">${formatRp(r.display_balance)}</div><div class="text-[9px] font-bold uppercase text-slate-400 mt-0.5">${t('rem_plafond_desc')}</div></td>` : '';
+            // Pastikan jika display balance gagal ditarik maka tampilkan 0 (Fall-safe)
+            const dBal = r.display_balance !== null && r.display_balance !== undefined ? parseFloat(r.display_balance) : 0;
+            const remPlafondTd = canViewAll ? `<td class="px-6 py-4 text-right bg-rose-50/30 align-middle border-x border-slate-100"><div class="font-black text-rose-600 text-sm drop-shadow-sm">${formatRp(dBal)}</div><div class="text-[9px] font-bold uppercase text-slate-400 mt-0.5">${t('rem_plafond_desc')}</div></td>` : '';
 
             let typeColor = 'bg-blue-100 text-blue-700 border-blue-200';
             if(r.claim_type === 'Kacamata') typeColor = 'bg-purple-100 text-purple-700 border-purple-200';
@@ -664,7 +682,7 @@
             if(r.claim_type === 'Rawat Inap') typeColor = 'bg-orange-100 text-orange-700 border-orange-200';
 
             tb.innerHTML += `
-            <tr class="border-b border-slate-100 hover:bg-slate-50 transition table-pro">
+            <tr class="border-b border-slate-100 hover:bg-slate-50 align-top transition table-pro">
                 <td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${r.created_at.split(' ')[0]}</div><div class="text-[10px] text-slate-400 font-mono mt-0.5">#${r.req_id.slice(-6)}</div></td>
                 <td class="px-6 py-4"><div class="font-bold text-xs text-slate-700">${r.fullname}</div><div class="text-[10px] text-slate-500 mt-0.5">${r.department}</div></td>
                 ${remPlafondTd}
@@ -678,7 +696,7 @@
                 <td class="px-6 py-4 text-right">${actionBtn}</td>
             </tr>`;
 
-            const remPlafondCard = canViewAll ? `<div class="text-[10px] text-slate-400 font-bold uppercase mt-3 border-t border-slate-100 pt-3 flex justify-between items-center bg-rose-50/50 p-2.5 rounded-xl border border-rose-100 shadow-sm"><span><i class="fas fa-heartbeat text-rose-500 mr-1.5"></i> ${t('rem_plafond_desc')}</span> <span class="font-black text-rose-600 text-sm drop-shadow-sm">${formatRp(r.display_balance)}</span></div>` : '';
+            const remPlafondCard = canViewAll ? `<div class="text-[10px] text-slate-400 font-bold uppercase mt-3 border-t border-slate-100 pt-3 flex justify-between items-center bg-rose-50/50 p-2.5 rounded-xl border border-rose-100 shadow-sm"><span><i class="fas fa-heartbeat text-rose-500 mr-1.5"></i> ${t('rem_plafond_desc')}</span> <span class="font-black text-rose-600 text-sm drop-shadow-sm">${formatRp(dBal)}</span></div>` : '';
 
             cc.innerHTML += `
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
@@ -761,19 +779,40 @@
 
         const executePost = (p) => {
             fetch('api/med.php', { method: 'POST', body: JSON.stringify(p) })
-            .then(r=>r.json()).then(res => {
+            .then(async r => {
+                const text = await r.text();
+                try { return JSON.parse(text); } 
+                catch(e) { throw new Error("Server returned non-JSON. " + text.substring(0,50)); }
+            })
+            .then(res => {
                 btn.disabled = false; btn.innerText = orgTxt;
                 if(res.success) { closeModal('modal-submit'); loadData(); showAlert("Success", "Data saved successfully."); }
                 else { showAlert("Error", res.message); }
             }).catch(e => {
                 btn.disabled = false; btn.innerText = orgTxt;
-                showAlert("Error", "Connection failed.");
+                showAlert("Error", "Connection failed. (Payload might be too large)");
             });
         };
 
         if (file) {
+            // Validate File Size & Compress if Image
+            if (file.size > 8 * 1024 * 1024 && !file.type.startsWith('image/')) { // 8MB limit for non-images
+                 showAlert("Error", "PDF file must be less than 8MB.");
+                 btn.disabled = false; btn.innerText = orgTxt;
+                 return;
+            }
+
             const reader = new FileReader();
-            reader.onload = function(e) { payload.photoBase64 = e.target.result; executePost(payload); };
+            reader.onload = async function(e) { 
+                let base64 = e.target.result;
+                // Compress image down to ~1000px width max
+                if (file.type.startsWith('image/')) {
+                    try { base64 = await compressImage(base64, 1000, 0.7); } 
+                    catch(err) { console.log('Compression failed, using original', err); }
+                }
+                payload.photoBase64 = base64; 
+                executePost(payload); 
+            };
             reader.readAsDataURL(file);
         } else { executePost(payload); }
     }

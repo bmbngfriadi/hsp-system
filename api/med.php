@@ -8,6 +8,17 @@ header("Access-Control-Allow-Origin: *");
 require 'db.php'; 
 require 'helper.php';
 
+// Cek Jika Payload Terlalu Besar
+$rawInput = file_get_contents('php://input');
+$input = json_decode($rawInput, true);
+if (!$input && !empty($rawInput)) {
+    echo json_encode(['success' => false, 'message' => 'Ukuran file terlalu besar. Gagal memproses data.']);
+    exit;
+}
+
+$action = $input['action'] ?? '';
+$now = date('Y-m-d H:i:s');
+
 // --- AUTO MIGRATION TABLES & COLUMNS ---
 $conn->query("CREATE TABLE IF NOT EXISTS med_plafond (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -68,7 +79,6 @@ function uploadMedicalFile($base64Data, $prefix) {
     return false;
 }
 
-// Map Claim Type to DB Columns
 function getCol($type, $isInitial = false) {
     if ($type === 'Kacamata') return $isInitial ? 'initial_kacamata' : 'current_kacamata';
     if ($type === 'Persalinan') return $isInitial ? 'initial_persalinan' : 'current_persalinan';
@@ -76,18 +86,12 @@ function getCol($type, $isInitial = false) {
     return $isInitial ? 'initial_budget' : 'current_budget'; // Rawat Jalan
 }
 
-$input = json_decode(file_get_contents('php://input'), true);
-$action = $input['action'] ?? '';
-$now = date('Y-m-d H:i:s');
-
 try {
-    // --- GET USERS FOR DROPDOWN ---
     if ($action == 'getUsers') {
         $res = $conn->query("SELECT username, fullname, department FROM users ORDER BY fullname ASC");
         echo json_encode(['success' => true, 'data' => $res->fetch_all(MYSQLI_ASSOC)]); exit;
     }
 
-    // --- 1. GET PLAFOND DATA ---
     if ($action == 'getPlafond') {
         $role = $input['role'];
         $username = $conn->real_escape_string($input['username']);
@@ -116,7 +120,6 @@ try {
         exit;
     }
 
-    // --- 2. SET PLAFOND (ADMIN ONLY) ---
     if ($action == 'setBudget') {
         if ($input['role'] !== 'Administrator') { echo json_encode(['success' => false, 'message' => 'Unauthorized']); exit; }
         $u = $conn->real_escape_string($input['target_username']);
@@ -135,7 +138,6 @@ try {
         echo json_encode(['success' => true]); exit;
     }
 
-    // --- 2.1 IMPORT PLAFOND BULK (ADMIN ONLY) ---
     if ($action == 'importBudgetBulk') {
         if ($input['role'] !== 'Administrator') { echo json_encode(['success' => false, 'message' => 'Unauthorized']); exit; }
         $items = $input['data'];
@@ -160,19 +162,22 @@ try {
         exit;
     }
 
-    // --- 3. GET CLAIMS DATA ---
     if ($action == 'getClaims' || $action == 'exportData') {
         $role = $input['role'];
         $username = $conn->real_escape_string($input['username']);
         $dept = $conn->real_escape_string($input['department'] ?? '');
         
         $sql = "SELECT c.*, 
-                CASE c.claim_type 
-                    WHEN 'Kacamata' THEN p.current_kacamata
-                    WHEN 'Persalinan' THEN p.current_persalinan
-                    WHEN 'Rawat Inap' THEN p.current_inap
-                    ELSE p.current_budget 
-                END as live_current,
+                COALESCE(
+                    NULLIF(c.remaining_balance, 0), 
+                    CASE c.claim_type 
+                        WHEN 'Kacamata' THEN p.current_kacamata
+                        WHEN 'Persalinan' THEN p.current_persalinan
+                        WHEN 'Rawat Inap' THEN p.current_inap
+                        ELSE p.current_budget 
+                    END, 
+                    0
+                ) as display_balance,
                 CASE c.claim_type 
                     WHEN 'Kacamata' THEN p.initial_kacamata
                     WHEN 'Persalinan' THEN p.initial_persalinan
@@ -202,16 +207,9 @@ try {
         }
         
         $res = $conn->query($sql);
-        $data = [];
-        while($row = $res->fetch_assoc()) {
-            // Assign display balance properly
-            $row['display_balance'] = $row['remaining_balance'] !== null ? floatval($row['remaining_balance']) : floatval($row['live_current']);
-            $data[] = $row;
-        }
-        echo json_encode(['success' => true, 'data' => $data]); exit;
+        echo json_encode(['success' => true, 'data' => $res->fetch_all(MYSQLI_ASSOC)]); exit;
     }
 
-    // --- 5. SUBMIT CLAIM ---
     if ($action == 'submit') {
         $reqId = "MED-" . time();
         $submitterUser = $conn->real_escape_string($input['username']);
@@ -241,23 +239,83 @@ try {
         if (!$photoUrl) { echo json_encode(['success' => false, 'message' => 'Gagal upload file.']); exit; }
 
         $status = in_array($role, ['HRGA', 'Administrator']) ? 'Confirmed' : 'Pending HRGA';
-        $hrgaBy = ($status === 'Confirmed') ? $conn->real_escape_string($input['fullname']) : NULL;
+        $hrgaByVal = ($status === 'Confirmed') ? "'" . $conn->real_escape_string($input['fullname']) . "'" : "NULL";
         $hrgaTime = ($status === 'Confirmed') ? "'$now'" : "NULL";
         $newBudget = $currBudget - $amount;
 
         $conn->begin_transaction();
         try {
-            $conn->query("UPDATE med_plafond SET $currCol = $newBudget, last_updated = '$now' WHERE username = '$targetUser'");
-            $stmt = $conn->prepare("INSERT INTO med_claims (req_id, username, fullname, department, claim_type, invoice_no, amount, photo_url, status, hrga_by, hrga_time, remaining_balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, $hrgaTime, ?, ?)");
-            $stmt->bind_param("ssssssdsssds", $reqId, $targetUser, $fullname, $dept, $claimType, $invoiceNo, $amount, $photoUrl, $status, $hrgaBy, $newBudget, $now);
-            $stmt->execute();
+            if(!$conn->query("UPDATE med_plafond SET $currCol = $newBudget, last_updated = '$now' WHERE username = '$targetUser'")) {
+                throw new Exception("Gagal update plafond master.");
+            }
+            
+            $sqlInsert = "INSERT INTO med_claims (req_id, username, fullname, department, claim_type, invoice_no, amount, photo_url, status, hrga_by, hrga_time, remaining_balance, created_at) 
+                          VALUES ('$reqId', '$targetUser', '$fullname', '$dept', '$claimType', '$invoiceNo', $amount, '$photoUrl', '$status', $hrgaByVal, $hrgaTime, $newBudget, '$now')";
+            
+            if(!$conn->query($sqlInsert)) {
+                throw new Exception("Insert Claim Gagal: " . $conn->error);
+            }
+            
             $conn->commit();
+
+            // NOTIFIKASI WA SUBMIT
+            $hrgaPhones = getPhones($conn, 'HRGA');
+            $userPhone = getUserPhone($conn, $targetUser);
+            $amtFormatted = number_format($amount, 0, ',', '.');
+            $remFormatted = number_format($newBudget, 0, ',', '.');
+
+            if ($status === 'Pending HRGA') {
+                $msgHrga = "🩺 *MEDICAL CLAIM - NEW REQUEST*\n"
+                         . "--------------------------------\n"
+                         . "User: $fullname ($dept)\n"
+                         . "Category: $claimType\n"
+                         . "Invoice: $invoiceNo\n"
+                         . "Amount: Rp $amtFormatted\n"
+                         . "*Rem. Plafond: Rp $remFormatted*\n\n"
+                         . "👉 _Plafond deducted temporarily. Please login to review._";
+                foreach($hrgaPhones as $ph) sendWA($ph, $msgHrga);
+                
+                if($userPhone) {
+                    $msgUser = "🩺 *MEDICAL CLAIM - SUBMITTED*\n"
+                             . "--------------------------------\n"
+                             . "Your claim has been submitted.\n\n"
+                             . "Category: $claimType\n"
+                             . "Invoice: $invoiceNo\n"
+                             . "Amount: Rp $amtFormatted\n"
+                             . "*Rem. Plafond: Rp $remFormatted*\n"
+                             . "Status: Pending HRGA Review\n\n"
+                             . "👉 _Your current plafond has been deducted temporarily._";
+                    sendWA($userPhone, $msgUser);
+                }
+            } else {
+                $msgHrga = "✅ *MEDICAL CLAIM - AUTO CONFIRMED*\n"
+                         . "--------------------------------\n"
+                         . "Inputted By: $submitterUser\n"
+                         . "Target User: $fullname\n"
+                         . "Category: $claimType\n"
+                         . "Invoice: $invoiceNo\n"
+                         . "Amount: Rp $amtFormatted\n"
+                         . "*Rem. Plafond: Rp $remFormatted*";
+                foreach($hrgaPhones as $ph) sendWA($ph, $msgHrga);
+                
+                if($userPhone && $submitterUser !== $targetUser) {
+                    $msgUser = "✅ *MEDICAL CLAIM - APPROVED*\n"
+                             . "--------------------------------\n"
+                             . "HRGA has inputted and approved a medical claim for you.\n\n"
+                             . "Category: $claimType\n"
+                             . "Invoice: $invoiceNo\n"
+                             . "Amount: Rp $amtFormatted\n"
+                             . "*Rem. Plafond: Rp $remFormatted*\n\n"
+                             . "👉 _Your plafond has been deducted._";
+                    sendWA($userPhone, $msgUser);
+                }
+            }
+
             echo json_encode(['success' => true]);
         } catch (Exception $e) { $conn->rollback(); echo json_encode(['success' => false, 'message' => $e->getMessage()]); }
         exit;
     }
 
-    // --- 6. EDIT CLAIM (USER) ---
     if ($action == 'edit') {
         $reqId = $conn->real_escape_string($input['reqId']);
         $newAmount = floatval($input['amount']);
@@ -277,19 +335,16 @@ try {
 
         $conn->begin_transaction();
         try {
-            // Refund Old
-            $conn->query("UPDATE med_plafond SET $colOld = $colOld + $oldAmount WHERE username='$u'");
+            if(!$conn->query("UPDATE med_plafond SET $colOld = $colOld + $oldAmount WHERE username='$u'")) throw new Exception("Refund old failed.");
             
-            // Check New
             $chk = $conn->query("SELECT $colNew FROM med_plafond WHERE username='$u'")->fetch_assoc();
             if ($chk[$colNew] < $newAmount) {
-                $conn->query("UPDATE med_plafond SET $colOld = $colOld - $oldAmount WHERE username='$u'"); // Revert Refund
+                $conn->query("UPDATE med_plafond SET $colOld = $colOld - $oldAmount WHERE username='$u'"); 
                 throw new Exception("Plafond (".$newType.") tidak mencukupi untuk penambahan ini.");
             }
             
-            // Deduct New
             $newRem = floatval($chk[$colNew]) - $newAmount;
-            $conn->query("UPDATE med_plafond SET $colNew = $newRem WHERE username='$u'");
+            if(!$conn->query("UPDATE med_plafond SET $colNew = $newRem WHERE username='$u'")) throw new Exception("Update new budget failed.");
 
             $photoQuery = "";
             if (!empty($photoBase64)) {
@@ -297,14 +352,45 @@ try {
                 $photoQuery = ", photo_url='$photoUrl'";
             }
 
-            $conn->query("UPDATE med_claims SET claim_type='$newType', invoice_no='$newInvoice', amount=$newAmount, remaining_balance=$newRem $photoQuery WHERE req_id='$reqId'");
+            $updSql = "UPDATE med_claims SET claim_type='$newType', invoice_no='$newInvoice', amount=$newAmount, remaining_balance=$newRem $photoQuery WHERE req_id='$reqId'";
+            if(!$conn->query($updSql)) throw new Exception("Update claim error: " . $conn->error);
+            
             $conn->commit();
+
+            // NOTIFIKASI WA EDIT
+            $hrgaPhones = getPhones($conn, 'HRGA');
+            $userPhone = getUserPhone($conn, $u);
+            $amtFormatted = number_format($newAmount, 0, ',', '.');
+            $remFormatted = number_format($newRem, 0, ',', '.');
+
+            $msgHrga = "✏️ *MEDICAL CLAIM - UPDATED*\n"
+                     . "--------------------------------\n"
+                     . "User: {$claim['fullname']} ({$claim['department']})\n"
+                     . "Request ID: $reqId\n"
+                     . "New Category: $newType\n"
+                     . "New Invoice: $newInvoice\n"
+                     . "New Amount: Rp $amtFormatted\n"
+                     . "*Rem. Plafond: Rp $remFormatted*\n\n"
+                     . "👉 _Please login to review the updated data._";
+            foreach($hrgaPhones as $ph) sendWA($ph, $msgHrga);
+
+            if($userPhone) {
+                $msgUser = "✏️ *MEDICAL CLAIM - UPDATED*\n"
+                         . "--------------------------------\n"
+                         . "You have updated your claim.\n\n"
+                         . "Request ID: $reqId\n"
+                         . "Category: $newType\n"
+                         . "Amount: Rp $amtFormatted\n"
+                         . "*Rem. Plafond: Rp $remFormatted*\n"
+                         . "Status: Pending HRGA Review";
+                sendWA($userPhone, $msgUser);
+            }
+
             echo json_encode(['success' => true]);
         } catch (Exception $e) { $conn->rollback(); echo json_encode(['success' => false, 'message' => $e->getMessage()]); }
         exit;
     }
 
-    // --- 7. UPDATE STATUS (HRGA ONLY) ---
     if ($action == 'updateStatus') {
         $reqId = $conn->real_escape_string($input['id']);
         $act = $input['act'];
@@ -315,9 +401,40 @@ try {
         $targetUser = $claim['username'];
         $amount = floatval($claim['amount']);
         $col = getCol($claim['claim_type'], false);
+        $amtFormatted = number_format($amount, 0, ',', '.');
+
+        $hrgaPhones = getPhones($conn, 'HRGA');
+        $userPhone = getUserPhone($conn, $targetUser);
 
         if ($act == 'confirm') {
             $conn->query("UPDATE med_claims SET status = 'Confirmed', hrga_by = '$hrgaName', hrga_time = '$now' WHERE req_id = '$reqId'");
+            
+            // Get Current Balance to show
+            $plafond = $conn->query("SELECT $col FROM med_plafond WHERE username='$targetUser'")->fetch_assoc();
+            $currBal = floatval($plafond[$col]);
+            $remFormatted = number_format($currBal, 0, ',', '.');
+
+            $msgHrga = "✅ *MEDICAL CLAIM - CONFIRMED*\n"
+                     . "--------------------------------\n"
+                     . "By: $hrgaName\n"
+                     . "User: {$claim['fullname']}\n"
+                     . "Req ID: $reqId\n"
+                     . "Amount: Rp $amtFormatted\n"
+                     . "*Rem. Plafond: Rp $remFormatted*";
+            foreach($hrgaPhones as $ph) sendWA($ph, $msgHrga);
+            
+            if($userPhone) {
+                $msgUser = "✅ *MEDICAL CLAIM - APPROVED*\n"
+                         . "--------------------------------\n"
+                         . "Your claim has been approved by HRGA ($hrgaName).\n\n"
+                         . "Req ID: $reqId\n"
+                         . "Category: {$claim['claim_type']}\n"
+                         . "Invoice: {$claim['invoice_no']}\n"
+                         . "Amount: Rp $amtFormatted\n"
+                         . "*Rem. Plafond: Rp $remFormatted*";
+                sendWA($userPhone, $msgUser);
+            }
+
             echo json_encode(['success' => true]);
         } 
         elseif ($act == 'reject') {
@@ -325,12 +442,35 @@ try {
             try {
                 $conn->query("UPDATE med_plafond SET $col = $col + $amount, last_updated = '$now' WHERE username = '$targetUser'");
                 
-                // Get updated balance to store in history
                 $plafond = $conn->query("SELECT $col FROM med_plafond WHERE username='$targetUser'")->fetch_assoc();
                 $newBudget = floatval($plafond[$col]);
 
                 $conn->query("UPDATE med_claims SET status = 'Rejected', hrga_by = '$hrgaName', hrga_time = '$now', reject_reason = '$reason', remaining_balance = $newBudget WHERE req_id = '$reqId'");
                 $conn->commit();
+
+                $remFormatted = number_format($newBudget, 0, ',', '.');
+
+                $msgHrga = "❌ *MEDICAL CLAIM - REJECTED*\n"
+                         . "--------------------------------\n"
+                         . "By: $hrgaName\n"
+                         . "User: {$claim['fullname']}\n"
+                         . "Req ID: $reqId\n"
+                         . "Reason: $reason\n"
+                         . "*Rem. Plafond: Rp $remFormatted* (Refunded)";
+                foreach($hrgaPhones as $ph) sendWA($ph, $msgHrga);
+                
+                if($userPhone) {
+                    $msgUser = "❌ *MEDICAL CLAIM - REJECTED*\n"
+                             . "--------------------------------\n"
+                             . "Your claim was rejected by HRGA ($hrgaName).\n\n"
+                             . "Req ID: $reqId\n"
+                             . "Invoice: {$claim['invoice_no']}\n"
+                             . "Reason: $reason\n\n"
+                             . "👉 _Your plafond has been refunded._\n"
+                             . "*Rem. Plafond: Rp $remFormatted*";
+                    sendWA($userPhone, $msgUser);
+                }
+
                 echo json_encode(['success' => true]);
             } catch (Exception $e) { $conn->rollback(); echo json_encode(['success' => false, 'message' => $e->getMessage()]); }
         }
