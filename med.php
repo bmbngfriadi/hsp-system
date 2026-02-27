@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Medical Plafond System</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   
@@ -18,17 +18,40 @@
     .loader-spin { border: 3px solid #e2e8f0; border-top: 3px solid #e11d48; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .status-badge { padding: 4px 10px; border-radius: 9999px; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; border: 1px solid transparent; letter-spacing: 0.02em; }
-    .animate-slide-up { animation: slideUp 0.3s ease-out; }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .btn-action { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-    .btn-action:hover { transform: translateY(-2px); box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.15); }
+    .btn-action:hover { transform: translateY(-2px); box-shadow: 0 6px 15px -3px rgba(0, 0, 0, 0.15); }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-    
     .table-pro th { padding-top: 0.75rem; padding-bottom: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0; }
     .table-pro td { padding-top: 0.875rem; padding-bottom: 0.875rem; vertical-align: middle; }
+
+    /* ==================================================
+       ANIMASI KARTU BUDGET & STATISTIK (LIVELY EFFECTS)
+       ================================================== */
+    .shine-effect { position: relative; overflow: hidden; }
+    .shine-effect::before {
+        content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+        background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+        transform: skewX(-20deg); animation: shine 5s infinite; z-index: 1;
+    }
+    @keyframes shine { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+
+    @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    .bg-live-gradient { background-size: 200% 200%; animation: gradientBG 4s ease infinite; }
+
+    @keyframes iconPulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+    .icon-pulse { animation: iconPulse 2s infinite ease-in-out; }
+    @keyframes iconWiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } }
+    .icon-wiggle { animation: iconWiggle 1.5s infinite ease-in-out; }
+    @keyframes iconBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    .icon-bounce { animation: iconBounce 2s infinite ease-in-out; }
+
+    .blob-bg { position: absolute; border-radius: 50%; filter: blur(20px); opacity: 0.4; animation: blobMove 6s infinite alternate; z-index: 0; }
+    @keyframes blobMove { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(10px, -15px) scale(1.2); } }
   </style>
 </head>
 <body class="text-slate-800 h-screen flex flex-col overflow-hidden">
@@ -36,7 +59,7 @@
     <nav class="bg-gradient-to-r from-rose-700 to-rose-900 text-white shadow-md sticky top-0 z-40 flex-none">
        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
          <div class="flex items-center gap-3">
-             <div class="bg-white p-2 rounded-lg shadow-sm text-rose-600 flex items-center justify-center"><i class="fas fa-briefcase-medical text-xl"></i></div>
+             <div class="bg-white p-2 rounded-lg shadow-sm text-rose-600 flex items-center justify-center"><i class="fas fa-briefcase-medical text-xl icon-pulse"></i></div>
              <div class="flex flex-col"><span class="font-bold leading-none text-base tracking-tight" data-i18n="app_title">Medical Plafond</span><span class="text-[10px] text-rose-200 font-medium">PT Cemindo Gemilang Tbk</span></div>
          </div>
          <div class="flex items-center gap-3 sm:gap-5">
@@ -68,29 +91,51 @@
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 relative overflow-hidden group hover:shadow-md transition">
-                    <div class="absolute -right-4 -top-4 w-20 h-20 rounded-full bg-slate-50 group-hover:scale-[2.5] transition-transform duration-700 z-0"></div>
-                    <div class="w-14 h-14 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-2xl z-10"><i class="fas fa-wallet"></i></div>
+                <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-6 rounded-2xl shadow-lg flex items-center gap-5 relative group hover:-translate-y-1.5 transition-all duration-300 shine-effect text-white">
+                    <div class="blob-bg bg-white w-24 h-24 -right-4 -bottom-4"></div>
+                    <div class="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl z-10 border border-white/30"><i class="fas fa-wallet icon-bounce"></i></div>
                     <div class="z-10">
-                        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1" data-i18n="init_plafond">Initial Plafond</div>
-                        <div class="text-2xl font-black text-slate-700 tracking-tight" id="disp-initial">Rp 0</div>
+                        <div class="text-[11px] font-bold text-blue-100 uppercase tracking-wider mb-1" data-i18n="init_plafond">Initial Plafond</div>
+                        <div class="text-2xl font-black tracking-tight drop-shadow-md" id="disp-initial">Rp 0</div>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 relative overflow-hidden group hover:shadow-md transition">
-                    <div class="absolute -right-4 -top-4 w-20 h-20 rounded-full bg-rose-50 group-hover:scale-[2.5] transition-transform duration-700 z-0"></div>
-                    <div class="w-14 h-14 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-2xl z-10"><i class="fas fa-heartbeat"></i></div>
+                <div class="bg-gradient-to-br from-rose-500 to-pink-600 p-6 rounded-2xl shadow-lg flex items-center gap-5 relative group hover:-translate-y-1.5 transition-all duration-300 shine-effect text-white bg-live-gradient">
+                    <div class="blob-bg bg-white w-24 h-24 -left-4 -bottom-4" style="animation-delay: 1s;"></div>
+                    <div class="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl z-10 border border-white/30"><i class="fas fa-heartbeat icon-pulse"></i></div>
                     <div class="z-10">
-                        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1" data-i18n="rem_plafond">Remaining Plafond</div>
-                        <div class="text-3xl font-black text-rose-600 drop-shadow-sm tracking-tight" id="disp-current">Rp 0</div>
+                        <div class="text-[11px] font-bold text-rose-100 uppercase tracking-wider mb-1" data-i18n="rem_plafond">Remaining Plafond</div>
+                        <div class="text-3xl font-black drop-shadow-md tracking-tight" id="disp-current">Rp 0</div>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 relative overflow-hidden group hover:shadow-md transition">
-                    <div class="absolute -right-4 -top-4 w-20 h-20 rounded-full bg-orange-50 group-hover:scale-[2.5] transition-transform duration-700 z-0"></div>
-                    <div class="w-14 h-14 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center text-2xl z-10"><i class="fas fa-receipt"></i></div>
+                <div class="bg-gradient-to-br from-orange-400 to-amber-500 p-6 rounded-2xl shadow-lg flex items-center gap-5 relative group hover:-translate-y-1.5 transition-all duration-300 shine-effect text-white">
+                    <div class="blob-bg bg-white w-24 h-24 -right-4 top-4" style="animation-delay: 2s;"></div>
+                    <div class="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl z-10 border border-white/30"><i class="fas fa-receipt icon-wiggle"></i></div>
                     <div class="z-10">
-                        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1" data-i18n="used_plafond">Used Plafond</div>
-                        <div class="text-2xl font-black text-slate-700 tracking-tight" id="disp-used">Rp 0</div>
+                        <div class="text-[11px] font-bold text-orange-100 uppercase tracking-wider mb-1" data-i18n="used_plafond">Used Plafond</div>
+                        <div class="text-2xl font-black tracking-tight drop-shadow-md" id="disp-used">Rp 0</div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="advanced-stats-section" class="hidden">
+            <h3 class="text-lg font-extrabold text-slate-800 flex items-center gap-2 mb-4"><i class="fas fa-chart-line text-blue-500"></i> <span data-i18n="stat_title">Advanced Analytics</span></h3>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition">
+                    <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-xl"><i class="fas fa-file-invoice-dollar icon-bounce"></i></div>
+                    <div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider" data-i18n="stat_total_claim">Total Claim Amount</div><div class="text-lg font-black text-slate-700" id="stat-total-amt">Rp 0</div></div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition">
+                    <div class="w-12 h-12 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center text-xl"><i class="fas fa-user-ninja icon-pulse"></i></div>
+                    <div class="overflow-hidden"><div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider" data-i18n="stat_top_user">Top Claimant</div><div class="text-sm font-black text-slate-700 truncate" id="stat-top-user">-</div><div class="text-[10px] text-purple-600 font-bold" id="stat-top-user-val"></div></div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition">
+                    <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center text-xl"><i class="fas fa-building icon-wiggle"></i></div>
+                    <div class="overflow-hidden"><div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider" data-i18n="stat_top_dept">Top Department</div><div class="text-sm font-black text-slate-700 truncate" id="stat-top-dept">-</div><div class="text-[10px] text-emerald-600 font-bold" id="stat-top-dept-val"></div></div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition">
+                    <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center text-xl"><i class="fas fa-medkit icon-bounce"></i></div>
+                    <div class="overflow-hidden"><div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider" data-i18n="stat_top_cat">Highest Cost Category</div><div class="text-sm font-black text-slate-700 truncate" id="stat-top-cat">-</div><div class="text-[10px] text-orange-600 font-bold" id="stat-top-cat-val"></div></div>
                 </div>
             </div>
         </div>
@@ -186,7 +231,7 @@
   <div id="modal-alert" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden">
           <div class="p-8 text-center">
-              <div class="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-5 text-rose-600 shadow-inner"><i class="fas fa-info text-2xl"></i></div>
+              <div class="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-5 text-rose-600 shadow-inner"><i class="fas fa-info text-2xl icon-pulse"></i></div>
               <h3 class="text-xl font-bold text-slate-800 mb-2" id="alert-title">Information</h3>
               <p class="text-sm text-slate-500 mb-8 leading-relaxed" id="alert-msg">Message</p>
               <button onclick="closeModal('modal-alert')" class="w-full py-3 bg-slate-800 text-white rounded-xl font-bold text-sm hover:bg-slate-900 shadow-md transition btn-action" data-i18n="btn_ok">OK</button>
@@ -197,7 +242,7 @@
   <div id="modal-confirm" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden">
           <div class="p-8 text-center">
-              <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-5 text-blue-600 shadow-inner"><i class="fas fa-question text-2xl"></i></div>
+              <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-5 text-blue-600 shadow-inner"><i class="fas fa-question text-2xl icon-wiggle"></i></div>
               <h3 class="text-xl font-bold text-slate-800 mb-2" id="conf-title">Confirm</h3>
               <p class="text-sm text-slate-500 mb-8 leading-relaxed" id="conf-msg">Are you sure?</p>
               <div class="flex gap-3">
@@ -292,27 +337,27 @@
                       <select id="admin-user-select" onchange="onAdminUserSelect()" class="w-full border border-slate-300 p-2.5 rounded-xl text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-rose-500 outline-none" required></select>
                   </div>
                   <div class="flex-1 grid grid-cols-5 gap-3">
-                      <div class="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
+                      <div class="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 hover:shadow-md transition">
                           <label class="block text-[9px] font-bold text-blue-700 uppercase mb-1.5 tracking-wider">R. JALAN (Init/Curr)</label>
                           <input type="number" id="adm-ij" class="w-full border border-white focus:border-blue-300 p-1.5 rounded text-xs mb-1 outline-none font-medium shadow-sm" placeholder="Init" required>
                           <input type="number" id="adm-cj" class="w-full border border-white focus:border-blue-300 p-1.5 rounded text-xs outline-none font-medium shadow-sm" placeholder="Curr" required>
                       </div>
-                      <div class="bg-purple-50/50 p-2.5 rounded-xl border border-purple-100">
+                      <div class="bg-purple-50/50 p-2.5 rounded-xl border border-purple-100 hover:shadow-md transition">
                           <label class="block text-[9px] font-bold text-purple-700 uppercase mb-1.5 tracking-wider">KACAMATA (Init/Curr)</label>
                           <input type="number" id="adm-ik" class="w-full border border-white focus:border-purple-300 p-1.5 rounded text-xs mb-1 outline-none font-medium shadow-sm" required>
                           <input type="number" id="adm-ck" class="w-full border border-white focus:border-purple-300 p-1.5 rounded text-xs outline-none font-medium shadow-sm" required>
                       </div>
-                      <div class="bg-green-50/50 p-2.5 rounded-xl border border-green-100">
+                      <div class="bg-green-50/50 p-2.5 rounded-xl border border-green-100 hover:shadow-md transition">
                           <label class="block text-[9px] font-bold text-green-700 uppercase mb-1.5 tracking-wider">PERSALINAN (Init/Curr)</label>
                           <input type="number" id="adm-ip" class="w-full border border-white focus:border-green-300 p-1.5 rounded text-xs mb-1 outline-none font-medium shadow-sm" required>
                           <input type="number" id="adm-cp" class="w-full border border-white focus:border-green-300 p-1.5 rounded text-xs outline-none font-medium shadow-sm" required>
                       </div>
-                      <div class="bg-orange-50/50 p-2.5 rounded-xl border border-orange-100">
+                      <div class="bg-orange-50/50 p-2.5 rounded-xl border border-orange-100 hover:shadow-md transition">
                           <label class="block text-[9px] font-bold text-orange-700 uppercase mb-1.5 tracking-wider">R. INAP (Init/Curr)</label>
                           <input type="number" id="adm-ii" class="w-full border border-white focus:border-orange-300 p-1.5 rounded text-xs mb-1 outline-none font-medium shadow-sm" required>
                           <input type="number" id="adm-ci" class="w-full border border-white focus:border-orange-300 p-1.5 rounded text-xs outline-none font-medium shadow-sm" required>
                       </div>
-                      <div class="bg-slate-100/50 p-2.5 rounded-xl border border-slate-200 flex flex-col justify-center">
+                      <div class="bg-slate-100/50 p-2.5 rounded-xl border border-slate-200 flex flex-col justify-center hover:shadow-md transition">
                           <label class="block text-[9px] font-bold text-slate-700 uppercase mb-1.5 tracking-wider">HARGA KAMAR / MLM</label>
                           <input type="number" id="adm-hk" class="w-full border border-white focus:border-slate-300 p-2 rounded text-xs font-bold outline-none shadow-sm text-indigo-700" required>
                       </div>
@@ -325,13 +370,13 @@
               <table class="w-full text-left text-sm whitespace-nowrap table-pro" id="admin-users-table">
                   <thead class="bg-white text-slate-500 uppercase text-[9px] font-bold sticky top-0 shadow-[0_2px_4px_rgba(0,0,0,0.02)] z-10">
                       <tr>
-                          <th class="px-3 py-2 border-r border-slate-200 align-middle bg-slate-50">Employee</th>
-                          <th class="px-2 py-2 text-center bg-blue-50/80 text-blue-700">R.Jalan<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
-                          <th class="px-2 py-2 text-center bg-purple-50/80 text-purple-700">Kacamata<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
-                          <th class="px-2 py-2 text-center bg-green-50/80 text-green-700">Persalinan<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
-                          <th class="px-2 py-2 text-center bg-orange-50/80 text-orange-700">R.Inap<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
-                          <th class="px-2 py-2 text-center bg-slate-50">Kamar</th>
-                          <th class="px-3 py-2 text-center w-8 bg-slate-50"><i class="fas fa-edit"></i></th>
+                          <th class="px-4 py-3 border-r border-slate-200 align-middle bg-slate-50">Employee</th>
+                          <th class="px-3 py-2 text-center bg-blue-50/80 text-blue-700">R.Jalan<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
+                          <th class="px-3 py-2 text-center bg-purple-50/80 text-purple-700">Kacamata<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
+                          <th class="px-3 py-2 text-center bg-green-50/80 text-green-700">Persalinan<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
+                          <th class="px-3 py-2 text-center bg-orange-50/80 text-orange-700">R.Inap<br><span class="text-[8px] text-slate-400">(Init/Rem)</span></th>
+                          <th class="px-3 py-2 text-center bg-slate-50">Kamar</th>
+                          <th class="px-3 py-2 text-center w-10 bg-slate-50"><i class="fas fa-edit"></i></th>
                       </tr>
                   </thead>
                   <tbody id="admin-table-body" class="divide-y divide-slate-100 bg-white text-[11px] font-medium"></tbody>
@@ -380,7 +425,8 @@
             no_data: "No claims found.", processing: "Processing...", upload_req: "Photo/PDF proof is required for new submission.", rem_plafond_desc: "Rem. Plafond",
             search_emp: "Search employee...", view_doc: "Open Document", claim_type: "Claim Category",
             export_report: "Export Report", export_start: "Start Date", export_end: "End Date", export_all: "Export All Time (Excel)",
-            emp_budgets: "Employee Budgets Overview", all_depts: "All Departments", import_excel: "Import", dl_template: "Template"
+            emp_budgets: "Employee Budgets Overview", all_depts: "All Departments", import_excel: "Import", dl_template: "Template",
+            stat_title: "Advanced Analytics", stat_total_claim: "Total Claim Amount", stat_top_user: "Top Claimant", stat_top_dept: "Top Department", stat_top_cat: "Highest Cost Category"
         },
         id: {
             app_title: "Plafond Medis", init_plafond: "Plafond Awal", rem_plafond: "Sisa Plafond", used_plafond: "Plafond Terpakai",
@@ -389,7 +435,7 @@
             th_rem_plafond: "Sisa Plafond", th_inv: "Kategori & Nota", th_status: "Status", th_hrga: "Review HRGA", th_action: "Aksi",
             btn_ok: "OK", btn_cancel: "Batal", btn_proceed: "Ya, Lanjutkan",
             modal_submit_title: "Kirim Klaim Medis", modal_edit_title: "Edit Klaim Medis", deduct_info: "Plafond akan langsung terpotong saat disubmit.",
-            target_emp: "Karyawan Tujuan", invoice_no: "No. Invoice", amount: "Nominal (Rp)", upload_proof: "Unggah Bukti (Gambar/PDF)",
+            target_emp: "Karyawan Tujuan", invoice_no: "No. Invoice", amount: "Nominal (Rp)", upload_proof: "Unggah Bukti (Img/PDF)",
             opt_edit_note: "(Opsional)", click_upload: "Klik untuk unggah file", btn_submit: "Kirim", btn_save: "Simpan",
             manage_plafond: "Kelola Plafond Karyawan", sel_user: "Pilih Karyawan",
             reject_claim: "Tolak Klaim", refund_info: "Plafond akan dikembalikan ke karyawan.", btn_reject: "Tolak",
@@ -397,7 +443,8 @@
             no_data: "Tidak ada klaim ditemukan.", processing: "Memproses...", upload_req: "Bukti Foto/PDF wajib diunggah untuk form baru.", rem_plafond_desc: "Sisa Plafond",
             search_emp: "Cari karyawan...", view_doc: "Buka Dokumen", claim_type: "Kategori Klaim",
             export_report: "Ekspor Laporan", export_start: "Tanggal Mulai", export_end: "Tanggal Akhir", export_all: "Ekspor Semua (Excel)",
-            emp_budgets: "Ringkasan Budget Karyawan", all_depts: "Semua Departemen", import_excel: "Impor", dl_template: "Template"
+            emp_budgets: "Ringkasan Budget Karyawan", all_depts: "Semua Departemen", import_excel: "Impor", dl_template: "Template",
+            stat_title: "Analitik Lanjutan", stat_total_claim: "Total Nominal Klaim", stat_top_user: "Pengklaim Tertinggi", stat_top_dept: "Departemen Teratas", stat_top_cat: "Kategori Termahal"
         }
     };
 
@@ -429,6 +476,7 @@
     let adminUsersData = [];
     let globalBudgetData = [];
     let currentUserData = null;
+    let allClaimsData = [];
     const rawUser = localStorage.getItem('portal_user');
     if(!rawUser) { window.location.href = "index.php"; } else { currentUser = JSON.parse(rawUser); }
 
@@ -470,7 +518,6 @@
         openModal('modal-viewer');
     }
 
-    // Compression function (Downsize images before uploading)
     function compressImage(base64Str, maxWidth = 1000, quality = 0.7) {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -486,7 +533,7 @@
                     resolve(canvas.toDataURL('image/jpeg', quality));
                 } catch(e) { reject(e); }
             };
-            img.onerror = () => resolve(base64Str); // Fallback jika error render
+            img.onerror = () => resolve(base64Str); 
         });
     }
 
@@ -550,8 +597,51 @@
         document.getElementById('table-body').innerHTML = `<tr><td colspan="7" class="text-center py-10 text-slate-400"><span class="loader-spin mr-2"></span> ${t('processing')}</td></tr>`;
         fetch('api/med.php', { method: 'POST', body: JSON.stringify({ action: 'getClaims', role: currentUser.role, username: currentUser.username, department: currentUser.department }) })
         .then(r=>r.json()).then(res => {
-            if(res.success) renderTable(res.data);
+            if(res.success) {
+                allClaimsData = res.data;
+                renderTable(allClaimsData);
+                renderAdvancedStats(allClaimsData);
+            }
         });
+    }
+
+    function renderAdvancedStats(claims) {
+        const canViewAll = ['Administrator', 'PlantHead', 'HRGA'].includes(currentUser.role) || (currentUser.role === 'TeamLeader' && currentUser.department === 'HRGA');
+        if (!canViewAll) return;
+
+        document.getElementById('advanced-stats-section').classList.remove('hidden');
+
+        let totalAmt = 0;
+        let userMap = {};
+        let deptMap = {};
+        let catMap = {};
+
+        claims.forEach(c => {
+            if (c.status === 'Rejected' || c.status === 'Cancelled') return;
+            let amt = parseFloat(c.amount) || 0;
+            totalAmt += amt;
+            userMap[c.fullname] = (userMap[c.fullname] || 0) + amt;
+            deptMap[c.department] = (deptMap[c.department] || 0) + amt;
+            catMap[c.claim_type] = (catMap[c.claim_type] || 0) + amt;
+        });
+
+        const getTop = (map) => {
+            let topKey = "-", maxVal = 0;
+            for (let k in map) { if (map[k] > maxVal) { maxVal = map[k]; topKey = k; } }
+            return { key: topKey, val: maxVal };
+        };
+
+        let topUser = getTop(userMap);
+        let topDept = getTop(deptMap);
+        let topCat = getTop(catMap); 
+
+        document.getElementById('stat-total-amt').innerText = formatRp(totalAmt);
+        document.getElementById('stat-top-user').innerText = topUser.key !== '-' ? topUser.key : 'N/A';
+        document.getElementById('stat-top-user-val').innerText = topUser.val > 0 ? formatRp(topUser.val) : '';
+        document.getElementById('stat-top-dept').innerText = topDept.key !== '-' ? topDept.key : 'N/A';
+        document.getElementById('stat-top-dept-val').innerText = topDept.val > 0 ? formatRp(topDept.val) : '';
+        document.getElementById('stat-top-cat').innerText = topCat.key !== '-' ? topCat.key : 'N/A';
+        document.getElementById('stat-top-cat-val').innerText = topCat.val > 0 ? formatRp(topCat.val) : '';
     }
 
     function renderUserCards() {
@@ -635,7 +725,6 @@
         });
     }
 
-    // --- CLAIMS TABLE ---
     function renderTable(data) {
         const tb = document.getElementById('table-body');
         const cc = document.getElementById('data-card-container');
@@ -672,7 +761,6 @@
             let fileIcon = r.photo_url && r.photo_url.toLowerCase().endsWith('.pdf') ? 'fa-file-pdf' : 'fa-image';
             const photoHtml = r.photo_url ? `<button onclick="viewFile('${r.photo_url}')" class="text-blue-600 bg-blue-50 border border-blue-200 px-2 py-1 rounded-md text-[10px] font-bold shadow-sm hover:bg-blue-100 transition inline-flex items-center gap-1 mt-1.5"><i class="fas ${fileIcon}"></i> Proof Doc</button>` : '';
 
-            // Pastikan jika display balance gagal ditarik maka tampilkan 0 (Fall-safe)
             const dBal = r.display_balance !== null && r.display_balance !== undefined ? parseFloat(r.display_balance) : 0;
             const remPlafondTd = canViewAll ? `<td class="px-6 py-4 text-right bg-rose-50/30 align-middle border-x border-slate-100"><div class="font-black text-rose-600 text-sm drop-shadow-sm">${formatRp(dBal)}</div><div class="text-[9px] font-bold uppercase text-slate-400 mt-0.5">${t('rem_plafond_desc')}</div></td>` : '';
 
@@ -719,7 +807,6 @@
         });
     }
 
-    // --- SUBMIT / EDIT CLAIM ---
     function openSubmitModal() {
         document.getElementById('input-action').value = 'submit';
         document.getElementById('input-reqid').value = '';
@@ -795,8 +882,7 @@
         };
 
         if (file) {
-            // Validate File Size & Compress if Image
-            if (file.size > 8 * 1024 * 1024 && !file.type.startsWith('image/')) { // 8MB limit for non-images
+            if (file.size > 8 * 1024 * 1024 && !file.type.startsWith('image/')) {
                  showAlert("Error", "PDF file must be less than 8MB.");
                  btn.disabled = false; btn.innerText = orgTxt;
                  return;
@@ -805,7 +891,6 @@
             const reader = new FileReader();
             reader.onload = async function(e) { 
                 let base64 = e.target.result;
-                // Compress image down to ~1000px width max
                 if (file.type.startsWith('image/')) {
                     try { base64 = await compressImage(base64, 1000, 0.7); } 
                     catch(err) { console.log('Compression failed, using original', err); }
@@ -817,7 +902,6 @@
         } else { executePost(payload); }
     }
 
-    // --- HRGA ACTIONS ---
     function confirmClaim(id) {
         showConfirm(t('btn_confirm'), "Approve this claim?", () => {
             fetch('api/med.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: 'confirm', approverName: currentUser.fullname }) })
