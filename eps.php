@@ -241,6 +241,31 @@
     function submitPermit(){const f=document.getElementById('form-create-permit'),b=document.getElementById('btn-submit-permit');if(!f.checkValidity()){f.reportValidity();return;}b.disabled=true;b.innerText="Processing...";let fr='Return';if(document.getElementById('form-is-return').value==='No Return')fr=document.getElementById('form-no-return-type').value;const p={action:'submit',username:currentUser.username,fullname:currentUser.fullname,nik:currentUser.nik,department:currentUser.department,role:currentUser.role,typePermit:document.getElementById('form-type').value,returnStatus:fr,datePermit:document.getElementById('form-date').value,timeOut:document.getElementById('form-out').value,timeIn:document.getElementById('form-in').value,purpose:document.getElementById('form-purpose').value};fetch('api/eps.php',{method:'POST',body:JSON.stringify(p)}).then(r=>r.json()).then(res=>{closeModal('modal-create');b.disabled=false;b.innerText="Submit Request";if(res.success){loadData();showAlert("Success","Request submitted.");}else showAlert("Error",res.message);});}
     function openApprovalModal(id,act){document.getElementById('approval-id').value=id;document.getElementById('approval-action').value=act;document.getElementById('approval-note').value='';document.getElementById('approval-photo').value='';const t=document.getElementById('approval-title'),txt=document.getElementById('approval-text'),b=document.getElementById('btn-approval-confirm'),dp=document.getElementById('div-security-photo'),dn=document.getElementById('div-approval-note');dp.classList.add('hidden');dn.classList.remove('hidden');if(act==='approve'){t.innerText="Approve Permit";txt.innerText="Approve this permit?";b.className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-bold shadow-sm btn-action";b.innerText="Approve";}else if(act==='reject'){t.innerText="Reject Permit";txt.innerText="Reject this permit?";b.className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-bold shadow-sm btn-action";b.innerText="Reject";}else if(act==='cancel'){t.innerText="Cancel Permit";txt.innerText="Cancel this request?";b.className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 text-sm font-bold shadow-sm btn-action";b.innerText="Cancel";dn.classList.add('hidden');}else if(act==='security_out'){t.innerText="Security Check Out";txt.innerText="Process staff leaving?";b.className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm font-bold shadow-sm btn-action";b.innerText="Process Out";dp.classList.remove('hidden');}else if(act==='security_in'){t.innerText="Security Check In";txt.innerText="Process staff returning?";b.className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-bold shadow-sm btn-action";b.innerText="Process In";}openModal('modal-approval');}
     function submitStatusUpdate(){const id=document.getElementById('approval-id').value,act=document.getElementById('approval-action').value,n=document.getElementById('approval-note').value,b=document.getElementById('btn-approval-confirm'),fi=document.getElementById('approval-photo');b.disabled=true;b.innerText="Processing...";const p={action:'updateStatus',id:id,act:act,role:currentUser.role,fullname:currentUser.fullname,extra:{note:n}};const r=e=>{if(e)p.extra={...p.extra,...e};fetch('api/eps.php',{method:'POST',body:JSON.stringify(p)}).then(r=>r.json()).then(()=>{closeModal('modal-approval');loadData();b.disabled=false;});};if(act==='security_out'&&fi.files.length>0){const rd=new FileReader();rd.onload=e=>{r({photo:e.target.result});};rd.readAsDataURL(fi.files[0]);}else{r();}}
+  
+  // --- IDLE TIMEOUT (3 MINUTES) ---
+    let idleTime = 0;
+    const IDLE_MAX = 180; // 3 menit = 180 detik
+
+    function resetIdle() { idleTime = 0; }
+    
+    // Deteksi interaksi user
+    ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'].forEach(e => 
+        document.addEventListener(e, resetIdle, true)
+    );
+
+    // Hitung waktu mundur setiap 1 detik
+    setInterval(() => {
+        if (currentUser) {
+            idleTime++;
+            if (idleTime >= IDLE_MAX) {
+                // Hapus sesi login
+                localStorage.removeItem('portal_user');
+                // Redirect ke index.php dengan lemparan parameter timeout=1
+                window.location.href = 'index.php?timeout=1';
+            }
+        }
+    }, 1000);
+
   </script>
 </body>
 </html>

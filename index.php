@@ -103,7 +103,7 @@
               <button id="btn-manage-users" onclick="openManageUsers()" class="hidden bg-slate-800 border border-slate-900 text-white px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:bg-slate-700 transition flex items-center gap-2">
                  <i class="fas fa-users-cog text-yellow-400"></i> <span data-i18n="manage_users">Manage Users</span>
               </button>
-              <button onclick="handleLogout()" class="bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:bg-red-100 transition flex items-center gap-2">
+              <button onclick="handleLogout(false)" class="bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:bg-red-100 transition flex items-center gap-2">
                  <i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span>
               </button>
           </div>
@@ -253,32 +253,33 @@
     </div>
   </div>
 
-  <footer class="py-6 text-center text-xs text-slate-400 font-medium"><div class="animate-fade-in-up delay-400">&copy; 2026 PT Cemindo Gemilang Tbk - Plant Batam</div></footer>
+  <div id="modal-alert-global" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-fade-in-up overflow-hidden">
+          <div class="p-6 text-center">
+              <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 shadow-sm"><i class="fas fa-info-circle text-xl"></i></div>
+              <h3 class="text-lg font-bold text-slate-700 mb-2" id="alert-global-title">Information</h3>
+              <p class="text-sm text-slate-500 mb-6" id="alert-global-msg">Message</p>
+              <button onclick="document.getElementById('modal-alert-global').classList.add('hidden')" class="w-full py-2.5 bg-slate-800 text-white rounded-lg font-bold text-sm hover:bg-slate-900 shadow-sm transition">OK</button>
+          </div>
+      </div>
+  </div>
 
   <script>
-    document.addEventListener('keydown', function(event) {
-        if (event.key === "Escape") {
-            const modals = ['modal-profile', 'modal-users', 'modal-forgot'];
-            modals.forEach(id => closeModal(id));
-        }
-    });
-
-    let currentUser = null;
-    let allUsers = [];
-    let currentLang = localStorage.getItem('portal_lang') || 'en';
-    
+    // --- TRANSLATION DICTIONARY ---
     const i18n = {
         en: {
             hello: "Hello", edit_profile: "Edit Profile", manage_users: "Manage Users", logout: "Logout",
             profile_title: "User Profile", fullname: "Full Name", role: "Role", dept: "Department",
             edit_info: "Edit Information", wa_phone: "WhatsApp Number", new_pass: "New Password",
-            leave_blank: "(leave empty if unchanged)", cancel: "Cancel", save: "Save", launch: "Launch App"
+            leave_blank: "(leave empty if unchanged)", cancel: "Cancel", save: "Save", launch: "Launch App",
+            session_exp: "Session Expired", session_msg: "You have been logged out automatically due to 3 minutes of inactivity."
         },
         id: {
             hello: "Halo", edit_profile: "Ubah Profil", manage_users: "Kelola User", logout: "Keluar",
             profile_title: "Profil Pengguna", fullname: "Nama Lengkap", role: "Jabatan", dept: "Departemen",
             edit_info: "Ubah Informasi", wa_phone: "Nomor WhatsApp", new_pass: "Password Baru",
-            leave_blank: "(biarkan kosong jika tidak diubah)", cancel: "Batal", save: "Simpan", launch: "Buka Aplikasi"
+            leave_blank: "(biarkan kosong jika tidak diubah)", cancel: "Batal", save: "Simpan", launch: "Buka Aplikasi",
+            session_exp: "Sesi Berakhir", session_msg: "Sesi Anda telah ditutup otomatis karena tidak ada aktivitas selama 3 menit."
         }
     };
     
@@ -290,8 +291,52 @@
       'med': { icon: 'fa-briefcase-medical', color: 'rose', title: 'Medical Plafond', desc_en: 'Medical budget & claim monitoring.', desc_id: 'Pemantauan budget dan klaim medis.', url: 'med.php' }
     };
 
+    let currentLang = localStorage.getItem('portal_lang') || 'en';
+    const t = (key) => i18n[currentLang][key] || key;
+
+    // --- IDLE TIMEOUT (3 MINUTES) ---
+    let idleTime = 0;
+    const IDLE_MAX = 180; // 3 menit = 180 detik
+    let currentUser = null;
+    let allUsers = [];
+
+    function resetIdle() { idleTime = 0; }
+    ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'].forEach(e => document.addEventListener(e, resetIdle, true));
+
+    setInterval(() => {
+        if (currentUser) {
+            idleTime++;
+            if (idleTime >= IDLE_MAX) {
+                handleLogout(true);
+            }
+        }
+    }, 1000);
+
+    // Global Alert Function
+    function showAlertGlobal(title, message) {
+        document.getElementById('alert-global-title').innerText = title;
+        document.getElementById('alert-global-msg').innerText = message;
+        document.getElementById('modal-alert-global').classList.remove('hidden');
+    }
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === "Escape") {
+            ['modal-profile', 'modal-users', 'modal-forgot', 'modal-alert-global'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+        }
+    });
+
     window.onload = function() {
         applyLanguage();
+        
+        // Cek jika terlempar dari aplikasi lain karena timeout
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('timeout') === '1') {
+            showAlertGlobal(t('session_exp'), t('session_msg'));
+            window.history.replaceState({}, document.title, "index.php"); // Bersihkan URL
+        }
+
         const stored = localStorage.getItem('portal_user');
         if(stored) { currentUser = JSON.parse(stored); showDashboard(); } else { showLogin(); }
     };
@@ -299,15 +344,10 @@
     function togglePass(inputId, iconId) {
         const input = document.getElementById(inputId);
         const icon = document.getElementById(iconId);
-        
         if (input.type === "password") {
-            input.type = "text";
-            icon.classList.remove('fa-eye');
-            icon.classList.add('fa-eye-slash');
+            input.type = "text"; icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash');
         } else {
-            input.type = "password";
-            icon.classList.remove('fa-eye-slash');
-            icon.classList.add('fa-eye');
+            input.type = "password"; icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye');
         }
     }
 
@@ -336,6 +376,7 @@
        document.getElementById('user-dept').innerText = currentUser.department;
        if(currentUser.role === 'Administrator') { document.getElementById('btn-manage-users').classList.remove('hidden'); }
        renderApps();
+       resetIdle(); // Reset timer upon successful login/dashboard load
     }
 
     async function handleLogin() {
@@ -369,7 +410,14 @@
        }
     }
 
-    function handleLogout() { localStorage.removeItem('portal_user'); currentUser = null; showLogin(); }
+    function handleLogout(isAuto = false) { 
+        localStorage.removeItem('portal_user'); 
+        currentUser = null; 
+        showLogin(); 
+        if(isAuto) {
+            showAlertGlobal(t('session_exp'), t('session_msg'));
+        }
+    }
 
     function renderApps() {
        const container = document.getElementById('app-grid'); container.innerHTML = '';
@@ -378,7 +426,7 @@
           if(allowed.includes(key) || allowed.includes('all')) {
              const app = appsConfig[key];
              const desc = currentLang === 'id' ? app.desc_id : app.desc_en;
-             const launch = i18n[currentLang].launch;
+             const launch = t('launch');
              const html = `
              <a href="${app.url}" class="app-card group relative bg-white/80 backdrop-blur-md rounded-3xl p-8 border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-lg overflow-hidden cursor-pointer block">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-${app.color}-50 rounded-bl-[100px] -mr-6 -mt-6 transition-colors group-hover:bg-${app.color}-100 z-0"></div>
@@ -402,33 +450,20 @@
     function submitForgot() {
         const u = document.getElementById('forgot-username').value;
         if(!u) return alert("Please enter username");
-        
         const btn = document.getElementById('btn-forgot');
         const originalText = btn.innerText;
-        btn.disabled = true;
-        btn.innerText = "Sending...";
+        btn.disabled = true; btn.innerText = "Sending...";
 
         fetch('api/auth.php', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ action: 'requestReset', username: u })
         })
-        .then(r => r.json())
-        .then(res => {
-            btn.disabled = false;
-            btn.innerText = originalText;
-            if(res.success) {
-                alert(res.message);
-                document.getElementById('modal-forgot').classList.add('hidden');
-            } else {
-                alert("Error: " + res.message);
-            }
+        .then(r => r.json()).then(res => {
+            btn.disabled = false; btn.innerText = originalText;
+            if(res.success) { alert(res.message); document.getElementById('modal-forgot').classList.add('hidden'); } 
+            else { alert("Error: " + res.message); }
         })
-        .catch(err => {
-            btn.disabled = false;
-            btn.innerText = originalText;
-            alert("Connection Error");
-        });
+        .catch(err => { btn.disabled = false; btn.innerText = originalText; alert("Connection Error"); });
     }
 
     function openProfileModal() { 
@@ -450,43 +485,32 @@
         btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Saving...'; 
         
         fetch('api/users.php', {
-            method: 'POST',
-            body: JSON.stringify({ action: 'updateProfile', username: currentUser.username, phone: ph, newPass: pa })
+            method: 'POST', body: JSON.stringify({ action: 'updateProfile', username: currentUser.username, phone: ph, newPass: pa })
         })
-        .then(r => r.json())
-        .then(res => {
+        .then(r => r.json()).then(res => {
             btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save'; 
             alert(res.message); 
-            if(res.success) { 
-                currentUser.phone = ph; 
-                localStorage.setItem('portal_user', JSON.stringify(currentUser)); 
-                closeModal('modal-profile'); 
-            }
+            if(res.success) { currentUser.phone = ph; localStorage.setItem('portal_user', JSON.stringify(currentUser)); closeModal('modal-profile'); }
         });
     }
 
     // --- MANAGE USERS MODAL ---
     function openManageUsers() { 
         document.getElementById('modal-users').classList.remove('hidden'); 
-        resetUserForm(); 
-        loadUsers(); 
-        loadDropdownOptions(); 
+        resetUserForm(); loadUsers(); loadDropdownOptions(); 
     }
 
     function populateSelect(id, dataList, defaultVal = '') {
         const sel = document.getElementById(id);
         sel.innerHTML = '<option value="">-- Select --</option>';
-        dataList.forEach(item => {
-            sel.innerHTML += `<option value="${item}">${item}</option>`;
-        });
+        dataList.forEach(item => { sel.innerHTML += `<option value="${item}">${item}</option>`; });
         sel.innerHTML += '<option value="custom" class="font-bold text-blue-600">➕ Create New...</option>';
         if(defaultVal) setFieldValue(id.replace('u-', '').replace('-select', ''), defaultVal);
     }
 
     function loadDropdownOptions() { 
         fetch('api/users.php', { method: 'POST', body: JSON.stringify({ action: 'getOptions' }) })
-        .then(r => r.json())
-        .then(options => {
+        .then(r => r.json()).then(options => {
             populateSelect('u-dept-select', options.departments);
             populateSelect('u-role-select', options.roles);
             populateSelect('u-apps-select', options.apps, 'eps, vms, mgp, atk, med');
@@ -496,48 +520,29 @@
     function checkCustom(field) {
         const sel = document.getElementById(`u-${field}-select`);
         const cust = document.getElementById(`u-${field}-custom`);
-        if(sel.value === 'custom') {
-            cust.classList.remove('hidden');
-            cust.required = true;
-        } else {
-            cust.classList.add('hidden');
-            cust.required = false;
-        }
+        if(sel.value === 'custom') { cust.classList.remove('hidden'); cust.required = true; } 
+        else { cust.classList.add('hidden'); cust.required = false; }
     }
 
     function getFieldValue(field) {
         const sel = document.getElementById(`u-${field}-select`).value;
-        if(sel === 'custom') return document.getElementById(`u-${field}-custom`).value;
-        return sel;
+        return (sel === 'custom') ? document.getElementById(`u-${field}-custom`).value : sel;
     }
 
     function setFieldValue(field, val) {
         const sel = document.getElementById(`u-${field}-select`);
         const cust = document.getElementById(`u-${field}-custom`);
+        let exists = Array.from(sel.options).some(opt => opt.value === val);
         
-        let exists = false;
-        for(let i = 0; i < sel.options.length; i++) {
-            if(sel.options[i].value === val) exists = true;
-        }
-        
-        if(exists) {
-            sel.value = val;
-            cust.classList.add('hidden');
-            cust.value = '';
-        } else {
-            sel.value = 'custom';
-            cust.classList.remove('hidden');
-            cust.value = val;
-        }
+        if(exists) { sel.value = val; cust.classList.add('hidden'); cust.value = ''; } 
+        else { sel.value = 'custom'; cust.classList.remove('hidden'); cust.value = val; }
     }
     
     function loadUsers() { 
         const container = document.getElementById('user-list-container'); 
         container.innerHTML = '<div class="text-center py-4 text-slate-400 text-xs"><i class="fas fa-spinner fa-spin"></i> Loading...</div>'; 
-        
         fetch('api/users.php', { method: 'POST', body: JSON.stringify({ action: 'getAllUsers' }) })
-        .then(r => r.json())
-        .then(users => { allUsers = users; renderUserList(allUsers); });
+        .then(r => r.json()).then(users => { allUsers = users; renderUserList(allUsers); });
     }
     
     function renderUserList(users) { 
@@ -566,20 +571,14 @@
         document.getElementById('u-username').value = user.username; 
         document.getElementById('u-username').disabled = true; 
         
-        // PENTING: Kosongkan password agar tidak double hash
         const pwInput = document.getElementById('u-password');
-        pwInput.value = ''; 
-        pwInput.required = false;
-        pwInput.placeholder = "(Leave blank to keep current)";
+        pwInput.value = ''; pwInput.required = false; pwInput.placeholder = "(Leave blank to keep current)";
 
         document.getElementById('u-fullname').value = user.fullname; 
         document.getElementById('u-nik').value = user.nik; 
         document.getElementById('u-phone').value = user.phone; 
         
-        setFieldValue('dept', user.department);
-        setFieldValue('role', user.role);
-        setFieldValue('apps', user.apps);
-
+        setFieldValue('dept', user.department); setFieldValue('role', user.role); setFieldValue('apps', user.apps);
         document.getElementById('btn-delete-user').classList.remove('hidden'); 
         document.getElementById('btn-save-user').innerHTML = '<i class="fas fa-check"></i> Update User'; 
     }
@@ -591,16 +590,10 @@
         document.getElementById('user-form').reset(); 
         document.getElementById('u-username').disabled = false; 
         
-        // Kembalikan atribut password
         const pwInput = document.getElementById('u-password');
-        pwInput.value = '';
-        pwInput.required = true;
-        pwInput.placeholder = "******";
+        pwInput.value = ''; pwInput.required = true; pwInput.placeholder = "******";
 
-        setFieldValue('dept', '');
-        setFieldValue('role', '');
-        setFieldValue('apps', 'eps, vms, mgp, atk, med');
-        
+        setFieldValue('dept', ''); setFieldValue('role', ''); setFieldValue('apps', 'eps, vms, mgp, atk, med');
         document.getElementById('btn-delete-user').classList.add('hidden'); 
         document.getElementById('btn-save-user').innerHTML = '<i class="fas fa-plus"></i> Create User'; 
     }
@@ -608,29 +601,18 @@
     function saveUser() { 
         const isEdit = document.getElementById('u-username').disabled; 
         const data = { 
-            username: document.getElementById('u-username').value, 
-            password: document.getElementById('u-password').value, 
-            fullname: document.getElementById('u-fullname').value, 
-            nik: document.getElementById('u-nik').value, 
-            phone: document.getElementById('u-phone').value, 
-            department: getFieldValue('dept'), 
-            role: getFieldValue('role'), 
-            apps: getFieldValue('apps') 
+            username: document.getElementById('u-username').value, password: document.getElementById('u-password').value, 
+            fullname: document.getElementById('u-fullname').value, nik: document.getElementById('u-nik').value, 
+            phone: document.getElementById('u-phone').value, department: getFieldValue('dept'), 
+            role: getFieldValue('role'), apps: getFieldValue('apps') 
         }; 
-        
-        if(!data.username || (!isEdit && !data.password) || !data.fullname) { 
-            alert("Please fill required fields"); return; 
-        } 
+        if(!data.username || (!isEdit && !data.password) || !data.fullname) { alert("Please fill required fields"); return; } 
         
         const btn = document.getElementById('btn-save-user'); const orgHtml = btn.innerHTML; 
         btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Processing...'; 
         
-        fetch('api/users.php', {
-            method: 'POST',
-            body: JSON.stringify({ action: 'saveUser', isEdit: isEdit, data: data })
-        })
-        .then(r => r.json())
-        .then(res => {
+        fetch('api/users.php', { method: 'POST', body: JSON.stringify({ action: 'saveUser', isEdit: isEdit, data: data }) })
+        .then(r => r.json()).then(res => {
             btn.disabled = false; btn.innerHTML = orgHtml; 
             alert(res.message); 
             if(res.success) { resetUserForm(); loadUsers(); loadDropdownOptions(); }
@@ -641,18 +623,13 @@
         const u = document.getElementById('u-username').value; 
         if(!confirm("Are you sure?")) return; 
         
-        fetch('api/users.php', {
-            method: 'POST',
-            body: JSON.stringify({ action: 'deleteUser', username: u })
-        })
-        .then(r => r.json())
-        .then(res => {
+        fetch('api/users.php', { method: 'POST', body: JSON.stringify({ action: 'deleteUser', username: u }) })
+        .then(r => r.json()).then(res => {
             alert(res.message); 
             if(res.success) { resetUserForm(); loadUsers(); loadDropdownOptions(); }
         });
     }
 
-    // --- BULK EXPORT & IMPORT ---
     function downloadUserTemplate() {
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet([
@@ -667,9 +644,7 @@
         if (allUsers.length === 0) return alert("No users to export");
         const wb = XLSX.utils.book_new();
         const rows = [["Username", "Fullname", "NIK", "Department", "Role", "Allowed_Apps", "Phone"]];
-        allUsers.forEach(u => {
-            rows.push([u.username, u.fullname, u.nik, u.department, u.role, u.apps, u.phone]);
-        });
+        allUsers.forEach(u => { rows.push([u.username, u.fullname, u.nik, u.department, u.role, u.apps, u.phone]); });
         const ws = XLSX.utils.aoa_to_sheet(rows);
         XLSX.utils.book_append_sheet(wb, ws, "Users");
         XLSX.writeFile(wb, "Users_Database.xlsx");
@@ -686,38 +661,21 @@
                 const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 
                 const formatted = json.map(r => ({
-                    username: r.Username || r.username,
-                    password: r.Password || r.password, // Jika kosong, API akan abaikan hashing
-                    fullname: r.Fullname || r.fullname,
-                    nik: r.NIK || r.nik || '',
-                    department: r.Department || r.department || '',
-                    role: r.Role || r.role || 'User',
-                    allowed_apps: r.Allowed_Apps || r.allowed_apps || 'eps, vms, mgp, atk, med',
-                    phone: r.Phone || r.phone || ''
+                    username: r.Username || r.username, password: r.Password || r.password,
+                    fullname: r.Fullname || r.fullname, nik: r.NIK || r.nik || '',
+                    department: r.Department || r.department || '', role: r.Role || r.role || 'User',
+                    allowed_apps: r.Allowed_Apps || r.allowed_apps || 'eps, vms, mgp, atk, med', phone: r.Phone || r.phone || ''
                 })).filter(r => r.username && r.fullname);
 
-                if(formatted.length === 0) {
-                    document.getElementById('import-user-file').value = '';
-                    return alert("Invalid or empty data.");
-                }
+                if(formatted.length === 0) { document.getElementById('import-user-file').value = ''; return alert("Invalid or empty data."); }
 
-                fetch('api/users.php', {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'importUsers', data: formatted })
-                }).then(r=>r.json()).then(res => {
+                fetch('api/users.php', { method: 'POST', body: JSON.stringify({ action: 'importUsers', data: formatted }) })
+                .then(r=>r.json()).then(res => {
                     document.getElementById('import-user-file').value = '';
-                    if(res.success) {
-                        alert("Bulk import successful!");
-                        loadUsers();
-                        loadDropdownOptions();
-                    } else {
-                        alert("Import failed: " + res.message);
-                    }
+                    if(res.success) { alert("Bulk import successful!"); loadUsers(); loadDropdownOptions(); } 
+                    else { alert("Import failed: " + res.message); }
                 });
-            } catch(err) {
-                document.getElementById('import-user-file').value = '';
-                alert("Failed to parse Excel file.");
-            }
+            } catch(err) { document.getElementById('import-user-file').value = ''; alert("Failed to parse Excel file."); }
         };
         reader.readAsArrayBuffer(file);
     }

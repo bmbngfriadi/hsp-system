@@ -879,6 +879,31 @@
 
         doc.save(`ATK_Audit_Report_${new Date().getTime()}.pdf`); 
     }
+
+    // --- IDLE TIMEOUT (3 MINUTES) ---
+    let idleTime = 0;
+    const IDLE_MAX = 180; // 3 menit = 180 detik
+
+    function resetIdle() { idleTime = 0; }
+    
+    // Deteksi interaksi user
+    ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'].forEach(e => 
+        document.addEventListener(e, resetIdle, true)
+    );
+
+    // Hitung waktu mundur setiap 1 detik
+    setInterval(() => {
+        if (currentUser) {
+            idleTime++;
+            if (idleTime >= IDLE_MAX) {
+                // Hapus sesi login
+                localStorage.removeItem('portal_user');
+                // Redirect ke index.php dengan lemparan parameter timeout=1
+                window.location.href = 'index.php?timeout=1';
+            }
+        }
+    }, 1000);
+
   </script>
 </body>
 </html>

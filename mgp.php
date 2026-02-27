@@ -187,6 +187,31 @@
     function openSecurityModal(id,act){document.getElementById('sec-id').value=id;document.getElementById('sec-action').value=act;document.getElementById('sec-notes').value='';document.getElementById('sec-photo').value='';document.getElementById('img-preview').classList.add('hidden');document.getElementById('upload-placeholder').classList.remove('hidden');document.getElementById('sec-title').innerText=act==='security_out'?'Security Check Out':'Security Check In';openModal('modal-security');}
     function previewImage(i){if(i.files&&i.files[0]){const r=new FileReader();r.onload=e=>{document.getElementById('img-preview').src=e.target.result;document.getElementById('img-preview').classList.remove('hidden');document.getElementById('upload-placeholder').classList.add('hidden');};r.readAsDataURL(i.files[0]);}}
     function submitSecurity(){const id=document.getElementById('sec-id').value,act=document.getElementById('sec-action').value,n=document.getElementById('sec-notes').value,f=document.getElementById('sec-photo').files[0];if(!f)return showAlert("Error","Photo required!");const b=document.getElementById('btn-sec-submit');b.disabled=true;b.innerText="Uploading...";const r=new FileReader();r.onload=e=>{fetch('api/mgp.php',{method:'POST',body:JSON.stringify({action:'updateStatus',id:id,act:act,user:currentUser,extra:{photo:e.target.result,notes:n}})}).then(()=>{closeModal('modal-security');loadData();b.disabled=false;b.innerText="Process";});};r.readAsDataURL(f);}
+  
+    // --- IDLE TIMEOUT (3 MINUTES) ---
+    let idleTime = 0;
+    const IDLE_MAX = 180; // 3 menit = 180 detik
+
+    function resetIdle() { idleTime = 0; }
+    
+    // Deteksi interaksi user
+    ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'].forEach(e => 
+        document.addEventListener(e, resetIdle, true)
+    );
+
+    // Hitung waktu mundur setiap 1 detik
+    setInterval(() => {
+        if (currentUser) {
+            idleTime++;
+            if (idleTime >= IDLE_MAX) {
+                // Hapus sesi login
+                localStorage.removeItem('portal_user');
+                // Redirect ke index.php dengan lemparan parameter timeout=1
+                window.location.href = 'index.php?timeout=1';
+            }
+        }
+    }, 1000);
+
   </script>
 </body>
 </html>
