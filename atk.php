@@ -331,6 +331,7 @@
     let currentUser = null, itemCount = 0, confirmCallback = null, confirmReasonCallback = null, currentData = [], atkInventory = [], myDeptStock = [], fullInventoryData = [];
     let currentLang = localStorage.getItem('portal_lang') || 'en';
     let isBulkEditMode = false;
+    let sortState = { key: '', dir: 'asc' }; // Global Sort State
     const rawUser = localStorage.getItem('portal_user');
     if(!rawUser) { window.location.href = "index.php"; } else { currentUser = JSON.parse(rawUser); }
     
@@ -558,7 +559,48 @@
             if(res.success) { isBulkEditMode = false; toggleBulkUI(); loadInventoryStock(); showAlert(i18n[currentLang].success_title, i18n[currentLang].txt_bulk_success); } else { showAlert(i18n[currentLang].error_title, res.message); }
         });
     }
-    function sortInventory(key) { let sortDir = 'asc'; const sorted = [...fullInventoryData].sort((a, b) => { let valA = a[key], valB = b[key]; if(key === 'qty') { valA = parseInt(valA); valB = parseInt(valB); } else { valA = valA.toLowerCase(); valB = valB.toLowerCase(); } if (valA < valB) return sortDir === 'asc' ? -1 : 1; if (valA > valB) return sortDir === 'asc' ? 1 : -1; return 0; }); renderInventoryTable(sorted); }
+
+    // --- SORTING FUNCTION UPDATED ---
+    function sortInventory(key) { 
+        // 1. Tentukan arah sorting
+        if (sortState.key === key) {
+            sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortState.key = key;
+            // Default untuk QTY adalah Descending (Tertinggi ke Terendah)
+            sortState.dir = (key === 'qty') ? 'desc' : 'asc'; 
+        }
+
+        const sorted = [...fullInventoryData].sort((a, b) => { 
+            let valA = a[key];
+            let valB = b[key]; 
+            
+            // 2. Logic khusus untuk QTY (Angka)
+            if(key === 'qty') { 
+                valA = parseInt(valA) || 0; 
+                valB = parseInt(valB) || 0; 
+                
+                if (valA < valB) return sortState.dir === 'asc' ? -1 : 1; 
+                if (valA > valB) return sortState.dir === 'asc' ? 1 : -1; 
+                return 0;
+            } 
+            
+            // 3. Logic untuk Teks (Item Name) dengan prioritas data terisi
+            valA = (valA || '').toString().toLowerCase().trim(); 
+            valB = (valB || '').toString().toLowerCase().trim(); 
+
+            // Jika valA kosong dan valB ada isinya, pindahkan valA ke bawah
+            if (!valA && valB) return 1;
+            // Jika valB kosong dan valA ada isinya, pindahkan valB ke bawah
+            if (valA && !valB) return -1;
+
+            // Jika keduanya ada isinya, urutkan sesuai abjad
+            if (valA < valB) return sortState.dir === 'asc' ? -1 : 1; 
+            if (valA > valB) return sortState.dir === 'asc' ? 1 : -1; 
+            return 0; 
+        }); 
+        renderInventoryTable(sorted); 
+    }
     
     function openEditStockModal(dept, item, qty, unit) { if(dept==='-'){showAlert(i18n[currentLang].info_title, i18n[currentLang].txt_sel_dept_first); return;} document.getElementById('edit-stock-dept').value = dept; document.getElementById('edit-stock-item').value = item; document.getElementById('disp-edit-dept').innerText = dept; document.getElementById('disp-edit-item').innerText = item; document.getElementById('edit-stock-qty').value = qty; document.getElementById('edit-stock-unit').value = unit; openModal('modal-edit-stock'); }
     function submitStockUpdate() { const dept = document.getElementById('edit-stock-dept').value; const item = document.getElementById('edit-stock-item').value; const qty = document.getElementById('edit-stock-qty').value; const unit = document.getElementById('edit-stock-unit').value; fetch('api/atk.php', { method: 'POST', body: JSON.stringify({ action: 'updateStock', role: currentUser.role, department: dept, item_name: item, qty: qty, unit: unit }) }).then(r => r.json()).then(res => { closeModal('modal-edit-stock'); if(res.success) { loadInventoryStock(); showAlert(i18n[currentLang].success_title, i18n[currentLang].txt_stock_updated); } else showAlert(i18n[currentLang].error_title, res.message); }); }
