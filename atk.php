@@ -54,7 +54,6 @@
       </div>
 
       <div id="view-request" class="space-y-6">
-        
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 animate-slide-up">
            <div onclick="filterTable('All')" class="group relative cursor-pointer bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
                <div class="absolute -right-6 -top-6 w-24 h-24 bg-blue-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700 ease-out"></div>
@@ -123,7 +122,6 @@
                 <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider" data-i18n="insights">Quick Insights</h3>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
-                
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 relative overflow-hidden group">
                    <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-purple-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700 ease-out"></div>
                    <div class="relative z-10">
@@ -134,7 +132,6 @@
                        <div id="ins-top-dept" class="space-y-3"></div>
                    </div>
                 </div>
-
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 relative overflow-hidden group">
                    <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-rose-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700 ease-out"></div>
                    <div class="relative z-10">
@@ -145,7 +142,6 @@
                        <div id="ins-top-items" class="space-y-3"></div>
                    </div>
                 </div>
-
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 relative overflow-hidden group flex flex-col justify-center items-center text-center">
                    <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-sky-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700 ease-out"></div>
                    <div class="relative z-10 w-full flex flex-col items-center">
@@ -242,7 +238,7 @@
             <h3 class="font-bold text-slate-700" id="modal-create-title" data-i18n="modal_req_title">ATK Request Form</h3>
             <button onclick="closeModal('modal-create')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
         </div>
-        <div class="p-6 overflow-y-auto flex-1">
+        <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
             <form id="form-create-atk" onsubmit="event.preventDefault(); submitRequest();">
                 <input type="hidden" id="edit-req-id">
                 <div class="mb-4">
@@ -257,17 +253,19 @@
                 </div>
                 <div class="mb-4">
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-2" data-i18n="lbl_list">Item List</label>
-                    <div class="text-[10px] text-amber-600 mb-2 italic bg-amber-50 p-2 rounded border border-amber-100 flex items-start gap-2"><i class="fas fa-info-circle mt-0.5"></i> <div data-i18n="note_stock"><b>Note:</b> "Last Stock" is from Inventory. "Last Usage" deducts Inventory.</div></div>
-                    <div class="grid grid-cols-12 gap-2 mb-1 px-1">
-                        <div class="col-span-4 text-[10px] font-bold text-slate-400 uppercase" data-i18n="th_item_name">Item</div>
+                    <div class="text-[10px] text-amber-600 mb-3 italic bg-amber-50 p-2.5 rounded-lg border border-amber-100 flex items-start gap-2 shadow-sm"><i class="fas fa-info-circle mt-0.5"></i> <div data-i18n="note_stock"><b>Note:</b> "Last Stock" is from Inventory. "Last Usage" deducts Inventory.</div></div>
+                    
+                    <div class="hidden sm:grid grid-cols-12 gap-2 mb-2 px-2">
+                        <div class="col-span-4 text-[10px] font-bold text-slate-400 uppercase" data-i18n="th_item_name">Item Name</div>
                         <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase text-center" data-i18n="th_last_stock">Last Stock</div>
                         <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase text-center" data-i18n="th_usage">Usage</div>
                         <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase text-center" data-i18n="th_req_qty">Request</div>
-                        <div class="col-span-1 text-[10px] font-bold text-slate-400 uppercase" data-i18n="th_unit">Unit</div>
+                        <div class="col-span-1 text-[10px] font-bold text-slate-400 uppercase text-center" data-i18n="th_unit">Unit</div>
                         <div class="col-span-1"></div>
                     </div>
-                    <div id="items-container" class="space-y-2"></div>
-                    <button type="button" onclick="addItemRow()" class="mt-4 text-sm bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-3 px-3 rounded-lg flex items-center gap-2 border border-blue-200 w-full justify-center border-dashed transition"><i class="fas fa-plus-circle"></i> <span data-i18n="btn_add_row">Add Item Row</span></button>
+                    
+                    <div id="items-container" class="space-y-3 sm:space-y-2"></div>
+                    <button type="button" onclick="addItemRow()" class="mt-4 text-sm bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-3 px-3 rounded-lg flex items-center gap-2 border border-blue-200 w-full justify-center border-dashed transition shadow-sm hover:shadow-md"><i class="fas fa-plus-circle"></i> <span data-i18n="btn_add_row">Add Item Row</span></button>
                 </div>
                 <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1" data-i18n="lbl_reason">Reason</label><textarea id="req-reason" data-i18n-ph="ph_reason" rows="2" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-amber-500" required placeholder="Explain why you need these items..."></textarea></div>
             </form>
@@ -343,14 +341,14 @@
         click_filter: "Click to filter", insights: "Quick Insights",
         top_dept: "Top Departments", top_items: "Most Requested Items", total_vol: "Total Items Volume", reqs: "reqs", units: "units", units_req: "units requested all time",
         hist_title: "Request History", showing: "Showing:", btn_export: "Export", btn_new: "New Request",
-        th_id: "ID / Date", th_req: "Requester", th_items: "Items Details", th_app: "Approval Status",
+        th_id: "ID / Date", th_req: "Requester", th_items: "Item Name", th_app: "Approval Status",
         th_stat: "Status", th_act: "Action", inv_title: "Inventory Stock", inv_desc: "Monitoring stock levels.",
         search_placeholder: "Search item...", btn_import: "Import Master", opt_all_dept: "All Departments",
         btn_bulk_edit: "Bulk Edit", btn_cancel_edit: "Cancel Edit", btn_save_all: "Save All",
         th_dept: "Department", th_item_name: "Item Name", th_qty: "Current Qty", th_updated: "Last Updated",
         modal_req_title: "ATK Request Form", lbl_period: "Submission Period", opt_sel_month: "-- Select Month --",
         lbl_list: "Item List", note_stock: "<b>Note:</b> 'Last Stock' is from Inventory. 'Last Usage' deducts Inventory.",
-        th_last_stock: "Last Stock", th_usage: "Usage", th_req_qty: "Request", th_unit: "Unit", btn_add_row: "Add Item Row",
+        th_last_stock: "L. Stock", th_usage: "Usage", th_req_qty: "Req", th_unit: "Unit", btn_add_row: "Add Item Row",
         lbl_reason: "Reason", ph_reason: "Explain why you need these items...", btn_cancel: "Cancel", btn_submit_req: "Submit Request",
         modal_stock_title: "Update Stock (Admin)", lbl_actual_qty: "Actual Qty", btn_save: "Save",
         modal_import_title: "Import Master Items", import_instr: "Copy data from Excel (2 columns: <b>Item Name</b> | <b>Unit</b>) and paste below.",
@@ -377,14 +375,14 @@
         click_filter: "Klik untuk filter", insights: "Ringkasan Cepat",
         top_dept: "Departemen Teratas", top_items: "Barang Paling Diminta", total_vol: "Total Volume Barang", reqs: "permintaan", units: "unit", units_req: "unit diminta sepanjang waktu",
         hist_title: "Riwayat Permintaan", showing: "Menampilkan:", btn_export: "Ekspor", btn_new: "Buat Baru",
-        th_id: "ID / Tanggal", th_req: "Pemohon", th_items: "Detail Barang", th_app: "Status Persetujuan",
+        th_id: "ID / Tanggal", th_req: "Pemohon", th_items: "Nama Barang", th_app: "Status Persetujuan",
         th_stat: "Status", th_act: "Aksi", inv_title: "Stok Inventaris", inv_desc: "Memantau jumlah stok.",
         search_placeholder: "Cari barang...", btn_import: "Impor Master", opt_all_dept: "Semua Departemen",
         btn_bulk_edit: "Edit Masal", btn_cancel_edit: "Batal Edit", btn_save_all: "Simpan Semua",
         th_dept: "Departemen", th_item_name: "Nama Barang", th_qty: "Stok Saat Ini", th_updated: "Terakhir Update",
         modal_req_title: "Formulir Permintaan ATK", lbl_period: "Periode Pengajuan", opt_sel_month: "-- Pilih Bulan --",
         lbl_list: "Daftar Barang", note_stock: "<b>Catatan:</b> 'Stok Awal' dari Inventory. 'Pemakaian' memotong Inventory.",
-        th_last_stock: "Stok Awal", th_usage: "Pemakaian", th_req_qty: "Permintaan", th_unit: "Satuan", btn_add_row: "Tambah Baris",
+        th_last_stock: "S. Awal", th_usage: "Pakai", th_req_qty: "Minta", th_unit: "Unit", btn_add_row: "Tambah Baris",
         lbl_reason: "Alasan", ph_reason: "Jelaskan kebutuhan Anda atas barang ini...", btn_cancel: "Batal", btn_submit_req: "Kirim Permintaan",
         modal_stock_title: "Update Stok (Admin)", lbl_actual_qty: "Stok Aktual", btn_save: "Simpan",
         modal_import_title: "Impor Barang Master", import_instr: "Salin data dari Excel (2 kolom: <b>Nama Barang</b> | <b>Satuan</b>) dan tempel di bawah.",
@@ -562,12 +560,10 @@
 
     // --- SORTING FUNCTION UPDATED ---
     function sortInventory(key) { 
-        // 1. Tentukan arah sorting
         if (sortState.key === key) {
             sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
         } else {
             sortState.key = key;
-            // Default untuk QTY adalah Descending (Tertinggi ke Terendah)
             sortState.dir = (key === 'qty') ? 'desc' : 'asc'; 
         }
 
@@ -575,26 +571,20 @@
             let valA = a[key];
             let valB = b[key]; 
             
-            // 2. Logic khusus untuk QTY (Angka)
             if(key === 'qty') { 
                 valA = parseInt(valA) || 0; 
                 valB = parseInt(valB) || 0; 
-                
                 if (valA < valB) return sortState.dir === 'asc' ? -1 : 1; 
                 if (valA > valB) return sortState.dir === 'asc' ? 1 : -1; 
                 return 0;
             } 
             
-            // 3. Logic untuk Teks (Item Name) dengan prioritas data terisi
             valA = (valA || '').toString().toLowerCase().trim(); 
             valB = (valB || '').toString().toLowerCase().trim(); 
 
-            // Jika valA kosong dan valB ada isinya, pindahkan valA ke bawah
             if (!valA && valB) return 1;
-            // Jika valB kosong dan valA ada isinya, pindahkan valB ke bawah
             if (valA && !valB) return -1;
 
-            // Jika keduanya ada isinya, urutkan sesuai abjad
             if (valA < valB) return sortState.dir === 'asc' ? -1 : 1; 
             if (valA > valB) return sortState.dir === 'asc' ? 1 : -1; 
             return 0; 
@@ -725,7 +715,57 @@
     function openCreateModal(){ document.getElementById('modal-create-title').innerText=i18n[currentLang].modal_req_title; document.getElementById('edit-req-id').value=""; document.getElementById('btn-submit-req').innerText=i18n[currentLang].btn_submit_req; document.getElementById('items-container').innerHTML=`<div class="text-center py-4 text-xs text-slate-400"><i class="fas fa-spinner fa-spin"></i> ${i18n[currentLang].loading_data}</div>`; openModal('modal-create'); fetchMyDeptStock().then(() => { document.getElementById('items-container').innerHTML=''; document.getElementById('req-period').value = ''; document.getElementById('req-reason').value=''; itemCount=0; addItemRow(); }); }
     function openEditModal(id) { const row = currentData.find(r => r.id === id); if(!row) return; document.getElementById('modal-create-title').innerText=i18n[currentLang].btn_edit + " Request: " + id; document.getElementById('edit-req-id').value = id; document.getElementById('btn-submit-req').innerText="Update Request"; document.getElementById('items-container').innerHTML=`<div class="text-center py-4 text-xs text-slate-400"><i class="fas fa-spinner fa-spin"></i> ${i18n[currentLang].loading_data}</div>`; openModal('modal-create'); fetchMyDeptStock().then(() => { document.getElementById('items-container').innerHTML=''; document.getElementById('req-period').value = row.period; document.getElementById('req-reason').value = row.reason; itemCount = 0; if(row.items && row.items.length > 0) { row.items.forEach(it => { addItemRow(it.name, it.qty, it.unit, it.last_usage, it.current_stock); }); } else { addItemRow(); } }); }
     
-    function addItemRow(n='', q='', u='', usage='', stock=''){ if(itemCount>=20){showAlert(i18n[currentLang].info_title, i18n[currentLang].msg_max_item);return;} itemCount++; let displayStock = stock !== '' ? stock : 0; const d=document.createElement('div'); d.className="grid grid-cols-12 gap-2 items-start animate-slide-up item-row bg-slate-50 p-2 rounded-lg border border-slate-100 relative z-0"; d.id=`item-row-${itemCount}`; d.innerHTML=`<div class="col-span-12 sm:col-span-4 relative"><div class="relative w-full"><input type="text" class="w-full border border-slate-300 rounded p-2 text-xs bg-white focus:ring-1 focus:ring-amber-500 inp-name outline-none cursor-pointer font-bold" placeholder="${i18n[currentLang].ph_item}" value="${n}" onfocus="showDropdown(this)" onkeyup="filterDropdown(this)" autocomplete="off"><i class="fas fa-chevron-down absolute right-3 top-3 text-slate-400 pointer-events-none text-xs"></i><div class="dropdown-list hidden absolute z-50 w-full bg-white border border-slate-200 rounded shadow-xl mt-1 max-h-60 overflow-y-auto dropdown-scroll left-0"></div></div></div><div class="col-span-4 sm:col-span-2"><input type="number" placeholder="0" class="w-full border border-slate-200 bg-slate-200 text-slate-500 rounded p-2 text-xs font-mono inp-stock font-bold text-center" readonly tabindex="-1" value="${displayStock}"></div><div class="col-span-4 sm:col-span-2"><input type="number" placeholder="0" class="w-full border border-slate-300 rounded p-2 text-xs focus:ring-1 focus:ring-amber-500 inp-usage text-center" value="${usage}" required></div><div class="col-span-4 sm:col-span-2"><input type="number" placeholder="0" class="w-full border border-slate-300 rounded p-2 text-xs focus:ring-1 focus:ring-amber-500 inp-qty text-center" value="${q}" required></div><div class="col-span-3 sm:col-span-1"><input type="text" placeholder="Unit" class="w-full border-none bg-transparent p-2 text-xs text-slate-500 inp-unit font-bold text-center" value="${u}" readonly tabindex="-1"></div><div class="col-span-1 sm:col-span-1 flex items-center justify-center pt-1"><button type="button" onclick="document.getElementById('item-row-${itemCount}').remove()" class="text-red-400 hover:text-red-600"><i class="fas fa-times-circle"></i></button></div>`; document.getElementById('items-container').appendChild(d); renderInventoryDropdown(d.querySelector('.dropdown-list')); }
+    // --- UPDATED ADD ITEM ROW FOR RESPONSIVE MOBILE ---
+    function addItemRow(n='', q='', u='', usage='', stock=''){ 
+        if(itemCount>=20){showAlert(i18n[currentLang].error_title, i18n[currentLang].msg_max_item);return;} 
+        itemCount++; 
+        let displayStock = stock !== '' ? stock : 0; 
+        const d=document.createElement('div'); 
+        d.className="flex flex-col sm:grid sm:grid-cols-12 gap-3 sm:gap-2 items-start sm:items-center animate-slide-up item-row bg-slate-50 p-4 sm:p-2 rounded-xl sm:rounded-lg border border-slate-200 relative z-0 shadow-sm sm:shadow-none"; 
+        d.id=`item-row-${itemCount}`; 
+        
+        // Render Header Labels for mobile dynamically via string injection
+        const lblStock = i18n[currentLang].th_last_stock;
+        const lblUsage = i18n[currentLang].th_usage;
+        const lblReq = i18n[currentLang].th_req_qty;
+        const lblUnit = i18n[currentLang].th_unit;
+        const lblItem = i18n[currentLang].th_item_name;
+
+        d.innerHTML=`
+            <button type="button" onclick="document.getElementById('item-row-${itemCount}').remove()" class="absolute top-3 right-3 sm:static sm:col-span-1 sm:col-start-12 sm:row-start-1 flex items-center justify-center text-red-400 hover:text-red-600 transition p-1 sm:p-0 bg-red-50 sm:bg-transparent rounded-full sm:rounded-none"><i class="fas fa-times sm:fa-times-circle text-base"></i></button>
+
+            <div class="w-full sm:col-span-4 sm:col-start-1 sm:row-start-1 relative pr-8 sm:pr-0">
+                <label class="sm:hidden text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">${lblItem}</label>
+                <div class="relative w-full">
+                    <input type="text" class="w-full border border-slate-300 rounded-lg sm:rounded p-2.5 sm:p-2 text-xs bg-white focus:ring-2 focus:ring-amber-500 inp-name outline-none cursor-pointer font-bold" placeholder="${i18n[currentLang].ph_item}" value="${n}" onfocus="showDropdown(this)" onkeyup="filterDropdown(this)" autocomplete="off">
+                    <i class="fas fa-chevron-down absolute right-3 top-3 text-slate-400 pointer-events-none text-xs"></i>
+                    <div class="dropdown-list hidden absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 max-h-60 overflow-y-auto dropdown-scroll left-0"></div>
+                </div>
+            </div>
+            
+            <div class="flex items-end gap-2 w-full sm:col-span-7 sm:col-start-5 sm:row-start-1 sm:grid sm:grid-cols-7 sm:gap-2">
+                <div class="flex-1 sm:col-span-2">
+                    <label class="sm:hidden text-[9px] font-bold text-slate-400 uppercase mb-1.5 block text-center">${lblStock}</label>
+                    <input type="number" placeholder="0" class="w-full border border-slate-200 bg-slate-200 text-slate-500 rounded-lg sm:rounded p-2.5 sm:p-2 text-xs font-mono inp-stock font-bold text-center" readonly tabindex="-1" value="${displayStock}">
+                </div>
+                <div class="flex-1 sm:col-span-2">
+                    <label class="sm:hidden text-[9px] font-bold text-slate-400 uppercase mb-1.5 block text-center">${lblUsage}</label>
+                    <input type="number" placeholder="0" class="w-full border border-slate-300 rounded-lg sm:rounded p-2.5 sm:p-2 text-xs focus:ring-2 focus:ring-amber-500 inp-usage text-center" value="${usage}" required>
+                </div>
+                <div class="flex-1 sm:col-span-2">
+                    <label class="sm:hidden text-[9px] font-bold text-amber-600 uppercase mb-1.5 block text-center">${lblReq}</label>
+                    <input type="number" placeholder="0" class="w-full border border-amber-300 bg-amber-50 text-amber-800 rounded-lg sm:rounded p-2.5 sm:p-2 text-xs font-bold focus:ring-2 focus:ring-amber-500 inp-qty text-center shadow-inner" value="${q}" required>
+                </div>
+                <div class="w-12 sm:w-auto sm:col-span-1 flex flex-col justify-end h-full">
+                    <label class="sm:hidden text-[9px] font-bold text-slate-400 uppercase mb-1.5 block text-center">${lblUnit}</label>
+                    <input type="text" placeholder="-" class="w-full border-none bg-transparent p-2.5 sm:p-2 text-xs text-slate-500 inp-unit font-bold text-center" value="${u}" readonly tabindex="-1">
+                </div>
+            </div>
+        `; 
+        document.getElementById('items-container').appendChild(d); 
+        renderInventoryDropdown(d.querySelector('.dropdown-list')); 
+    }
+
     function renderInventoryDropdown(c){ if(!atkInventory||atkInventory.length===0){c.innerHTML=`<div class="p-2 text-xs text-slate-400 italic">${i18n[currentLang].loading_items}</div>`;return;} let h=''; atkInventory.forEach(i=>{h+=`<div class="p-2 hover:bg-amber-50 cursor-pointer text-xs border-b border-slate-50 last:border-0 transition-colors" onclick="selectOption(this, '${i.name}', '${i.uom}')"><div class="font-medium text-slate-700">${i.name}</div></div>`;}); c.innerHTML=h; }
     function selectOption(e,n,u){ const row = e.closest('.item-row'); row.querySelector('.inp-name').value=n; row.querySelector('.inp-unit').value=u; const found = myDeptStock.find(s => s.item_name === n); const currentStock = found ? parseInt(found.qty) : 0; row.querySelector('.inp-stock').value = currentStock; e.closest('.dropdown-list').classList.add('hidden'); }
     function showDropdown(i){document.querySelectorAll('.dropdown-list').forEach(e=>e.classList.add('hidden'));i.nextElementSibling.nextElementSibling.classList.remove('hidden');}
@@ -786,7 +826,6 @@
         const nowStr = new Date().toLocaleString('id-ID');
         const title = i18n[currentLang].rep_title.toUpperCase();
         
-        // 1. Build Header Array (AOA)
         let aoa = [
             [title],
             ["PT Cemindo Gemilang Tbk - Plant Batam"],
@@ -813,7 +852,6 @@
             ]
         ];
 
-        // 2. Add Data Rows (Flat Structure: 1 Item = 1 Row)
         data.forEach(r => {
             if (r.items && r.items.length > 0) {
                 r.items.forEach(it => {
@@ -824,7 +862,7 @@
                         r.fullname || r.username,
                         r.department,
                         it.name,
-                        parseInt(it.qty) || 0, // Dibuat sebagai integer agar mudah di-sum di Excel
+                        parseInt(it.qty) || 0,
                         it.unit,
                         r.reason || "-",
                         r.appHead || "-",
@@ -837,7 +875,6 @@
                     ]);
                 });
             } else {
-                // Failsafe jika items kosong
                 aoa.push([
                     r.id, r.timestamp, r.period || "-", r.fullname || r.username, r.department,
                     "-", 0, "-", r.reason || "-", r.appHead || "-", r.headActionAt || "-", r.appHrga || "-", r.hrgaActionAt || "-", r.status, r.receivedAt || "-", r.rejectReason || "-"
@@ -848,10 +885,9 @@
         const wb = XLSX.utils.book_new(); 
         const ws = XLSX.utils.aoa_to_sheet(aoa); 
         
-        // Auto-Width Setup for Professional Look
         const wscols = [
             {wch: 22}, {wch: 20}, {wch: 12}, {wch: 25}, {wch: 18}, 
-            {wch: 35}, {wch: 10}, {wch: 10}, // Item Name, Qty, Unit
+            {wch: 35}, {wch: 10}, {wch: 10}, 
             {wch: 35}, {wch: 25}, {wch: 20}, {wch: 25}, 
             {wch: 20}, {wch: 15}, {wch: 20}, {wch: 30}
         ];
@@ -865,7 +901,6 @@
         const { jsPDF } = window.jspdf; 
         const doc = new jsPDF('landscape', 'mm', 'a4'); 
         
-        // Header Format Professional
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
         doc.text(i18n[currentLang].rep_title, 14, 15);
@@ -881,7 +916,6 @@
                 r.items.forEach(i => { itemsStr += `• ${i.name} (${i.qty} ${i.unit})\n`; });
             }
             
-            // Kolom Status & Catatan & Receive Time
             let statAndNote = r.status;
             if(r.receivedAt) statAndNote += `\n\n${i18n[currentLang].rcv_lbl}\n${formatDateSimple(r.receivedAt)}`;
             if(r.rejectReason) statAndNote += `\n\nNote: ${r.rejectReason}`;
@@ -902,17 +936,16 @@
             body: tableData,
             theme: 'grid',
             styles: { fontSize: 8, cellPadding: 2, valign: 'top' },
-            headStyles: { fillColor: [217, 119, 6], textColor: 255, fontStyle: 'bold' }, // Amber color header
+            headStyles: { fillColor: [217, 119, 6], textColor: 255, fontStyle: 'bold' },
             columnStyles: {
                 0: { cellWidth: 30 },
                 1: { cellWidth: 35 },
                 2: { cellWidth: 65 },
                 3: { cellWidth: 40 },
-                4: { cellWidth: 45 }, // Diperlebar agar waktu receive muat rapi
+                4: { cellWidth: 45 }, 
                 5: { cellWidth: 'auto' }
             },
             didDrawPage: function (data) {
-                // Footer Page Number
                 let str = 'Page ' + doc.internal.getNumberOfPages();
                 doc.setFontSize(8);
                 doc.text(str, data.settings.margin.left, doc.internal.pageSize.height - 10);
