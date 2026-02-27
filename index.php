@@ -256,7 +256,6 @@
   <footer class="py-6 text-center text-xs text-slate-400 font-medium"><div class="animate-fade-in-up delay-400">&copy; 2026 PT Cemindo Gemilang Tbk - Plant Batam</div></footer>
 
   <script>
-    // --- GLOBAL ESC LISTENER ---
     document.addEventListener('keydown', function(event) {
         if (event.key === "Escape") {
             const modals = ['modal-profile', 'modal-users', 'modal-forgot'];
@@ -283,7 +282,6 @@
         }
     };
     
-    // UPDATE KONFIGURASI APP
     const appsConfig = {
       'eps': { icon: 'fa-id-card-clip', color: 'red', title: 'Exit Permit System', desc_en: 'Employee gate pass & permit management.', desc_id: 'Sistem izin keluar & manajemen gate pass.', url: 'eps.php' },
       'vms': { icon: 'fa-car-side', color: 'blue', title: 'Vehicle Management', desc_en: 'Operational vehicle booking & monitoring.', desc_id: 'Pemesanan & pemantauan kendaraan operasional.', url: 'vms.php' },
@@ -298,7 +296,6 @@
         if(stored) { currentUser = JSON.parse(stored); showDashboard(); } else { showLogin(); }
     };
 
-    // --- FUNGSI TOGGLE PASSWORD VISIBILITY ---
     function togglePass(inputId, iconId) {
         const input = document.getElementById(inputId);
         const icon = document.getElementById(iconId);
@@ -367,7 +364,6 @@
                msg.innerText = res.message; msg.classList.remove('hidden');
            }
        } catch (error) {
-           console.error(error);
            btn.disabled = false; btn.innerText = "Login";
            msg.innerText = "Server Error"; msg.classList.remove('hidden');
        }
@@ -398,7 +394,6 @@
        });
     }
 
-    // --- FORGOT PASSWORD LOGIC ---
     function openForgotModal() {
         document.getElementById('modal-forgot').classList.remove('hidden');
         document.getElementById('forgot-username').value = '';
@@ -436,7 +431,6 @@
         });
     }
 
-    // --- PROFILE MODAL ---
     function openProfileModal() { 
         document.getElementById('prof-fullname').value = currentUser.fullname || '-'; 
         document.getElementById('prof-nik').value = currentUser.nik || '-'; 
@@ -571,7 +565,13 @@
         
         document.getElementById('u-username').value = user.username; 
         document.getElementById('u-username').disabled = true; 
-        document.getElementById('u-password').value = user.password; 
+        
+        // PENTING: Kosongkan password agar tidak double hash
+        const pwInput = document.getElementById('u-password');
+        pwInput.value = ''; 
+        pwInput.required = false;
+        pwInput.placeholder = "(Leave blank to keep current)";
+
         document.getElementById('u-fullname').value = user.fullname; 
         document.getElementById('u-nik').value = user.nik; 
         document.getElementById('u-phone').value = user.phone; 
@@ -591,6 +591,12 @@
         document.getElementById('user-form').reset(); 
         document.getElementById('u-username').disabled = false; 
         
+        // Kembalikan atribut password
+        const pwInput = document.getElementById('u-password');
+        pwInput.value = '';
+        pwInput.required = true;
+        pwInput.placeholder = "******";
+
         setFieldValue('dept', '');
         setFieldValue('role', '');
         setFieldValue('apps', 'eps, vms, mgp, atk, med');
@@ -611,7 +617,10 @@
             role: getFieldValue('role'), 
             apps: getFieldValue('apps') 
         }; 
-        if(!data.username || !data.password || !data.fullname) { alert("Please fill required fields"); return; } 
+        
+        if(!data.username || (!isEdit && !data.password) || !data.fullname) { 
+            alert("Please fill required fields"); return; 
+        } 
         
         const btn = document.getElementById('btn-save-user'); const orgHtml = btn.innerHTML; 
         btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Processing...'; 
@@ -657,9 +666,9 @@
     function exportUsers() {
         if (allUsers.length === 0) return alert("No users to export");
         const wb = XLSX.utils.book_new();
-        const rows = [["Username", "Password", "Fullname", "NIK", "Department", "Role", "Allowed_Apps", "Phone"]];
+        const rows = [["Username", "Fullname", "NIK", "Department", "Role", "Allowed_Apps", "Phone"]];
         allUsers.forEach(u => {
-            rows.push([u.username, u.password, u.fullname, u.nik, u.department, u.role, u.apps, u.phone]);
+            rows.push([u.username, u.fullname, u.nik, u.department, u.role, u.apps, u.phone]);
         });
         const ws = XLSX.utils.aoa_to_sheet(rows);
         XLSX.utils.book_append_sheet(wb, ws, "Users");
@@ -678,7 +687,7 @@
                 
                 const formatted = json.map(r => ({
                     username: r.Username || r.username,
-                    password: r.Password || r.password,
+                    password: r.Password || r.password, // Jika kosong, API akan abaikan hashing
                     fullname: r.Fullname || r.fullname,
                     nik: r.NIK || r.nik || '',
                     department: r.Department || r.department || '',
