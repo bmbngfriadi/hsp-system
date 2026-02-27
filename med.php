@@ -176,17 +176,28 @@
             </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-           <div><h2 class="text-xl font-bold text-slate-800 tracking-tight" data-i18n="history_title">Medical Claims History</h2><p class="text-xs text-slate-500 font-medium mt-0.5" data-i18n="history_desc">Realtime plafond deduction & tracking.</p></div>
-           <div class="flex gap-2 w-full sm:w-auto items-center flex-wrap sm:flex-nowrap">
-             <button id="btn-export" onclick="openExportModal()" class="hidden bg-blue-600 text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition items-center gap-2 btn-action"><i class="fas fa-file-export"></i> <span data-i18n="btn_export">Export</span></button>
-             <button id="btn-admin" onclick="openAdminModal()" class="hidden bg-slate-800 text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm hover:bg-slate-700 transition flex items-center gap-2 btn-action"><i class="fas fa-cogs"></i> <span data-i18n="btn_manage">Manage</span></button>
-             <button onclick="loadData()" class="bg-white border border-slate-300 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-50 btn-action transition"><i class="fas fa-sync-alt"></i></button>
-             <button id="btn-create" onclick="openSubmitModal()" class="hidden flex-1 sm:flex-none bg-rose-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md hover:bg-rose-700 hover:shadow-lg transition items-center justify-center gap-2 btn-action"><i class="fas fa-plus"></i> <span data-i18n="btn_submit_claim">Submit Claim</span></button>
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mt-8">
+           <div>
+               <h2 class="text-xl font-bold text-slate-800 tracking-tight" data-i18n="history_title">Medical Claims History</h2>
+               <p class="text-xs text-slate-500 font-medium mt-0.5" data-i18n="history_desc">Realtime plafond deduction & tracking.</p>
+           </div>
+           
+           <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto items-center">
+             <div id="search-claim-container" class="hidden relative w-full sm:w-64">
+                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fas fa-search"></i></span>
+                 <input type="text" id="search-claim" onkeyup="filterClaimsTable()" class="w-full border border-slate-300 rounded-lg p-2.5 pl-9 text-xs font-medium focus:ring-2 focus:ring-rose-500 outline-none shadow-sm" data-i18n-ph="search_claim" placeholder="Search claims (Name, Dept, Inv)...">
+             </div>
+
+             <div class="flex gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 hide-scroll">
+                 <button id="btn-export" onclick="openExportModal()" class="hidden bg-blue-600 text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition items-center gap-2 btn-action whitespace-nowrap"><i class="fas fa-file-export"></i> <span data-i18n="btn_export">Export</span></button>
+                 <button id="btn-admin" onclick="openAdminModal()" class="hidden bg-slate-800 text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm hover:bg-slate-700 transition flex items-center gap-2 btn-action whitespace-nowrap"><i class="fas fa-cogs"></i> <span data-i18n="btn_manage">Manage</span></button>
+                 <button onclick="loadData()" class="bg-white border border-slate-300 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-50 btn-action transition"><i class="fas fa-sync-alt"></i></button>
+                 <button id="btn-create" onclick="openSubmitModal()" class="hidden flex-1 sm:flex-none bg-rose-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md hover:bg-rose-700 hover:shadow-lg transition flex items-center justify-center gap-2 btn-action whitespace-nowrap"><i class="fas fa-plus"></i> <span data-i18n="btn_submit_claim">Submit Claim</span></button>
+             </div>
            </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mt-4">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mt-2">
            <div id="data-card-container" class="md:hidden bg-slate-50 p-3 space-y-4"></div>
            
            <div class="hidden md:block overflow-x-auto">
@@ -426,7 +437,7 @@
             search_emp: "Search employee...", view_doc: "Open Document", claim_type: "Claim Category",
             export_report: "Export Report", export_start: "Start Date", export_end: "End Date", export_all: "Export All Time (Excel)",
             emp_budgets: "Employee Budgets Overview", all_depts: "All Departments", import_excel: "Import", dl_template: "Template",
-            stat_title: "Advanced Analytics", stat_total_claim: "Total Claim Amount", stat_top_user: "Top Claimant", stat_top_dept: "Top Department", stat_top_cat: "Highest Cost Category"
+            stat_title: "Advanced Analytics", stat_total_claim: "Total Claim Amount", stat_top_user: "Top Claimant", stat_top_dept: "Top Department", stat_top_cat: "Highest Cost Category", search_claim: "Search claims (Name, Dept, Inv)..."
         },
         id: {
             app_title: "Plafond Medis", init_plafond: "Plafond Awal", rem_plafond: "Sisa Plafond", used_plafond: "Plafond Terpakai",
@@ -435,7 +446,7 @@
             th_rem_plafond: "Sisa Plafond", th_inv: "Kategori & Nota", th_status: "Status", th_hrga: "Review HRGA", th_action: "Aksi",
             btn_ok: "OK", btn_cancel: "Batal", btn_proceed: "Ya, Lanjutkan",
             modal_submit_title: "Kirim Klaim Medis", modal_edit_title: "Edit Klaim Medis", deduct_info: "Plafond akan langsung terpotong saat disubmit.",
-            target_emp: "Karyawan Tujuan", invoice_no: "No. Invoice", amount: "Nominal (Rp)", upload_proof: "Unggah Bukti (Img/PDF)",
+            target_emp: "Karyawan Tujuan", invoice_no: "No. Invoice", amount: "Nominal (Rp)", upload_proof: "Unggah Bukti (Gambar/PDF)",
             opt_edit_note: "(Opsional)", click_upload: "Klik untuk unggah file", btn_submit: "Kirim", btn_save: "Simpan",
             manage_plafond: "Kelola Plafond Karyawan", sel_user: "Pilih Karyawan",
             reject_claim: "Tolak Klaim", refund_info: "Plafond akan dikembalikan ke karyawan.", btn_reject: "Tolak",
@@ -444,7 +455,7 @@
             search_emp: "Cari karyawan...", view_doc: "Buka Dokumen", claim_type: "Kategori Klaim",
             export_report: "Ekspor Laporan", export_start: "Tanggal Mulai", export_end: "Tanggal Akhir", export_all: "Ekspor Semua (Excel)",
             emp_budgets: "Ringkasan Budget Karyawan", all_depts: "Semua Departemen", import_excel: "Impor", dl_template: "Template",
-            stat_title: "Analitik Lanjutan", stat_total_claim: "Total Nominal Klaim", stat_top_user: "Pengklaim Tertinggi", stat_top_dept: "Departemen Teratas", stat_top_cat: "Kategori Termahal"
+            stat_title: "Analitik Lanjutan", stat_total_claim: "Total Nominal Klaim", stat_top_user: "Pengklaim Tertinggi", stat_top_dept: "Departemen Teratas", stat_top_cat: "Kategori Termahal", search_claim: "Cari riwayat (Nama, Dept, Nota)..."
         }
     };
 
@@ -460,13 +471,17 @@
                 else el.innerHTML = i18n[currentLang][k];
             }
         });
+        document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+            const k = el.getAttribute('data-i18n-ph');
+            if(i18n[currentLang][k]) el.setAttribute('placeholder', i18n[currentLang][k]);
+        });
     }
 
     function toggleLanguage() {
         currentLang = (currentLang === 'en') ? 'id' : 'en';
         localStorage.setItem('portal_lang', currentLang);
         applyLanguage();
-        loadData(); 
+        filterClaimsTable(); // Re-render table with translation
         if(!document.getElementById('modal-admin').classList.contains('hidden')) loadAdminBudgets();
     }
 
@@ -546,6 +561,7 @@
         if (canViewAll) {
             document.getElementById('th-rem-plafond').classList.remove('hidden');
             document.getElementById('global-budget-section').classList.remove('hidden');
+            document.getElementById('search-claim-container').classList.remove('hidden');
         }
 
         if(['User', 'HRGA'].includes(currentUser.role)) {
@@ -599,7 +615,7 @@
         .then(r=>r.json()).then(res => {
             if(res.success) {
                 allClaimsData = res.data;
-                renderTable(allClaimsData);
+                filterClaimsTable(); // Trigger render
                 renderAdvancedStats(allClaimsData);
             }
         });
@@ -725,6 +741,30 @@
         });
     }
 
+    // --- CLAIMS TABLE & SEARCH ---
+    function filterClaimsTable() {
+        const searchInput = document.getElementById('search-claim');
+        if (!searchInput) {
+            renderTable(allClaimsData);
+            return;
+        }
+
+        const term = searchInput.value.toLowerCase();
+        if (!term) {
+            renderTable(allClaimsData);
+            return;
+        }
+
+        const filtered = allClaimsData.filter(c => 
+            c.fullname.toLowerCase().includes(term) || 
+            c.username.toLowerCase().includes(term) || 
+            c.department.toLowerCase().includes(term) ||
+            c.invoice_no.toLowerCase().includes(term) ||
+            c.req_id.toLowerCase().includes(term)
+        );
+        renderTable(filtered);
+    }
+
     function renderTable(data) {
         const tb = document.getElementById('table-body');
         const cc = document.getElementById('data-card-container');
@@ -807,6 +847,7 @@
         });
     }
 
+    // --- SUBMIT / EDIT CLAIM ---
     function openSubmitModal() {
         document.getElementById('input-action').value = 'submit';
         document.getElementById('input-reqid').value = '';
@@ -902,6 +943,7 @@
         } else { executePost(payload); }
     }
 
+    // --- HRGA ACTIONS ---
     function confirmClaim(id) {
         showConfirm(t('btn_confirm'), "Approve this claim?", () => {
             fetch('api/med.php', { method: 'POST', body: JSON.stringify({ action: 'updateStatus', id: id, act: 'confirm', approverName: currentUser.fullname }) })
@@ -1273,19 +1315,15 @@
 
     function resetIdle() { idleTime = 0; }
     
-    // Deteksi interaksi user
     ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'].forEach(e => 
         document.addEventListener(e, resetIdle, true)
     );
 
-    // Hitung waktu mundur setiap 1 detik
     setInterval(() => {
         if (currentUser) {
             idleTime++;
             if (idleTime >= IDLE_MAX) {
-                // Hapus sesi login
                 localStorage.removeItem('portal_user');
-                // Redirect ke index.php dengan lemparan parameter timeout=1
                 window.location.href = 'index.php?timeout=1';
             }
         }
