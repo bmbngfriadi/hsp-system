@@ -3,7 +3,7 @@ header("Access-Control-Allow-Origin: *");
 $host = "localhost";
 $user = "root";
 $pass = "";
-$db   = "db_internal_app_backup";
+$db   = "db_internal_app";
 
 $conn = new mysqli($host, $user, $pass, $db);
 if ($conn->connect_error) {
